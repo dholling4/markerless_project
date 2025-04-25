@@ -121,4 +121,4 @@ st.write('''
             2. Download the zipped file containing all the results
             3. Unzip the file and open the CSV files in Excel
 
-            have any questions or need assistance? Reach out to David Hollinger at dh25587@essex.ac.uk ''')
+            Have any questions or need assistance? Reach out to David Hollinger at dh25587@essex.ac.uk ''')
