@@ -116,7 +116,7 @@ st.markdown('''
 ## Instructions ''')
 st.write('''
          This app allows you to batch process videos and extract joint angles using pose estimation.
-         follow these steps to get started:
+         Follow these steps to get started:
             1. Drag and drop batch upload .mov or .mp4 files
             2. Download the zipped file containing all the results
             3. Unzip the file and open the CSV files in Excel
