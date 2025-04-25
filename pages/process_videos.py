@@ -115,12 +115,10 @@ if uploaded_files:
 st.markdown('''
 ## Instructions ''')
 st.write('''
+         This app allows you to batch process videos and extract joint angles using pose estimation.
+         follow these steps to get started:
             1. Drag and drop batch upload .mov or .mp4 files
-            2. Process each video → Run pose estimation → Extract joint angles (Ankle, Knee, Hip, Spine))
-            3. Export a CSV for each video individually
-            4. Zip all the results automatically
-            5. Download the zipped file containing all the results
-            6. Unzip the file and open the CSV files in Excel
-            7. Analyze the data and visualize the joint angles using your preferred tools (e.g., MATLAB, Python, R)
+            2. Download the zipped file containing all the results
+            3. Unzip the file and open the CSV files in Excel
 
             have any questions or need assistance? Reach out to David Hollinger at dh25587@essex.ac.uk ''')
