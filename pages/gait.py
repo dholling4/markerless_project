@@ -187,7 +187,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))  # Smaller size
+    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))  # Smaller size
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
