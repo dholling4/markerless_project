@@ -51,30 +51,49 @@ def get_color(value, good_range, moderate_range):
         return 'yellow'
     else:
         return "lightcoral"
-def create_spider_matplotlib(rom_values, joint_labels, save_path):
-    """Create and save a radar/spider plot using Matplotlib."""
+    
+def create_spider_matplotlib(rom_values, joint_labels, save_path,
+                             bad_rom_outer=None, moderate_rom_outer=None, ideal_rom_outer=None):
+    """Create and save a radar/spider plot using Matplotlib, including target ranges."""
     N = len(joint_labels)
     values = rom_values + [rom_values[0]]  # close the loop
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))  # Smaller size
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
-    # Plot the data
+    # Plot target ranges if provided
+    if bad_rom_outer is not None:
+        bad = list(bad_rom_outer) + [bad_rom_outer[0]]
+        ax.plot(angles, bad, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor')
+        ax.fill(angles, bad, color='red', alpha=0.13)
+    if moderate_rom_outer is not None:
+        moderate = list(moderate_rom_outer) + [moderate_rom_outer[0]]
+        ax.plot(angles, moderate, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate')
+        ax.fill(angles, moderate, color='gold', alpha=0.13)
+    if ideal_rom_outer is not None:
+        ideal = list(ideal_rom_outer) + [ideal_rom_outer[0]]
+        ax.plot(angles, ideal, color='#00FFAB', linewidth=1.5, linestyle='-', label='Ideal Target')
+        ax.fill(angles, ideal, color='lime', alpha=0.13)
+
+    # Plot the user's data
     ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=0.3)
 
     # Set the labels
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(joint_labels, color='white', fontsize=13)
+    ax.set_xticklabels(joint_labels, color='white', fontsize=10)
     ax.set_yticklabels([])
     ax.tick_params(axis='y', colors='white')
     ax.spines['polar'].set_color('white')
 
     # Add grid
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
+
+    # Add legend
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False)
 
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
@@ -156,28 +175,19 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     spider_plot_path = tempfile.mktemp(suffix=".png")
     rom_values = [float(x) for x in df_rom['Range of Motion (°)']]
     joint_labels = list(df_rom['Joint'])
+    # Prepare target ranges (ensure these are lists of floats, not tuples)
+    bad_rom_outer = [float(x) for x in bad_rom_outer]
+    moderate_rom_outer = [float(x) for x in moderate_rom_outer]
+    ideal_rom_outer = [float(x) for x in ideal_rom_outer]
+
     # Make the radar plot smaller (figsize=(4,4))
-    def create_spider_matplotlib(rom_values, joint_labels, save_path):
-        N = len(joint_labels)
-        values = rom_values + [rom_values[0]]
-        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-        angles += [angles[0]]
-        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))  # Smaller size
-        ax.set_facecolor('black')
-        fig.patch.set_facecolor('black')
-        ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
-        ax.fill(angles, values, color='deepskyblue', alpha=0.3)
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(joint_labels, color='white', fontsize=11)
-        ax.set_yticklabels([])
-        ax.tick_params(axis='y', colors='white')
-        ax.spines['polar'].set_color('white')
-        ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
-        plt.tight_layout()
-        plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
-        plt.close(fig)
-    create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
-    pdf.image(spider_plot_path, x=90, y=31, w=80)  # Move right, make smaller (w=80)
+    create_spider_matplotlib(
+        rom_values, joint_labels, spider_plot_path,
+        bad_rom_outer=bad_rom_outer,
+        moderate_rom_outer=moderate_rom_outer,
+        ideal_rom_outer=ideal_rom_outer
+    )
+    pdf.image(spider_plot_path, x=90, y=31, w=60)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
