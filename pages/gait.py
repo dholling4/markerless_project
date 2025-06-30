@@ -155,7 +155,11 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     spider_plot_path = tempfile.mktemp(suffix=".png")
     # You must pass the correct rom_values and joint_labels here
     # Example: create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
-    create_spider_matplotlib(df_rom.values, df_rom.columns, spider_plot_path)
+    # --- Matplotlib Spider/Radar Plot ---
+    spider_plot_path = tempfile.mktemp(suffix=".png")
+    rom_values = [float(x) for x in df_rom['Range of Motion (°)']]
+    joint_labels = list(df_rom['Joint'])
+    create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
     pdf.image(spider_plot_path, x=75, y=31, w=125)
 
     # --- Matplotlib Asymmetry Bar Chart ---
