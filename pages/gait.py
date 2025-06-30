@@ -6,8 +6,6 @@ import numpy as np
 import tempfile
 import os
 from matplotlib import pyplot as plt
-import os
-os.environ["BROWSER"] = "/usr/bin/chromium"
 import plotly.graph_objects as go
 import pandas as pd
 from scipy.signal import butter, lfilter
@@ -2048,6 +2046,8 @@ def send_email(to_email, attachment_path):
 # - Add step by step variation analysis
 
 def main():
+    os.environ["BROWSER"] = "/usr/bin/chromium"
+
     st.title("Biomechanics Analysis from Video")
 
     github_url = "https://raw.githubusercontent.com/dholling4/PolarPlotter/main/"
