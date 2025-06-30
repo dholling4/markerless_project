@@ -430,6 +430,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     
         ideal_rom_outer = [knee_good[1], hip_good[1], spine_good[1], hip_good[1], knee_good[1], ankle_good[1], ankle_good[1]]
+    ideal_rom_outer = [knee_good[1], hip_good[1], spine_good[1], hip_good[1], knee_good[1], ankle_good[1], ankle_good[1]]
     ideal_rom_inner = [knee_good[0], hip_good[0], spine_good[0], hip_good[0], knee_good[0], ankle_good[0], ankle_good[0]]
     moderate_rom_outer = [knee_moderate[1], hip_moderate[1], spine_moderate[1], hip_moderate[1], knee_moderate[1], ankle_moderate[1], ankle_moderate[1]]
     moderate_rom_inner = [knee_moderate[0], hip_moderate[0], spine_moderate[0], hip_moderate[0], knee_moderate[0], ankle_moderate[0], ankle_moderate[0]]
