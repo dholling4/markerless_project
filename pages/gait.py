@@ -164,14 +164,25 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
-    # You must pass the correct asymmetry_dict here, e.g.:
-    # asymmetry_dict = {"Ankle": right_ankle - left_ankle, "Knee": right_knee - left_knee, "Hip": right_hip - left_hip}
-    # asymmetry_dict = {
-    #     "Ankle": right_ankle - left_ankle,
-    #     "Knee": right_knee - left_knee,
-    #     "Hip": right_hip - left_hip
-    # }
-    create_asymmetry_bar_matplotlib(asymmetry_plot, asymmetry_plot_path)
+    # Calculate asymmetry values from df_rom
+    try:
+        left_ankle = float(df_rom.loc[df_rom['Joint'] == 'Left Ankle', 'Range of Motion (°)'].values[0])
+        right_ankle = float(df_rom.loc[df_rom['Joint'] == 'Right Ankle', 'Range of Motion (°)'].values[0])
+        left_knee = float(df_rom.loc[df_rom['Joint'] == 'Left Knee', 'Range of Motion (°)'].values[0])
+        right_knee = float(df_rom.loc[df_rom['Joint'] == 'Right Knee', 'Range of Motion (°)'].values[0])
+        left_hip = float(df_rom.loc[df_rom['Joint'] == 'Left Hip', 'Range of Motion (°)'].values[0])
+        right_hip = float(df_rom.loc[df_rom['Joint'] == 'Right Hip', 'Range of Motion (°)'].values[0])
+    except Exception as e:
+        left_ankle = right_ankle = left_knee = right_knee = left_hip = right_hip = 0
+
+    asymmetry_dict = {
+        "Ankle": right_ankle - left_ankle,
+        "Knee": right_knee - left_knee,
+        "Hip": right_hip - left_hip
+    }
+    create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
+    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
+# ...existing code below...
     pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
     pdf.ln(10)  # Extra spacing before next plot
 
