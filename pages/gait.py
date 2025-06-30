@@ -52,8 +52,134 @@ def get_color(value, good_range, moderate_range):
     else:
         return "lightcoral"
     
-def create_spider_matplotlib(rom_values, joint_labels, save_path,
+def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, save_path,
                              bad_rom_outer=None, moderate_rom_outer=None, ideal_rom_outer=None):
+    if camera_side == "side" and gait_type == "walking": 
+        ankle_good = (20, 45)
+        ankle_moderate = (15, 20)
+        ankle_bad = (0, 55) #(0, 10)
+
+        knee_good = (50, 70)
+        knee_moderate = (40, 50)
+        knee_bad = (0, 80) #(0, 40)
+
+        hip_good = (25, 45)
+        hip_moderate = (15, 25)
+        hip_bad = (0, 15)
+
+        spine_good = (0, 5)
+        spine_moderate = (5, 10)
+        spine_bad = (10, 30)
+
+    if camera_side == "back" and gait_type == "walking": 
+        ankle_good = (20, 50)
+        ankle_moderate = (15, 20)
+        ankle_bad = (0, 15)
+
+        knee_good = (0, 5)
+        knee_moderate = (5, 10)
+        knee_bad = (10, 30)
+
+        hip_good = (0, 10)
+        hip_moderate = (10, 15)
+        hip_bad = (15, 50)
+
+        spine_good = (0, 5)
+        spine_moderate = (5, 10)
+        spine_bad = (10, 30)
+
+    if camera_side == "side" and gait_type == "running": 
+        ankle_good = (65, 75)
+        ankle_moderate = (55, 85)
+        ankle_bad = (55, 95)
+
+        knee_good = (120, 130)
+        knee_moderate = (90, 175)
+        knee_bad = (90, 175)
+
+        hip_good = (60, 70)
+        hip_moderate = (40, 90)
+        hip_bad = (40, 90)
+
+        spine_good = (5, 15)
+        spine_moderate = (2, 20)
+        spine_bad = (0, 30)
+
+    if camera_side == "back" and gait_type == "running":
+        ankle_good = (20, 50)
+        ankle_moderate = (15, 20)
+        ankle_bad = (0, 15)
+
+        knee_good = (0, 5)
+        knee_moderate = (5, 12)
+        knee_bad = (12, 30)
+
+        hip_good = (0, 10)
+        hip_moderate = (10, 20)
+        hip_bad = (20, 40)
+
+        spine_good = (1, 10)
+        spine_moderate = (10, 20)
+        spine_bad = (20, 30)
+
+    if camera_side == "side" and gait_type == "pickup pen":
+        # Spine (Trunk Flexion from neutral upright)
+        spine_good = (30, 60)
+        spine_moderate = (20, 30) # Too little flexion
+        spine_moderate_upper = (60, 75) # Too much flexion
+        spine_bad = (0, 20) # Very little flexion
+        spine_bad_upper = (75, 90) # Excessive flexion
+
+        # Hip Flexion
+        hip_good = (50, 90)
+        hip_moderate = (40, 50) # Not enough hip flexion
+        hip_moderate_upper = (90, 100) # Deeper than expected
+        hip_bad = (0, 40) # Primarily back bending
+        hip_bad_upper = (100, 120) # Very deep / potentially unstable
+
+        # Knee Flexion
+        knee_good = (20, 70)
+        knee_moderate = (10, 20) # Stiff legs
+        knee_moderate_upper = (70, 90) # Deeper squat
+        knee_bad = (0, 10) # Straight-legged
+        knee_bad_upper = (90, 120) # Uncontrolled deep squat
+
+        # Ankle Dorsiflexion (Positive angle means dorsiflexion from neutral)
+        ankle_good = (10, 25)
+        ankle_moderate = (5, 10) # Limited dorsiflexion
+        ankle_moderate_upper = (25, 35) # Excessive dorsiflexion / instability
+        ankle_bad = (0, 5) # Very limited mobility
+        ankle_bad_upper = (35, 45) # Significant instability
+
+    if camera_side == "back" and gait_type == "pickup pen":
+        # Spine Lateral Flexion / Rotation (Deviation from central axis)
+        spine_good = (0, 5)
+        spine_moderate = (5, 10)
+        spine_bad = (10, 20)
+
+        # Hip Abduction/Adduction (Pelvic Tilt/Shift)
+        hip_good = (0, 5)
+        hip_moderate = (5, 10)
+        hip_bad = (10, 20)
+
+        # Knee Valgus/Varus (Deviation from straight alignment)
+        knee_good = (0, 5)
+        knee_moderate = (5, 10)
+        knee_bad = (10, 20)
+
+        # Ankle Inversion/Eversion (Foot Rolling)
+        ankle_good = (0, 5)
+        ankle_moderate = (5, 10)
+        ankle_bad = (10, 20)        
+
+ # Define ideal ROM values (midpoint of the good range)
+    ideal_rom_outer = [knee_good[1], hip_good[1], spine_good[1], hip_good[1], knee_good[1], ankle_good[1], ankle_good[1]]
+    ideal_rom_inner = [knee_good[0], hip_good[0], spine_good[0], hip_good[0], knee_good[0], ankle_good[0], ankle_good[0]]
+    moderate_rom_outer = [knee_moderate[1], hip_moderate[1], spine_moderate[1], hip_moderate[1], knee_moderate[1], ankle_moderate[1], ankle_moderate[1]]
+    moderate_rom_inner = [knee_moderate[0], hip_moderate[0], spine_moderate[0], hip_moderate[0], knee_moderate[0], ankle_moderate[0], ankle_moderate[0]]
+    bad_rom_outer = [knee_bad[1], hip_bad[1], spine_bad[1], hip_bad[1], knee_bad[1], ankle_bad[1], ankle_bad[1]]
+    bad_rom_inner = [knee_bad[0], hip_bad[0], spine_bad[0], hip_bad[0], knee_bad[0], ankle_bad[0], ankle_bad[0]]
+      
     """Create and save a radar/spider plot using Matplotlib, including target ranges."""
     N = len(joint_labels)
     values = rom_values + [rom_values[0]]  # close the loop
@@ -182,6 +308,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     # Make the radar plot smaller (figsize=(4,4))
     create_spider_matplotlib(
+        camera_side, gait_type,
         rom_values, joint_labels, spider_plot_path,
         bad_rom_outer=bad_rom_outer,
         moderate_rom_outer=moderate_rom_outer,
