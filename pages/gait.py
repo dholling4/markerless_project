@@ -1623,29 +1623,33 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     # Get max range of motion value
     max_all_joint_angles = max(max(rom_values), max(bad_rom_outer), max(bad_rom_inner), max(ideal_rom_outer)) + 10
 
-    # Update layout
     spider_plot.update_layout(
         title="Range of Motion (°) vs Ideal Target",
-        #update title fontsize
-        title_font=dict(size=36),
+        title_font=dict(size=36, color='white'),  # Set title color to white
         polar=dict(
+            bgcolor='black',
             angularaxis=dict(
-            tickfont=dict(size=26)  # Increase font size for theta labels
-        ),
+                tickfont=dict(size=26, color='white'),  # White theta labels
+                color='white'
+            ),
             radialaxis=dict(
                 visible=True,
                 range=[0, max_all_joint_angles],
-                # only show every other tickfont value
                 tickvals=[0, 30, 60, 90, 120, 150, 180],
-                tickfont=dict(size=16, color='black')
+                tickfont=dict(size=16, color='white'),  # White radial labels
+                color='white'
             )
         ),
+        paper_bgcolor='black',
+        plot_bgcolor='black',
+        font=dict(color='white'),  # Set all other text to white
         showlegend=True,
-        #increase legend fontsize
         legend=dict(
             font=dict(
-                size=16
-            ))
+                size=16,
+                color='white'  # Legend text color
+            )
+        )
     )
 
     st.plotly_chart(spider_plot, key=f"spider_plot_{video_index}_{camera_side}_{hash(video_path)}")
