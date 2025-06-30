@@ -53,7 +53,8 @@ def get_color(value, good_range, moderate_range):
         return "lightcoral"
     
 def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, save_path,
-                             bad_rom_outer=None, moderate_rom_outer=None, ideal_rom_outer=None):
+                            bad_rom_outer=None, bad_rom_inner=None, moderate_rom_outer=None, 
+                            moderate_rom_inner=None, ideal_rom_outer=None, ideal_rom_inner=None):
     if camera_side == "side" and gait_type == "walking": 
         ankle_good = (20, 45)
         ankle_moderate = (15, 20)
@@ -190,19 +191,25 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
-    # Plot target ranges if provided
-    if bad_rom_outer is not None:
-        bad = list(bad_rom_outer) + [bad_rom_outer[0]]
-        ax.plot(angles, bad, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor')
-        ax.fill(angles, bad, color='red', alpha=0.13)
-    if moderate_rom_outer is not None:
-        moderate = list(moderate_rom_outer) + [moderate_rom_outer[0]]
-        ax.plot(angles, moderate, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate')
-        ax.fill(angles, moderate, color='gold', alpha=0.13)
-    if ideal_rom_outer is not None:
-        ideal = list(ideal_rom_outer) + [ideal_rom_outer[0]]
-        ax.plot(angles, ideal, color='#00FFAB', linewidth=1.5, linestyle='-', label='Ideal Target')
-        ax.fill(angles, ideal, color='lime', alpha=0.13)
+    # Plot target ranges if provided (outer and inner boundaries)
+    if bad_rom_outer is not None and bad_rom_inner is not None:
+        bad_outer = list(bad_rom_outer) + [bad_rom_outer[0]]
+        bad_inner = list(bad_rom_inner) + [bad_rom_inner[0]]
+        ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor (Outer)')
+        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=1.5, linestyle='--', label='Poor (Inner)')
+        ax.fill_between(angles, bad_inner, bad_outer, color='red', alpha=0.13)
+    if moderate_rom_outer is not None and moderate_rom_inner is not None:
+        moderate_outer = list(moderate_rom_outer) + [moderate_rom_outer[0]]
+        moderate_inner = list(moderate_rom_inner) + [moderate_rom_inner[0]]
+        ax.plot(angles, moderate_outer, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate (Outer)')
+        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=1.5, linestyle='--', label='Moderate (Inner)')
+        ax.fill_between(angles, moderate_inner, moderate_outer, color='gold', alpha=0.13)
+    if ideal_rom_outer is not None and ideal_rom_inner is not None:
+        ideal_outer = list(ideal_rom_outer) + [ideal_rom_outer[0]]
+        ideal_inner = list(ideal_rom_inner) + [ideal_rom_inner[0]]
+        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=1.5, linestyle='-', label='Ideal Target (Outer)')
+        ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=1.5, linestyle='--', label='Ideal Target (Inner)')
+        ax.fill_between(angles, ideal_inner, ideal_outer, color='lime', alpha=0.13)
 
     # Plot the user's data
     ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
@@ -301,66 +308,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     spider_plot_path = tempfile.mktemp(suffix=".png")
     rom_values = [float(x) for x in df_rom['Range of Motion (°)']]
     joint_labels = list(df_rom['Joint'])
-    # Prepare target ranges (ensure these are lists of floats, not tuples)
-    bad_rom_outer = [float(x) for x in bad_rom_outer]
-    moderate_rom_outer = [float(x) for x in moderate_rom_outer]
-    ideal_rom_outer = [float(x) for x in ideal_rom_outer]
 
-    # Make the radar plot smaller (figsize=(4,4))
-    create_spider_matplotlib(
-        camera_side, gait_type,
-        rom_values, joint_labels, spider_plot_path,
-        bad_rom_outer=bad_rom_outer,
-        moderate_rom_outer=moderate_rom_outer,
-        ideal_rom_outer=ideal_rom_outer
-    )
-    pdf.image(spider_plot_path, x=90, y=31, w=60)   # Move right, make smaller (w=80)
-
-    # --- Matplotlib Asymmetry Bar Chart ---
-    asymmetry_plot_path = tempfile.mktemp(suffix=".png")
-    try:
-        left_ankle = float(df_rom.loc[df_rom['Joint'] == 'Left Ankle', 'Range of Motion (°)'].values[0])
-        right_ankle = float(df_rom.loc[df_rom['Joint'] == 'Right Ankle', 'Range of Motion (°)'].values[0])
-        left_knee = float(df_rom.loc[df_rom['Joint'] == 'Left Knee', 'Range of Motion (°)'].values[0])
-        right_knee = float(df_rom.loc[df_rom['Joint'] == 'Right Knee', 'Range of Motion (°)'].values[0])
-        left_hip = float(df_rom.loc[df_rom['Joint'] == 'Left Hip', 'Range of Motion (°)'].values[0])
-        right_hip = float(df_rom.loc[df_rom['Joint'] == 'Right Hip', 'Range of Motion (°)'].values[0])
-    except Exception as e:
-        left_ankle = right_ankle = left_knee = right_knee = left_hip = right_hip = 0
-
-    asymmetry_dict = {
-        "Ankle": right_ankle - left_ankle,
-        "Knee": right_knee - left_knee,
-        "Hip": right_hip - left_hip
-    }
-    create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
-    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
-
-    pdf.ln(10)  # Extra spacing before next plot
-
-    # ✅ Generate Styled ROM Table (Middle Right)
-    rom_chart_path = tempfile.mktemp(suffix=".png")
-    fig, ax = plt.subplots(figsize=(4.5, 2.3))  # Adjust size
-    ax.axis('tight')
-    ax.axis('off')
-    table = ax.table(cellText=df_rom.values, colLabels=df_rom.columns, cellLoc='center', loc='center')
-    table.auto_set_font_size(False)
-    table.set_fontsize(11)
-    table.scale(1.25, 1.25)
-    table.auto_set_column_width([0, 1, 2, 3])
-    # ...coloring code unchanged...
-    for key, cell in table._cells.items():
-        cell.set_edgecolor("white")
-        cell.set_facecolor("black")
-    plt.savefig(rom_chart_path, bbox_inches='tight', dpi=300, facecolor='black')
-    plt.close(fig)
-
-    # Move the ROM table lower to avoid overlap with text and radar plot
-    pdf.image(rom_chart_path, x=10, y=200, w=130)  # y=200 moves it further down
-
-    pdf.ln(155)  # Adjust based on vertical layout
-
-# ...rest of your code...
     # Define ranges for color classification
     if camera_side == "side" and gait_type == "walking": 
         ankle_good = (20, 45)
@@ -480,7 +428,74 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ankle_moderate = (5, 10)
         ankle_bad = (10, 20)        
 
+    
+        ideal_rom_outer = [knee_good[1], hip_good[1], spine_good[1], hip_good[1], knee_good[1], ankle_good[1], ankle_good[1]]
+    ideal_rom_inner = [knee_good[0], hip_good[0], spine_good[0], hip_good[0], knee_good[0], ankle_good[0], ankle_good[0]]
+    moderate_rom_outer = [knee_moderate[1], hip_moderate[1], spine_moderate[1], hip_moderate[1], knee_moderate[1], ankle_moderate[1], ankle_moderate[1]]
+    moderate_rom_inner = [knee_moderate[0], hip_moderate[0], spine_moderate[0], hip_moderate[0], knee_moderate[0], ankle_moderate[0], ankle_moderate[0]]
+    bad_rom_outer = [knee_bad[1], hip_bad[1], spine_bad[1], hip_bad[1], knee_bad[1], ankle_bad[1], ankle_bad[1]]
+    bad_rom_inner = [knee_bad[0], hip_bad[0], spine_bad[0], hip_bad[0], knee_bad[0], ankle_bad[0], ankle_bad[0]]
+    
+    # Prepare target ranges (ensure these are lists of floats, not tuples)
+    # bad_rom_outer = [float(x) for x in bad_rom_outer]
+    # moderate_rom_outer = [float(x) for x in moderate_rom_outer]
+    # ideal_rom_outer = [float(x) for x in ideal_rom_outer]
 
+    create_spider_matplotlib(
+        camera_side, gait_type,
+        rom_values, joint_labels, spider_plot_path,
+        bad_rom_outer=bad_rom_outer,
+        bad_rom_inner=bad_rom_inner,
+        moderate_rom_outer=moderate_rom_outer,
+        moderate_rom_inner=moderate_rom_inner,
+        ideal_rom_outer=ideal_rom_outer,
+        ideal_rom_inner=ideal_rom_inner
+    )
+    pdf.image(spider_plot_path, x=90, y=31, w=60)   # Move right, make smaller (w=80)
+
+    # --- Matplotlib Asymmetry Bar Chart ---
+    asymmetry_plot_path = tempfile.mktemp(suffix=".png")
+    try:
+        left_ankle = float(df_rom.loc[df_rom['Joint'] == 'Left Ankle', 'Range of Motion (°)'].values[0])
+        right_ankle = float(df_rom.loc[df_rom['Joint'] == 'Right Ankle', 'Range of Motion (°)'].values[0])
+        left_knee = float(df_rom.loc[df_rom['Joint'] == 'Left Knee', 'Range of Motion (°)'].values[0])
+        right_knee = float(df_rom.loc[df_rom['Joint'] == 'Right Knee', 'Range of Motion (°)'].values[0])
+        left_hip = float(df_rom.loc[df_rom['Joint'] == 'Left Hip', 'Range of Motion (°)'].values[0])
+        right_hip = float(df_rom.loc[df_rom['Joint'] == 'Right Hip', 'Range of Motion (°)'].values[0])
+    except Exception as e:
+        left_ankle = right_ankle = left_knee = right_knee = left_hip = right_hip = 0
+
+    asymmetry_dict = {
+        "Ankle": right_ankle - left_ankle,
+        "Knee": right_knee - left_knee,
+        "Hip": right_hip - left_hip
+    }
+    create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
+    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
+
+    pdf.ln(10)  # Extra spacing before next plot
+
+    # ✅ Generate Styled ROM Table (Middle Right)
+    rom_chart_path = tempfile.mktemp(suffix=".png")
+    fig, ax = plt.subplots(figsize=(4.5, 2.3))  # Adjust size
+    ax.axis('tight')
+    ax.axis('off')
+    table = ax.table(cellText=df_rom.values, colLabels=df_rom.columns, cellLoc='center', loc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(11)
+    table.scale(1.25, 1.25)
+    table.auto_set_column_width([0, 1, 2, 3])
+    # ...coloring code unchanged...
+    for key, cell in table._cells.items():
+        cell.set_edgecolor("white")
+        cell.set_facecolor("black")
+    plt.savefig(rom_chart_path, bbox_inches='tight', dpi=300, facecolor='black')
+    plt.close(fig)
+
+    # Move the ROM table lower to avoid overlap with text and radar plot
+    pdf.image(rom_chart_path, x=10, y=200, w=130)  # y=200 moves it further down
+
+    pdf.ln(155)  # Adjust based on vertical layout
 
     # Apply colors to the first and last columns
     for i, joint in enumerate(df_rom['Joint']):
