@@ -1,5 +1,6 @@
 opencv-python
 mediapipe
+numpy==1.26.4
 moviepy
 streamlit-webrtc==0.32.0
 git+https://github.com/tensorflow/docs
@@ -17,7 +18,7 @@ click==8.1.7
 contourpy==1.2.0
 cycler==0.12.1
 FPDF == 1.7.2
-langchain
+# langchain
 transformers
 openai
 python-dotenv
