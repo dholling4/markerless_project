@@ -51,7 +51,63 @@ def get_color(value, good_range, moderate_range):
         return 'yellow'
     else:
         return "lightcoral"
-        
+def create_spider_matplotlib(rom_values, joint_labels, save_path):
+    """Create and save a radar/spider plot using Matplotlib."""
+    N = len(joint_labels)
+    values = rom_values + [rom_values[0]]  # close the loop
+    angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+    angles += [angles[0]]
+
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.set_facecolor('black')
+    fig.patch.set_facecolor('black')
+
+    # Plot the data
+    ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
+    ax.fill(angles, values, color='deepskyblue', alpha=0.3)
+
+    # Set the labels
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(joint_labels, color='white', fontsize=13)
+    ax.set_yticklabels([])
+    ax.tick_params(axis='y', colors='white')
+    ax.spines['polar'].set_color('white')
+
+    # Add grid
+    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
+
+    plt.tight_layout()
+    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
+    plt.close(fig)
+
+def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
+    """Create and save a horizontal bar chart for asymmetry using Matplotlib."""
+    joints = list(asymmetry_dict.keys())
+    values = list(asymmetry_dict.values())
+    colors = ['green' if abs(v) < 10 else 'red' for v in values]
+
+    fig, ax = plt.subplots(figsize=(5, 2.5))
+    ax.set_facecolor('black')
+    fig.patch.set_facecolor('black')
+
+    bars = ax.barh(joints, values, color=colors, edgecolor='white')
+    ax.axvline(0, color='white', linewidth=1)
+    ax.set_xlabel('Asymmetry (°)', color='white')
+    ax.set_title('Range of Motion Asymmetry', color='gold', fontsize=16)
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    ax.set_xlim(-30, 30)
+
+    # Add value labels
+    for bar, value in zip(bars, values):
+        ax.text(bar.get_width(), bar.get_y() + bar.get_height()/2,
+                f'{value:.1f}°', va='center', ha='left' if value >= 0 else 'right',
+                color='white', fontsize=12, fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
+    plt.close(fig)
+
 def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info, camera_side, gait_type, user_footwear):
     """Generates a PDF with the pose estimation, given plots, and text. FPDF document (A4 size, 210mm width x 297mm height)"""
     pdf = CustomPDF()
@@ -95,20 +151,24 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         # 🔹 Reduce image size in the PDF
         pdf.image(padded_pose_path, x=10, y=25, h=88, w=49)  # Make it smaller (1/8 of the page)
 
-    # ✅ Spider Plot (Top Right)
+      # --- Matplotlib Spider/Radar Plot ---
     spider_plot_path = tempfile.mktemp(suffix=".png")
-    spider_plot.update_layout(paper_bgcolor="black", font_color="white") 
-    spider_plot.write_image(spider_plot_path)
-    pdf.image(spider_plot_path, x=75, y=31, w=125)  # Adjusted placement
+    # You must pass the correct rom_values and joint_labels here
+    # Example: create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
+    create_spider_matplotlib(df_rom.values, df_rom.columns, spider_plot_path)
+    pdf.image(spider_plot_path, x=75, y=31, w=125)
 
-    pdf.ln(35)  # Increase spacing before middle section
-
-    # ✅ Asymmetry Plot (Middle Left)
+    # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
-    asymmetry_plot.update_layout(paper_bgcolor="black", plot_bgcolor="black", font_color="white")
-    asymmetry_plot.write_image(asymmetry_plot_path)
-    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)  # Placed on the left
-
+    # You must pass the correct asymmetry_dict here, e.g.:
+    # asymmetry_dict = {"Ankle": right_ankle - left_ankle, "Knee": right_knee - left_knee, "Hip": right_hip - left_hip}
+    # asymmetry_dict = {
+    #     "Ankle": right_ankle - left_ankle,
+    #     "Knee": right_knee - left_knee,
+    #     "Hip": right_hip - left_hip
+    # }
+    create_asymmetry_bar_matplotlib(asymmetry_plot, asymmetry_plot_path)
+    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
     pdf.ln(10)  # Extra spacing before next plot
 
     # ✅ Generate Styled ROM Table (Middle Right)
