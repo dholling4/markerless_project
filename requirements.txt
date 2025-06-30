@@ -1,4 +1,4 @@
-cv2
+opencv-python
 mediapipe
 moviepy
 streamlit-webrtc==0.32.0
