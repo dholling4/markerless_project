@@ -152,19 +152,35 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.image(padded_pose_path, x=10, y=25, h=88, w=49)  # Make it smaller (1/8 of the page)
 
       # --- Matplotlib Spider/Radar Plot ---
-    spider_plot_path = tempfile.mktemp(suffix=".png")
-    # You must pass the correct rom_values and joint_labels here
-    # Example: create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
     # --- Matplotlib Spider/Radar Plot ---
     spider_plot_path = tempfile.mktemp(suffix=".png")
     rom_values = [float(x) for x in df_rom['Range of Motion (°)']]
     joint_labels = list(df_rom['Joint'])
+    # Make the radar plot smaller (figsize=(4,4))
+    def create_spider_matplotlib(rom_values, joint_labels, save_path):
+        N = len(joint_labels)
+        values = rom_values + [rom_values[0]]
+        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+        angles += [angles[0]]
+        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))  # Smaller size
+        ax.set_facecolor('black')
+        fig.patch.set_facecolor('black')
+        ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
+        ax.fill(angles, values, color='deepskyblue', alpha=0.3)
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(joint_labels, color='white', fontsize=11)
+        ax.set_yticklabels([])
+        ax.tick_params(axis='y', colors='white')
+        ax.spines['polar'].set_color('white')
+        ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
+        plt.tight_layout()
+        plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
+        plt.close(fig)
     create_spider_matplotlib(rom_values, joint_labels, spider_plot_path)
-    pdf.image(spider_plot_path, x=75, y=31, w=125)
+    pdf.image(spider_plot_path, x=90, y=31, w=80)  # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
-    # Calculate asymmetry values from df_rom
     try:
         left_ankle = float(df_rom.loc[df_rom['Joint'] == 'Left Ankle', 'Range of Motion (°)'].values[0])
         right_ankle = float(df_rom.loc[df_rom['Joint'] == 'Right Ankle', 'Range of Motion (°)'].values[0])
@@ -182,8 +198,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     }
     create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
     pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
-# ...existing code below...
-    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
+
     pdf.ln(10)  # Extra spacing before next plot
 
     # ✅ Generate Styled ROM Table (Middle Right)
@@ -192,14 +207,23 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     ax.axis('tight')
     ax.axis('off')
     table = ax.table(cellText=df_rom.values, colLabels=df_rom.columns, cellLoc='center', loc='center')
-    # table.auto_set_font_size(True)
-    # table.auto_set_column_width([0, 1, 2, 3])  # Adjust column width
-    # increase size of the table
     table.auto_set_font_size(False)
     table.set_fontsize(11)
-    table.scale(1.25, 1.25)  # Increase size by 1.5
-    table.auto_set_column_width([0, 1, 2, 3])  # Adjust column width
+    table.scale(1.25, 1.25)
+    table.auto_set_column_width([0, 1, 2, 3])
+    # ...coloring code unchanged...
+    for key, cell in table._cells.items():
+        cell.set_edgecolor("white")
+        cell.set_facecolor("black")
+    plt.savefig(rom_chart_path, bbox_inches='tight', dpi=300, facecolor='black')
+    plt.close(fig)
 
+    # Move the ROM table lower to avoid overlap with text and radar plot
+    pdf.image(rom_chart_path, x=10, y=200, w=130)  # y=200 moves it further down
+
+    pdf.ln(155)  # Adjust based on vertical layout
+
+# ...rest of your code...
     # Define ranges for color classification
     if camera_side == "side" and gait_type == "walking": 
         ankle_good = (20, 45)
