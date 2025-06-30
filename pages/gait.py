@@ -6,6 +6,8 @@ import numpy as np
 import tempfile
 import os
 from matplotlib import pyplot as plt
+import os
+os.environ["BROWSER"] = "/usr/bin/chromium"
 import plotly.graph_objects as go
 import pandas as pd
 from scipy.signal import butter, lfilter
