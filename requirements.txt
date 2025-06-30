@@ -13,3 +13,4 @@ fpdf
 Pillow
 qrcode
 python-dotenv
+kaleido
