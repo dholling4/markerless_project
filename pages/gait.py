@@ -230,8 +230,8 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
     # set title
-    ax.set_title(f"Range of Motion vs. Ideal Target)", 
-                 color='gold', fontsize=24, pad=20)
+    ax.set_title(f"Range of Motion vs. Ideal Target", 
+                 color='white', fontsize=36, pad=20)
 
     leg = ax.legend(
             loc='upper right',
@@ -272,7 +272,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     for bar, value in zip(bars, values):
         ax.text(bar.get_width(), bar.get_y() + bar.get_height()/2,
                 f'{value:.1f}°', va='center', ha='left' if value >= 0 else 'right',
-                color='white', fontsize=12, fontweight='bold')
+                color='white', fontsize=14, fontweight='bold')
 
 # ── gradient legend ░░░
     cmap   = LinearSegmentedColormap.from_list("asym", ["green", "yellow", "red"])
@@ -288,8 +288,8 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
 
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
     ax_grad.set_xticks([])                                   # no ticks
-    ax_grad.set_yticks([0, 127, 255])
-    ax_grad.set_yticklabels(["Low", "Moderate", "High"], color='white', fontsize=10)
+    ax_grad.set_yticks([0, 255])
+    ax_grad.set_yticklabels(["Good", "Poor"], color='white', fontsize=12)
     ax_grad.tick_params(length=0)                            # no tick marks
     for spine in ax_grad.spines.values():                    # hide box
         spine.set_visible(False)
@@ -508,7 +508,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
     pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
 
-    pdf.ln(10)  # Extra spacing before next plot
+    pdf.ln(2)  # Extra spacing before next plot
 
     # ✅ Generate Styled ROM Table (Middle Right)
     rom_chart_path = tempfile.mktemp(suffix=".png")
@@ -562,11 +562,10 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
                 facecolor=fig.get_facecolor())
     plt.close(fig)
 
-    
     # Place ROM Table
     pdf.image(rom_chart_path, x=10, y=190, w=130) 
 
-    pdf.ln(155)  # Adjust based on vertical layout
+    pdf.ln(175)  # Adjust based on vertical layout
    
     joint_color_map = {
         "spine": (200, 162, 200),  # Purple
