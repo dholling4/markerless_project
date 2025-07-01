@@ -223,7 +223,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.tick_params(axis='y', colors='white')
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False, color='white')
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False, labelcolor='white')
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
     plt.close(fig)
