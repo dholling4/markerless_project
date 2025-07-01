@@ -195,7 +195,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     fig.patch.set_facecolor('black')
 
     # Plot target ranges if provided (outer and inner boundaries)
-    alpha=0.5
+    alpha=0.9
     lw=2
     if bad_rom_outer is not None and bad_rom_inner is not None:
         bad_outer = list(bad_rom_outer) + [bad_rom_outer[0]]
@@ -229,6 +229,9 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0)  # Hide radial ticks
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
+    # set title
+    ax.set_title(f"Range of Motion vs. Ideal Target)", 
+                 color='gold', fontsize=24, pad=20)
 
     leg = ax.legend(
             loc='upper right',
@@ -483,7 +486,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=80)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=85)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
@@ -509,66 +512,56 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     # ✅ Generate Styled ROM Table (Middle Right)
     rom_chart_path = tempfile.mktemp(suffix=".png")
-    fig, ax = plt.subplots(figsize=(4.5, 2.3))  # Adjust size
-    ax.axis('tight')
-    ax.axis('off')
-    table = ax.table(cellText=df_rom.values, colLabels=df_rom.columns, cellLoc='center', loc='center')
+
+    fig, ax = plt.subplots(figsize=(4.5, 2.3), dpi=300)
+    fig.patch.set_facecolor("black")        # whole figure background
+
+    ax.axis("off")
+    table = ax.table(
+        cellText=df_rom.values,
+        colLabels=df_rom.columns,
+        cellLoc="center",
+        loc="center"
+    )
+
+    # -- styling ---------------------------------------------------------------
     table.auto_set_font_size(False)
     table.set_fontsize(11)
     table.scale(1.25, 1.25)
     table.auto_set_column_width([0, 1, 2, 3])
-    # ...coloring code unchanged...
-    for key, cell in table._cells.items():
+
+    for (row, col), cell in table.get_celld().items():
         cell.set_edgecolor("white")
         cell.set_facecolor("black")
-    plt.savefig(rom_chart_path, bbox_inches='tight', dpi=300, facecolor='black')
-    plt.close(fig)
+        # header row white & bold
+        if row == 0:
+            cell.get_text().set_color("white")
+            cell.get_text().set_weight("bold")
 
-    # Move the ROM table lower to avoid overlap with text and radar plot
-    pdf.image(rom_chart_path, x=10, y=200, w=130)  # y=200 moves it further down
-
-    pdf.ln(155)  # Adjust based on vertical layout
-
-    # Apply colors to the first and last columns
-    for i, joint in enumerate(df_rom['Joint']):
-        if joint == 'Spine Segment':
+    # colour first / last columns according to ROM value
+    for i, joint in enumerate(df_rom["Joint"]):
+        if joint == "Spine Segment":
             good_range, moderate_range = spine_good, spine_moderate
-        elif 'Hip' in joint:
+        elif "Hip" in joint:
             good_range, moderate_range = hip_good, hip_moderate
-        elif 'Knee' in joint:
+        elif "Knee" in joint:
             good_range, moderate_range = knee_good, knee_moderate
-        elif 'Ankle' in joint:
+        else:
             good_range, moderate_range = ankle_good, ankle_moderate
 
-        rom_value = float(df_rom['Range of Motion (°)'].iloc[i])
-        color = get_color(rom_value, good_range, moderate_range)
+        rom_val = float(df_rom["Range of Motion (°)"].iloc[i])
+        col = get_color(rom_val, good_range, moderate_range)
 
-        # Change color of the first column (Joint names)
-        cell = table[(i + 1, 0)]
-        cell.set_text_props(color=color)
+        table[(i + 1, 0)].get_text().set_color(col)                     # first col
+        table[(i + 1, len(df_rom.columns) - 1)].get_text().set_color(col)
 
-        # Change color of the last column (Range of Motion)
-        cell = table[(i + 1, len(df_rom.columns) - 1)]
-        cell.set_text_props(color=color)
-
-        # change color of 2nd, 3rd columns
-        cell = table[(i + 1, 1)]
-        cell.set_text_props(color="white")
-        cell = table[(i + 1, 2)]
-        cell.set_text_props(color="white")
-
-        for i in range(4):
-            cell = table[(0, i)]
-            cell.set_text_props(color="white", weight='bold')     
-
-    # Set the background color of the chart to black
-    for key, cell in table._cells.items():
-        cell.set_edgecolor("white")
-        # cell.set_text_props(color=color, weight='bold')
-        cell.set_facecolor("black")
-
-    plt.savefig(rom_chart_path, bbox_inches='tight', dpi=300, facecolor='black') 
+    # -- SAVE ONCE, *after* everything is styled -------------------------------
+    plt.tight_layout(pad=0.1)
+    fig.savefig(rom_chart_path,
+                bbox_inches="tight",
+                facecolor=fig.get_facecolor())
     plt.close(fig)
+
     
     # Place ROM Table
     pdf.image(rom_chart_path, x=10, y=190, w=130) 
