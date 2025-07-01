@@ -188,7 +188,9 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(7, 7), subplot_kw=dict(polar=True))  # Smaller size
+    fig, ax = plt.subplots(figsize=(10, 10), 
+                           subplot_kw=dict(polar=True),
+                           dpi=300) 
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
@@ -216,16 +218,29 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=0.3)
 
+    LABEL_SIZE  = 20         
+    TICK_SIZE   = 18
+    LEGEND_SIZE = 16
+
     # Set the labels
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(joint_labels, color='white', fontsize=14)
+    ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
     ax.set_yticklabels([])
-    ax.tick_params(axis='y', colors='white')
+    ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0)  # Hide radial ticks
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False, labelcolor='white')
+
+    leg = ax.legend(
+            loc='upper right',
+            bbox_to_anchor=(1.25, 1.10),
+            fontsize=LEGEND_SIZE,
+            frameon=False
+        )
+    for t in leg.get_texts():
+        t.set_color('white')
+
     plt.tight_layout()
-    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
+    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=300)
     plt.close(fig)
 
 def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
@@ -468,7 +483,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=90, y=31, w=60)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=80)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
