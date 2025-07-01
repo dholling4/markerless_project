@@ -263,7 +263,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
 
     # place new axes just to the right of current axes
     bbox   = ax.get_position()                               # [x0, y0, width, height]
-    x0     = bbox.x1 + 0.01                                  # 1 % gap
+    x0     = bbox.x1 + 0.1                                  # 1 % gap
     y0     = bbox.y0
     h      = bbox.height
     w      = 0.03                                            # thin colour bar
