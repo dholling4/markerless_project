@@ -202,26 +202,26 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
         bad_inner = list(bad_rom_inner) + [bad_rom_inner[0]]
         ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=lw, linestyle='-', label='Poor')
         ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=lw, linestyle='-', label='')
-        ax.fill_between(angles, bad_inner, bad_outer, color='red', alpha=alpha)
+        ax.fill_between(angles, bad_inner, bad_outer, color='#FF4C4C', alpha=alpha)
     if moderate_rom_outer is not None and moderate_rom_inner is not None:
         moderate_outer = list(moderate_rom_outer) + [moderate_rom_outer[0]]
         moderate_inner = list(moderate_rom_inner) + [moderate_rom_inner[0]]
         ax.plot(angles, moderate_outer, color='#FFD700', linewidth=lw, linestyle='-', label='Moderate')
         ax.plot(angles, moderate_inner, color='#FFD700', linewidth=lw, linestyle='-', label='')
-        ax.fill_between(angles, moderate_inner, moderate_outer, color='gold', alpha=alpha)
+        ax.fill_between(angles, moderate_inner, moderate_outer, color='#FFD700', alpha=alpha)
     if ideal_rom_outer is not None and ideal_rom_inner is not None:
         ideal_outer = list(ideal_rom_outer) + [ideal_rom_outer[0]]
         ideal_inner = list(ideal_rom_inner) + [ideal_rom_inner[0]]
         ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Ideal Target')
         ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=lw, linestyle='-', label='')
-        ax.fill_between(angles, ideal_inner, ideal_outer, color='lime', alpha=alpha)
+        ax.fill_between(angles, ideal_inner, ideal_outer, color='#00FFAB', alpha=alpha)
 
     ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
     LABEL_SIZE  = 20         
-    TICK_SIZE   = 18
-    LEGEND_SIZE = 16
+    TICK_SIZE   = 20
+    LEGEND_SIZE = 18
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
@@ -231,7 +231,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
     # set title
     ax.set_title(f"Range of Motion vs. Ideal Target", 
-                 color='white', fontsize=36, pad=20)
+                 color='white', fontsize=36,  fontweight='bold', pad=20)
 
     leg = ax.legend(
             loc='upper right',
@@ -259,7 +259,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     bars = ax.barh(joints, values, color=colors, edgecolor='white')
     ax.axvline(0, color='white', linewidth=1)
     ax.set_xlabel('Asymmetry (°)', color='white')
-    ax.set_title('Range of Motion Asymmetry', color='gold', fontsize=16)
+    ax.set_title('Range of Motion Asymmetry', color='white', fontweight='bold', fontsize=16)
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')    
 
@@ -294,7 +294,6 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     for spine in ax_grad.spines.values():                    # hide box
         spine.set_visible(False)
 
- 
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
     plt.close(fig)
@@ -506,7 +505,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         "Hip": right_hip - left_hip
     }
     create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
-    pdf.image(asymmetry_plot_path, x=10, y=115, w=125)
+    pdf.image(asymmetry_plot_path, x=10, y=115, w=130)
 
     pdf.ln(2)  # Extra spacing before next plot
 
@@ -560,12 +559,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     fig.savefig(rom_chart_path,
                 bbox_inches="tight",
                 facecolor=fig.get_facecolor())
-    plt.close(fig)
+    # plt.close(fig)
 
     # Place ROM Table
-    pdf.image(rom_chart_path, x=10, y=190, w=130) 
+    pdf.image(rom_chart_path, x=10, y=175, w=130) 
 
-    pdf.ln(175)  # Adjust based on vertical layout
+    pdf.ln(185)  # Adjust based on vertical layout
    
     joint_color_map = {
         "spine": (200, 162, 200),  # Purple
