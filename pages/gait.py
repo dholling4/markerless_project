@@ -243,21 +243,12 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax.set_xlabel('Asymmetry (°)', color='white')
     ax.set_title('Range of Motion Asymmetry', color='gold', fontsize=16)
     ax.tick_params(axis='x', colors='white')
-    ax.tick_params(axis='y', colors='white')
-    # Add a horizontal colorbar (gradient bar) below the bars to show the asymmetry scale
-
-    # Create a custom colormap: green (good) to yellow (moderate) to red (bad)
-    cmap = LinearSegmentedColormap.from_list("asymmetry_cmap", ["green", "yellow", "red"])
-
-    # Gradient bar parameters
-    gradient = np.linspace(-30, 30, 256).reshape(1, -1)
-    ax.imshow(gradient, aspect='auto', cmap=cmap, extent=[-30, 30, -0.7, -1.2])
+    ax.tick_params(axis='y', colors='white')    
 
     # Add text labels for the gradient bar
     ax.text(-30, -1.25, "← Left More", color='white', fontsize=10, va='top', ha='left')
     ax.text(30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
     ax.text(0, -1.25, "Symmetry", color='white', fontsize=10, va='top', ha='center')
-
     ax.set_xlim(-30, 30)
 
     # Add value labels
@@ -266,6 +257,27 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
                 f'{value:.1f}°', va='center', ha='left' if value >= 0 else 'right',
                 color='white', fontsize=12, fontweight='bold')
 
+# ── gradient legend ░░░
+    cmap   = LinearSegmentedColormap.from_list("asym", ["green", "yellow", "red"])
+    grad   = np.linspace(0, 1, 256).reshape(-1, 1)           # vertical gradient (256×1)
+
+    # place new axes just to the right of current axes
+    bbox   = ax.get_position()                               # [x0, y0, width, height]
+    x0     = bbox.x1 + 0.01                                  # 1 % gap
+    y0     = bbox.y0
+    h      = bbox.height
+    w      = 0.03                                            # thin colour bar
+    ax_grad = fig.add_axes([x0, y0, w, h])
+
+    ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
+    ax_grad.set_xticks([])                                   # no ticks
+    ax_grad.set_yticks([0, 127, 255])
+    ax_grad.set_yticklabels(["Low", "Moderate", "High"], color='white', fontsize=10)
+    ax_grad.tick_params(length=0)                            # no tick marks
+    for spine in ax_grad.spines.values():                    # hide box
+        spine.set_visible(False)
+
+ 
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
     plt.close(fig)
