@@ -226,77 +226,92 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
     ax.set_yticklabels([])
-    # Place tick labels outside the radar plot
-    ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0, pad=18)  # pad moves labels outward
+
+    ax.tick_params(axis="x", pad=30, colors="white", labelsize=LABEL_SIZE)
     ax.spines['polar'].set_color('white')
-    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
-    # set title
+    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.7)
+
     ax.set_title(f"Range of Motion vs. Ideal Target", 
                  color='white', fontsize=36,  fontweight='bold', pad=20)
 
     leg = ax.legend(
             loc='upper right',
-            bbox_to_anchor=(1.25, 1.10),
+            bbox_to_anchor=(1.2, 0.5),
             fontsize=LEGEND_SIZE,
             frameon=False
         )
     for t in leg.get_texts():
         t.set_color('white')
 
-    plt.tight_layout()
-    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=300)
+    plt.tight_layout(pad=0.5)
+    fig.savefig(save_path, dpi=300, facecolor=fig.get_facecolor(), bbox_inches="tight")    
     plt.close(fig)
 
 def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
-    """Create and save a horizontal bar chart for asymmetry using Matplotlib."""
-    joints = list(asymmetry_dict.keys())
-    values = list(asymmetry_dict.values())
-    colors = ['green' if abs(v) < 10 else 'red' for v in values]
+    """Create & save a horizontal bar chart for asymmetry with a green-yellow-red scale."""
+    joints  = list(asymmetry_dict.keys())
+    values  = list(asymmetry_dict.values())
 
-    fig, ax = plt.subplots(figsize=(5, 2.5))
-    ax.set_facecolor('black')
-    fig.patch.set_facecolor('black')
+    # ── 1.  Build a continuous colormap (0→40) -------------------------------
+    cmap = LinearSegmentedColormap.from_list(
+        "asym_map",
+        ["#00C853",  # vivid green
+         "#FFD600",  # bright yellow
+         "#D50000"]  # red
+    )
 
-    bars = ax.barh(joints, values, color=colors, edgecolor='white')
+    # normalise abs(value) into 0–1 range where 0 → green, 0.5 → yellow, 1 → red
+    norm_vals = np.clip(np.abs(values) / 40.0, 0, 1)   # 40° == reddest red
+    bar_cols  = [cmap(v) for v in norm_vals]
+
+    # ── 2.  Figure / axes -----------------------------------------------------
+    fig, ax = plt.subplots(figsize=(5, 2.5), dpi=300)
+    fig.patch.set_facecolor("black")
+    ax.set_facecolor("black")
+
+    bars = ax.barh(joints, values, color=bar_cols, edgecolor='white')
     ax.axvline(0, color='white', linewidth=1)
-    ax.set_xlabel('Asymmetry (°)', color='white')
-    ax.set_title('Range of Motion Asymmetry', color='white', fontweight='bold', fontsize=16)
+
+    ax.set_xlim(-30, 30)                                 # keep your fixed range
+    ax.set_xlabel("Asymmetry (°)", color="white")
+    ax.set_title("Range of Motion Asymmetry",
+                 color="white", fontweight="bold", fontsize=16)
     ax.tick_params(axis='x', colors='white')
-    ax.tick_params(axis='y', colors='white')    
+    ax.tick_params(axis='y', colors='white')
 
-    # Add text labels for the gradient bar
-    ax.text(-30, -1.25, "← Left More", color='white', fontsize=10, va='top', ha='left')
-    ax.text(30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
-    ax.set_xlim(-30, 30)
+    # value labels ------------------------------------------------------------
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_width(),
+                bar.get_y() + bar.get_height()/2,
+                f"{val:+.1f}°",
+                va='center',
+                ha='left' if val >= 0 else 'right',
+                color='white',
+                fontsize=14,
+                fontweight='bold')
 
-    # Add value labels
-    for bar, value in zip(bars, values):
-        ax.text(bar.get_width(), bar.get_y() + bar.get_height()/2,
-                f'{value:.1f}°', va='center', ha='left' if value >= 0 else 'right',
-                color='white', fontsize=14, fontweight='bold')
+    # directional hints below the axis ---------------------------------------
+    ax.text(-30, -1.25, "← Left More",  color='white', fontsize=10, va='top', ha='left')
+    ax.text( 30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
+    ax.text(  0, -1.25, "Symmetry",     color='white', fontsize=10, va='top', ha='center')
 
-# ── gradient legend ░░░
-    cmap   = LinearSegmentedColormap.from_list("asym", ["green", "yellow", "red"])
-    grad   = np.linspace(0, 1, 256).reshape(-1, 1)           # vertical gradient (256×1)
-
-    # place new axes just to the right of current axes
-    bbox   = ax.get_position()                               # [x0, y0, width, height]
-    x0     = bbox.x1 + 0.3                                  # 1 % gap
-    y0     = bbox.y0
-    h      = bbox.height
-    w      = 0.03                                            # thin colour bar
-    ax_grad = fig.add_axes([x0, y0, w, h])
+    # ── 3.  Gradient legend (same colormap) ----------------------------------
+    grad   = np.linspace(0, 1, 256).reshape(-1, 1)        # vertical gradient
+    bbox   = ax.get_position()
+    ax_grad = fig.add_axes([bbox.x1 + 0.02, bbox.y0, 0.03, bbox.height])
 
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
-    ax_grad.set_xticks([])                                   # no ticks
-    ax_grad.set_yticks([0, 255])
-    ax_grad.set_yticklabels(["Good", "Poor"], color='white', fontsize=12)
-    ax_grad.tick_params(length=0)                            # no tick marks
-    for spine in ax_grad.spines.values():                    # hide box
+    ax_grad.set_xticks([])
+    ax_grad.set_yticks([0, 0.5, 1])
+    ax_grad.set_yticklabels(["0°", "20°", "40°+"], color='white', fontsize=10)
+    for spine in ax_grad.spines.values():
         spine.set_visible(False)
 
     plt.tight_layout()
-    plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
+    fig.savefig(save_path,
+                bbox_inches='tight',
+                dpi=300,
+                facecolor=fig.get_facecolor())
     plt.close(fig)
 
 def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info, camera_side, gait_type, user_footwear):
@@ -324,7 +339,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     logo_img = Image.open(BytesIO(logo.content))
     logo_img_path = tempfile.mktemp(suffix=".png")
     logo_img.save(logo_img_path)
-    pdf.image(logo_img_path, x=170, y=10, w=20)  # Adjusted placement
+    pdf.image(logo_img_path, x=175, y=10, w=15)  # Adjusted placement
 
     pdf.ln(10)  # Spacing before the next section
 
