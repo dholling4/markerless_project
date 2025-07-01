@@ -248,7 +248,6 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     # Add text labels for the gradient bar
     ax.text(-30, -1.25, "← Left More", color='white', fontsize=10, va='top', ha='left')
     ax.text(30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
-    ax.text(0, -1.25, "Symmetry", color='white', fontsize=10, va='top', ha='center')
     ax.set_xlim(-30, 30)
 
     # Add value labels
@@ -263,7 +262,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
 
     # place new axes just to the right of current axes
     bbox   = ax.get_position()                               # [x0, y0, width, height]
-    x0     = bbox.x1 + 0.2                                  # 1 % gap
+    x0     = bbox.x1 + 0.3                                  # 1 % gap
     y0     = bbox.y0
     h      = bbox.height
     w      = 0.03                                            # thin colour bar
