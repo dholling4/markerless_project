@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
 # # GENERAL
 # - Fix when video is uploaded 90 deg sideways (gives wrong results, uh oh!) --> it should be vertical, not landscape recording
@@ -187,7 +188,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))  # Smaller size
+    fig, ax = plt.subplots(figsize=(7, 7), subplot_kw=dict(polar=True))  # Smaller size
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
@@ -196,13 +197,13 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
         bad_outer = list(bad_rom_outer) + [bad_rom_outer[0]]
         bad_inner = list(bad_rom_inner) + [bad_rom_inner[0]]
         ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor (Outer)')
-        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=1.5, linestyle='--', label='Poor (Inner)')
+        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor (Inner)')
         ax.fill_between(angles, bad_inner, bad_outer, color='red', alpha=0.13)
     if moderate_rom_outer is not None and moderate_rom_inner is not None:
         moderate_outer = list(moderate_rom_outer) + [moderate_rom_outer[0]]
         moderate_inner = list(moderate_rom_inner) + [moderate_rom_inner[0]]
         ax.plot(angles, moderate_outer, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate (Outer)')
-        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=1.5, linestyle='--', label='Moderate (Inner)')
+        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate (Inner)')
         ax.fill_between(angles, moderate_inner, moderate_outer, color='gold', alpha=0.13)
     if ideal_rom_outer is not None and ideal_rom_inner is not None:
         ideal_outer = list(ideal_rom_outer) + [ideal_rom_outer[0]]
@@ -217,17 +218,12 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
 
     # Set the labels
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(joint_labels, color='white', fontsize=10)
+    ax.set_xticklabels(joint_labels, color='white', fontsize=14)
     ax.set_yticklabels([])
     ax.tick_params(axis='y', colors='white')
     ax.spines['polar'].set_color('white')
-
-    # Add grid
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
-
-    # Add legend
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False)
-
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=8, frameon=False, color='white')
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=200)
     plt.close(fig)
@@ -248,6 +244,20 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax.set_title('Range of Motion Asymmetry', color='gold', fontsize=16)
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')
+    # Add a horizontal colorbar (gradient bar) below the bars to show the asymmetry scale
+
+    # Create a custom colormap: green (good) to yellow (moderate) to red (bad)
+    cmap = LinearSegmentedColormap.from_list("asymmetry_cmap", ["green", "yellow", "red"])
+
+    # Gradient bar parameters
+    gradient = np.linspace(-30, 30, 256).reshape(1, -1)
+    ax.imshow(gradient, aspect='auto', cmap=cmap, extent=[-30, 30, -0.7, -1.2])
+
+    # Add text labels for the gradient bar
+    ax.text(-30, -1.25, "← Left More", color='white', fontsize=10, va='top', ha='left')
+    ax.text(30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
+    ax.text(0, -1.25, "Symmetry", color='white', fontsize=10, va='top', ha='center')
+
     ax.set_xlim(-30, 30)
 
     # Add value labels
@@ -276,7 +286,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # ✅ Report Title (Centered)
     pdf.set_xy(10, 10)  # Reset cursor
     pdf.set_font("Arial", style='BU', size=20)
-    pdf.cell(190, 10, "Your Stride Sync Report", ln=True, align='C')
+    pdf.cell(190, 10, "Stride Sync Report", ln=True, align='C')
 
     # add logo in the top right corner
     github_url = "https://raw.githubusercontent.com/dholling4/PolarPlotter/main/"
@@ -437,11 +447,6 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     bad_rom_outer = [knee_bad[1], hip_bad[1], spine_bad[1], hip_bad[1], knee_bad[1], ankle_bad[1], ankle_bad[1]]
     bad_rom_inner = [knee_bad[0], hip_bad[0], spine_bad[0], hip_bad[0], knee_bad[0], ankle_bad[0], ankle_bad[0]]
     
-    # Prepare target ranges (ensure these are lists of floats, not tuples)
-    # bad_rom_outer = [float(x) for x in bad_rom_outer]
-    # moderate_rom_outer = [float(x) for x in moderate_rom_outer]
-    # ideal_rom_outer = [float(x) for x in ideal_rom_outer]
-
     create_spider_matplotlib(
         camera_side, gait_type,
         rom_values, joint_labels, spider_plot_path,
@@ -567,7 +572,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             pdf.write(font_size / 2, summary + "\n")
             pdf.ln(1)    
 
-    pdf.ln(200)  # Spacing before bottom text section
+    pdf.ln(10)  # Spacing before bottom text section
     
     pdf.set_text_color(255, 215, 0)  # Gold Text for Highlights
     pdf.set_font("Arial", style='B', size=14)
@@ -2267,7 +2272,7 @@ def send_email(to_email, attachment_path):
         st.write("✅ Email sent!") 
     
     msg = EmailMessage()
-    msg['Subject'] = "Your Stride Sync Report"
+    msg['Subject'] = "Stride Sync Report"
     msg['From'] = sender_email
     msg['To'] = to_email
     msg.set_content("Hi! Attached is your personalized gait report from Stride Sync. Feel free to reach out if you have any questions or would like to setup an appointment to discuss your results.")
