@@ -195,40 +195,40 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     fig.patch.set_facecolor('black')
 
     # Plot target ranges if provided (outer and inner boundaries)
+    alpha=0.5
+    lw=2
     if bad_rom_outer is not None and bad_rom_inner is not None:
         bad_outer = list(bad_rom_outer) + [bad_rom_outer[0]]
         bad_inner = list(bad_rom_inner) + [bad_rom_inner[0]]
-        ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor (Outer)')
-        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=1.5, linestyle='-', label='Poor (Inner)')
-        ax.fill_between(angles, bad_inner, bad_outer, color='red', alpha=0.13)
+        ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=lw, linestyle='-', label='Poor')
+        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=lw, linestyle='-', label='')
+        ax.fill_between(angles, bad_inner, bad_outer, color='red', alpha=alpha)
     if moderate_rom_outer is not None and moderate_rom_inner is not None:
         moderate_outer = list(moderate_rom_outer) + [moderate_rom_outer[0]]
         moderate_inner = list(moderate_rom_inner) + [moderate_rom_inner[0]]
-        ax.plot(angles, moderate_outer, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate (Outer)')
-        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=1.5, linestyle='-', label='Moderate (Inner)')
-        ax.fill_between(angles, moderate_inner, moderate_outer, color='gold', alpha=0.13)
+        ax.plot(angles, moderate_outer, color='#FFD700', linewidth=lw, linestyle='-', label='Moderate')
+        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=lw, linestyle='-', label='')
+        ax.fill_between(angles, moderate_inner, moderate_outer, color='gold', alpha=alpha)
     if ideal_rom_outer is not None and ideal_rom_inner is not None:
         ideal_outer = list(ideal_rom_outer) + [ideal_rom_outer[0]]
         ideal_inner = list(ideal_rom_inner) + [ideal_rom_inner[0]]
-        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=1.5, linestyle='-', label='Ideal Target (Outer)')
-        ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=1.5, linestyle='--', label='Ideal Target (Inner)')
-        ax.fill_between(angles, ideal_inner, ideal_outer, color='lime', alpha=0.13)
+        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Ideal Target')
+        ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=lw, linestyle='-', label='')
+        ax.fill_between(angles, ideal_inner, ideal_outer, color='lime', alpha=alpha)
 
-    # Plot the user's data
-    ax.plot(angles, values, color='deepskyblue', linewidth=2, label='Yours')
-    ax.fill(angles, values, color='deepskyblue', alpha=0.3)
+    ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
+    ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
     LABEL_SIZE  = 20         
     TICK_SIZE   = 18
     LEGEND_SIZE = 16
 
-    # Set the labels
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
     ax.set_yticklabels([])
     ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0)  # Hide radial ticks
     ax.spines['polar'].set_color('white')
-    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5)
+    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
 
     leg = ax.legend(
             loc='upper right',
