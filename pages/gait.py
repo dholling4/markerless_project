@@ -219,14 +219,15 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
-    LABEL_SIZE  = 20         
-    TICK_SIZE   = 20
-    LEGEND_SIZE = 18
+    LABEL_SIZE  = 24         
+    TICK_SIZE   = 24
+    LEGEND_SIZE = 22
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
     ax.set_yticklabels([])
-    ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0)  # Hide radial ticks
+    # Place tick labels outside the radar plot
+    ax.tick_params(axis='y', colors='white', labelsize=TICK_SIZE, length=0, pad=18)  # pad moves labels outward
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=alpha)
     # set title
@@ -323,8 +324,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     logo_img = Image.open(BytesIO(logo.content))
     logo_img_path = tempfile.mktemp(suffix=".png")
     logo_img.save(logo_img_path)
-    pdf.image(logo_img_path, x=165, y=10, w=30)  # Adjusted placement
-
+    pdf.image(logo_img_path, x=170, y=10, w=20)  # Adjusted placement
 
     pdf.ln(10)  # Spacing before the next section
 
@@ -507,7 +507,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
     pdf.image(asymmetry_plot_path, x=10, y=115, w=130)
 
-    pdf.ln(2)  # Extra spacing before next plot
+    pdf.ln(1)  # Extra spacing before next plot
 
     # ✅ Generate Styled ROM Table (Middle Right)
     rom_chart_path = tempfile.mktemp(suffix=".png")
@@ -559,12 +559,11 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     fig.savefig(rom_chart_path,
                 bbox_inches="tight",
                 facecolor=fig.get_facecolor())
-    # plt.close(fig)
 
     # Place ROM Table
     pdf.image(rom_chart_path, x=10, y=175, w=130) 
 
-    pdf.ln(185)  # Adjust based on vertical layout
+    pdf.ln(195)  # Adjust based on vertical layout
    
     joint_color_map = {
         "spine": (200, 162, 200),  # Purple
