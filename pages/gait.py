@@ -616,7 +616,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         "right ankle": (255, 182, 193)   # Red
     }
     font_size=12
-    
+
     for joint in ["spine segment summary", "left hip summary", "right hip summary", "left knee summary", "right knee summary", "left ankle summary", "right ankle summary"]:
         summary = text_info.get(joint, "")
         if summary:
@@ -1923,7 +1923,6 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         if gait_type == "running" and camera_side == "back":
             left_ankle_text_info = "Healthy ankle range of motion in the frontal plane allows the foot to move inward (inversion) and outward (eversion) smoothly, with a total range of about 35 degrees-typically up to 23 degrees of inversion and 12 degrees of eversion. This range supports stable, adaptable movement during running, helping the foot absorb shock and adjust to uneven surfaces."
 
-
     elif ankle_moderate[0] <= ankle_left_rom_mean <= ankle_moderate[1]:
         left_ankle_text_summary = "Moderate"
         if gait_type == "walking" and camera_side == "side":
@@ -1982,7 +1981,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             spine_text_info = "Pronounced lateral bending (>10° per side), increases spinal disc shear forces and is associated with unilateral hip weakness or ankle instability."
 
     text_info = {
-        "left ankle": left_ankle_text_info if 'left_ankle_text_info' in locals() else "",
+        "left ankle": left_ankle_text_info if 'left_ankle_text_info' in locals() else left_ankle_text_info,
         "left knee": left_knee_text_info if 'left_knee_text_info' in locals() else "",
         "left hip": left_hip_text_info if 'left_hip_text_info' in locals() else "",
         "right ankle": right_ankle_text_info if 'right_ankle_text_info' in locals() else "",
