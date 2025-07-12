@@ -204,7 +204,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(8, 8), 
+    fig, ax = plt.subplots(figsize=(15, 15), 
                            subplot_kw=dict(polar=True),
                            dpi=300) 
     ax.set_facecolor('black')
@@ -522,7 +522,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=85)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=160)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
