@@ -1981,7 +1981,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             spine_text_info = "Pronounced lateral bending (>10° per side), increases spinal disc shear forces and is associated with unilateral hip weakness or ankle instability."
 
     text_info = {
-        "left ankle": left_ankle_text_info if 'left_ankle_text_info' in locals() else left_ankle_text_info,
+        "left ankle": left_ankle_text_info if 'left_ankle_text_info' in locals() else "",
         "left knee": left_knee_text_info if 'left_knee_text_info' in locals() else "",
         "left hip": left_hip_text_info if 'left_hip_text_info' in locals() else "",
         "right ankle": right_ankle_text_info if 'right_ankle_text_info' in locals() else "",
