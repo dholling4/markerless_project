@@ -240,7 +240,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     LEGEND_SIZE = 32
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE)
+    ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE, zorder=10)
     max_value = max(max(values), max(bad_rom_outer) if bad_rom_outer else 0, 
                    max(ideal_rom_outer) if ideal_rom_outer else 0) + 10
     tick_values = [0, 30, 60, 90, 120, 150]
@@ -248,14 +248,16 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     
     ax.set_ylim(0, max_value)
     ax.set_yticks(tick_values)
-    ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=28)
+    ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=28, zorder=10)
 
-    ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE)
+    ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE, which='major', zorder=10)
+    ax.tick_params(axis="y", colors="white", labelsize=28, which='major', zorder=10)
+
     ax.spines['polar'].set_color('white')
-    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.7)
+    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5, zorder=0)
 
-    ax.set_title(f"Range of Motion vs. Ideal Target", 
-                 color='white', fontsize=36,  fontweight='bold', pad=20)
+    ax.set_title(f"Range of Motion (°) vs. Ideal Target", 
+                 color='white', fontsize=36,  fontweight='bold', pad=20, zorder=10)
 
     # Move legend outside to the right
     leg = ax.legend(
@@ -320,7 +322,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax_grad = fig.add_axes([bbox.x1 + 0.22, bbox.y0, 0.03, bbox.height])
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
     ax_grad.set_xticks([])
-    ax_grad.set_yticks([0, 0.5, 1])
+    ax_grad.set_yticks([0, 128, 255])
     ax_grad.set_yticklabels(["0°", "20°", "40°+"], color='white', fontsize=10)
     for spine in ax_grad.spines.values():
         spine.set_visible(False)
