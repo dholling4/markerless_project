@@ -297,7 +297,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax.axvline(0, color='white', linewidth=1)
 
     ax.set_xlim(-30, 30)                                 # keep your fixed range
-    ax.set_xlabel("← Left Asymmetry       Right Asymmetry →", color="white")
+    ax.set_xlabel("← Left Asymmetry          Right Asymmetry →", color="white")
     ax.set_title("Range of Motion Asymmetry",
                  color="white", fontweight="bold", fontsize=16)
     ax.tick_params(axis='x', colors='white')
@@ -317,7 +317,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     # ── 3.  Gradient legend (same colormap) ----------------------------------
     grad   = np.linspace(0, 1, 256).reshape(-1, 1)        # vertical gradient
     bbox   = ax.get_position()
-    ax_grad = fig.add_axes([bbox.x1 + 0.1, bbox.y0, 0.03, bbox.height])
+    ax_grad = fig.add_axes([bbox.x1 + 0.22, bbox.y0, 0.03, bbox.height])
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
     ax_grad.set_xticks([])
     ax_grad.set_yticks([0, 0.5, 1])
@@ -585,10 +585,13 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             good_range, moderate_range = ankle_good, ankle_moderate
 
         rom_val = float(df_rom["Range of Motion (°)"].iloc[i])
-        col = get_color(rom_val, good_range, moderate_range)
+        col_color = get_color(rom_val, good_range, moderate_range)
 
-        table[(i + 1, 0)].get_text().set_color(col)                     # first col
-        table[(i + 1, len(df_rom.columns) - 1)].get_text().set_color(col)
+        # Color ALL columns for this joint (0=Joint, 1=Min, 2=Max, 3=ROM)
+        table[(i + 1, 0)].get_text().set_color(col_color)  # Joint name
+        table[(i + 1, 1)].get_text().set_color(col_color)  # Min Angle
+        table[(i + 1, 2)].get_text().set_color(col_color)  # Max Angle  
+        table[(i + 1, 3)].get_text().set_color(col_color)  # Range of Motion
 
     # -- SAVE ONCE, *after* everything is styled -------------------------------
     plt.tight_layout(pad=0.1)
