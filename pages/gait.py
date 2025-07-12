@@ -235,13 +235,20 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
-    LABEL_SIZE  = 18         
-    TICK_SIZE   = 18
-    LEGEND_SIZE = 16
+    LABEL_SIZE  = 20         
+    TICK_SIZE   = 20
+    LEGEND_SIZE = 20
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE)
-    ax.set_yticklabels([])
+    max_value = max(max(values), max(bad_rom_outer) if bad_rom_outer else 0, 
+                   max(ideal_rom_outer) if ideal_rom_outer else 0) + 10
+    tick_values = [0, 30, 60, 90, 120, 150]
+    tick_values = [val for val in tick_values if val <= max_value]
+    
+    ax.set_ylim(0, max_value)
+    ax.set_yticks(tick_values)
+    ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=16)
 
     ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE)
     ax.spines['polar'].set_color('white')
@@ -253,7 +260,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     # Move legend outside to the right
     leg = ax.legend(
             loc='center left',
-            bbox_to_anchor=(1.15, 0.5),  # Position outside the plot on the right
+            bbox_to_anchor=(1.25, 0.5),  # Position outside the plot on the right
             fontsize=LEGEND_SIZE,
             frameon=False
         )
