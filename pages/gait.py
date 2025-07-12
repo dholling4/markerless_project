@@ -248,14 +248,14 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     
     ax.set_ylim(0, max_value)
     ax.set_yticks(tick_values)
-    ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=16)
+    ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=28)
 
     ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE)
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.7)
 
     ax.set_title(f"Range of Motion vs. Ideal Target", 
-                 color='white', fontsize=24,  fontweight='bold', pad=20)
+                 color='white', fontsize=36,  fontweight='bold', pad=20)
 
     # Move legend outside to the right
     leg = ax.legend(
@@ -297,7 +297,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax.axvline(0, color='white', linewidth=1)
 
     ax.set_xlim(-30, 30)                                 # keep your fixed range
-    ax.set_xlabel("Asymmetry (°)", color="white")
+    ax.set_xlabel("← Left Asymmetry       Right Asymmetry →", color="white")
     ax.set_title("Range of Motion Asymmetry",
                  color="white", fontweight="bold", fontsize=16)
     ax.tick_params(axis='x', colors='white')
@@ -314,14 +314,10 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
                 fontsize=14,
                 fontweight='bold')
 
-    # directional hints below the axis ---------------------------------------
-    ax.text(-30, -1.25, "← Left Asymmetry",  color='white', fontsize=10, va='top', ha='left')
-    ax.text( 30, -1.25, "Right Asymmetry →", color='white', fontsize=10, va='top', ha='right')
-
     # ── 3.  Gradient legend (same colormap) ----------------------------------
     grad   = np.linspace(0, 1, 256).reshape(-1, 1)        # vertical gradient
     bbox   = ax.get_position()
-    ax_grad = fig.add_axes([bbox.x1 + 0.02, bbox.y0, 0.03, bbox.height])
+    ax_grad = fig.add_axes([bbox.x1 + 0.1, bbox.y0, 0.03, bbox.height])
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
     ax_grad.set_xticks([])
     ax_grad.set_yticks([0, 0.5, 1])
@@ -525,7 +521,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=100)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=120)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
