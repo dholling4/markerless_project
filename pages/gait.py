@@ -522,7 +522,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=160)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=90)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
