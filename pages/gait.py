@@ -254,7 +254,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.tick_params(axis="y", colors="white", labelsize=28, which='major', zorder=10)
 
     ax.spines['polar'].set_color('white')
-    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.5, zorder=0)
+    ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.9, zorder=0)
 
     ax.set_title(f"Range of Motion (°) vs. Ideal Target", 
                  color='white', fontsize=36,  fontweight='bold', pad=20, zorder=10)
@@ -629,7 +629,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             pdf.write(font_size / 2, summary + "\n")
             pdf.ln(1)    
 
-    pdf.ln(10)  # Spacing before bottom text section
+    pdf.ln(12)  # Spacing before bottom text section
     
     pdf.set_text_color(255, 215, 0)  # Gold Text for Highlights
     pdf.set_font("Arial", style='B', size=14)
