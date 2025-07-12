@@ -173,45 +173,61 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
         ankle_good = (0, 5)
         ankle_moderate = (5, 10)
         ankle_bad = (10, 20)        
-
- # Define ideal ROM values (midpoint of the good range)
-    ideal_rom_outer = [knee_good[1], hip_good[1], spine_good[1], hip_good[1], knee_good[1], ankle_good[1], ankle_good[1]]
-    ideal_rom_inner = [knee_good[0], hip_good[0], spine_good[0], hip_good[0], knee_good[0], ankle_good[0], ankle_good[0]]
-    moderate_rom_outer = [knee_moderate[1], hip_moderate[1], spine_moderate[1], hip_moderate[1], knee_moderate[1], ankle_moderate[1], ankle_moderate[1]]
-    moderate_rom_inner = [knee_moderate[0], hip_moderate[0], spine_moderate[0], hip_moderate[0], knee_moderate[0], ankle_moderate[0], ankle_moderate[0]]
-    bad_rom_outer = [knee_bad[1], hip_bad[1], spine_bad[1], hip_bad[1], knee_bad[1], ankle_bad[1], ankle_bad[1]]
-    bad_rom_inner = [knee_bad[0], hip_bad[0], spine_bad[0], hip_bad[0], knee_bad[0], ankle_bad[0], ankle_bad[0]]
-      
+ 
+    # Reorder data to match the counter-clockwise arrangement starting at 3 o'clock
+    # Order: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right
+    reordered_rom_values = [
+        rom_values[0],  # Knee Right (was index 0)
+        rom_values[1],  # Hip Right (was index 1) 
+        rom_values[2],  # Spine (was index 2)
+        rom_values[3],  # Hip Left (was index 3)
+        rom_values[4],  # Knee Left (was index 4)
+        rom_values[5],  # Ankle Left (was index 5)
+        rom_values[6]   # Ankle Right (was index 6)
+    ]
+    
+    reordered_joint_labels = [
+        "Knee Right", "Hip Right", "Spine", "Hip Left", "Knee Left", "Ankle Left", "Ankle Right"
+    ]
+    
+    # Reorder the target ranges to match
+    reordered_bad_rom_outer = [bad_rom_outer[0], bad_rom_outer[1], bad_rom_outer[2], bad_rom_outer[3], bad_rom_outer[4], bad_rom_outer[5], bad_rom_outer[6]]
+    reordered_bad_rom_inner = [bad_rom_inner[0], bad_rom_inner[1], bad_rom_inner[2], bad_rom_inner[3], bad_rom_inner[4], bad_rom_inner[5], bad_rom_inner[6]]
+    reordered_moderate_rom_outer = [moderate_rom_outer[0], moderate_rom_outer[1], moderate_rom_outer[2], moderate_rom_outer[3], moderate_rom_outer[4], moderate_rom_outer[5], moderate_rom_outer[6]]
+    reordered_moderate_rom_inner = [moderate_rom_inner[0], moderate_rom_inner[1], moderate_rom_inner[2], moderate_rom_inner[3], moderate_rom_inner[4], moderate_rom_inner[5], moderate_rom_inner[6]]
+    reordered_ideal_rom_outer = [ideal_rom_outer[0], ideal_rom_outer[1], ideal_rom_outer[2], ideal_rom_outer[3], ideal_rom_outer[4], ideal_rom_outer[5], ideal_rom_outer[6]]
+    reordered_ideal_rom_inner = [ideal_rom_inner[0], ideal_rom_inner[1], ideal_rom_inner[2], ideal_rom_inner[3], ideal_rom_inner[4], ideal_rom_inner[5], ideal_rom_inner[6]]
+    
     """Create and save a radar/spider plot using Matplotlib, including target ranges."""
-    N = len(joint_labels)
-    values = rom_values + [rom_values[0]]  # close the loop
+    N = len(reordered_joint_labels)
+    values = reordered_rom_values + [reordered_rom_values[0]]  # close the loop
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(10, 10), 
+    fig, ax = plt.subplots(figsize=(8, 8), 
                            subplot_kw=dict(polar=True),
                            dpi=300) 
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
     # Plot target ranges if provided (outer and inner boundaries)
-    alpha=0.9
+    alpha=0.3
     lw=2
-    if bad_rom_outer is not None and bad_rom_inner is not None:
-        bad_outer = list(bad_rom_outer) + [bad_rom_outer[0]]
-        bad_inner = list(bad_rom_inner) + [bad_rom_inner[0]]
+    if reordered_bad_rom_outer is not None and reordered_bad_rom_inner is not None:
+        bad_outer = list(reordered_bad_rom_outer) + [reordered_bad_rom_outer[0]]
+        bad_inner = list(reordered_bad_rom_inner) + [reordered_bad_rom_inner[0]]
         ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=lw, linestyle='-', label='Poor')
         ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=lw, linestyle='-', label='')
         ax.fill_between(angles, bad_inner, bad_outer, color='#FF4C4C', alpha=alpha)
-    if moderate_rom_outer is not None and moderate_rom_inner is not None:
-        moderate_outer = list(moderate_rom_outer) + [moderate_rom_outer[0]]
-        moderate_inner = list(moderate_rom_inner) + [moderate_rom_inner[0]]
+    if reordered_moderate_rom_outer is not None and reordered_moderate_rom_inner is not None:
+        moderate_outer = list(reordered_moderate_rom_outer) + [reordered_moderate_rom_outer[0]]
+        moderate_inner = list(reordered_moderate_rom_inner) + [reordered_moderate_rom_inner[0]]
         ax.plot(angles, moderate_outer, color='#FFD700', linewidth=lw, linestyle='-', label='Moderate')
         ax.plot(angles, moderate_inner, color='#FFD700', linewidth=lw, linestyle='-', label='')
         ax.fill_between(angles, moderate_inner, moderate_outer, color='#FFD700', alpha=alpha)
-    if ideal_rom_outer is not None and ideal_rom_inner is not None:
-        ideal_outer = list(ideal_rom_outer) + [ideal_rom_outer[0]]
-        ideal_inner = list(ideal_rom_inner) + [ideal_rom_inner[0]]
+    if reordered_ideal_rom_outer is not None and reordered_ideal_rom_inner is not None:
+        ideal_outer = list(reordered_ideal_rom_outer) + [reordered_ideal_rom_outer[0]]
+        ideal_inner = list(reordered_ideal_rom_inner) + [reordered_ideal_rom_inner[0]]
         ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Ideal Target')
         ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=lw, linestyle='-', label='')
         ax.fill_between(angles, ideal_inner, ideal_outer, color='#00FFAB', alpha=alpha)
@@ -219,31 +235,32 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
-    LABEL_SIZE  = 24         
-    TICK_SIZE   = 24
-    LEGEND_SIZE = 22
+    LABEL_SIZE  = 18         
+    TICK_SIZE   = 18
+    LEGEND_SIZE = 16
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(joint_labels, color='white', fontsize=LABEL_SIZE)
+    ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE)
     ax.set_yticklabels([])
 
-    ax.tick_params(axis="x", pad=30, colors="white", labelsize=LABEL_SIZE)
+    ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE)
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.7)
 
     ax.set_title(f"Range of Motion vs. Ideal Target", 
-                 color='white', fontsize=36,  fontweight='bold', pad=20)
+                 color='white', fontsize=24,  fontweight='bold', pad=20)
 
+    # Move legend outside to the right
     leg = ax.legend(
-            loc='upper right',
-            bbox_to_anchor=(1.2, 0.5),
+            loc='center left',
+            bbox_to_anchor=(1.15, 0.5),  # Position outside the plot on the right
             fontsize=LEGEND_SIZE,
             frameon=False
         )
     for t in leg.get_texts():
         t.set_color('white')
 
-    plt.tight_layout(pad=0.5)
+    plt.tight_layout()
     fig.savefig(save_path, dpi=300, facecolor=fig.get_facecolor(), bbox_inches="tight")    
     plt.close(fig)
 
@@ -291,15 +308,13 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
                 fontweight='bold')
 
     # directional hints below the axis ---------------------------------------
-    ax.text(-30, -1.25, "← Left More",  color='white', fontsize=10, va='top', ha='left')
-    ax.text( 30, -1.25, "Right More →", color='white', fontsize=10, va='top', ha='right')
-    ax.text(  0, -1.25, "Symmetry",     color='white', fontsize=10, va='top', ha='center')
+    ax.text(-30, -1.25, "← Left Asymmetry",  color='white', fontsize=10, va='top', ha='left')
+    ax.text( 30, -1.25, "Right Asymmetry →", color='white', fontsize=10, va='top', ha='right')
 
     # ── 3.  Gradient legend (same colormap) ----------------------------------
     grad   = np.linspace(0, 1, 256).reshape(-1, 1)        # vertical gradient
     bbox   = ax.get_position()
     ax_grad = fig.add_axes([bbox.x1 + 0.02, bbox.y0, 0.03, bbox.height])
-
     ax_grad.imshow(grad, aspect='auto', cmap=cmap, origin='lower')
     ax_grad.set_xticks([])
     ax_grad.set_yticks([0, 0.5, 1])
