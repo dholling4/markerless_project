@@ -616,7 +616,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         "right ankle": (255, 182, 193)   # Red
     }
     font_size=12
-
+    
     for joint in ["spine segment summary", "left hip summary", "right hip summary", "left knee summary", "right knee summary", "left ankle summary", "right ankle summary"]:
         summary = text_info.get(joint, "")
         if summary:
@@ -1904,9 +1904,9 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     elif ankle_bad[0] >= ankle_right_rom_mean or ankle_right_rom_mean >= ankle_bad[1]:
         right_ankle_text_summary = "BAD"
         if gait_type == "walking" and camera_side == "side":
-            right_ankle_text_info = "Severe dorsiflexion deficits (<5°) elevate risks of plantar fasciitis and Achilles tendinopathy."
+            right_ankle_text_info = "Severe dorsiflexion deficits (<5°) or excessive plantarflexion (>50°) elevates risk of plantar fasciitis and Achilles tendinopathy."
         if gait_type == "running" and camera_side == "side":
-            right_ankle_text_info = "Severe dorsiflexion deficits (<5°) elevate risks of plantar fasciitis and Achilles tendinopathy."
+            right_ankle_text_info = "Severe dorsiflexion deficits (<5°) or excessive plantarflexion elevates risk of plantar fasciitis and Achilles tendinopathy."
         if gait_type == "walking" and camera_side == "back":
             right_ankle_text_info = "Associated with instability, compensatory pelvic motion, and medial tibial stress syndrome."
         if gait_type == "running" and camera_side == "back":
@@ -1990,14 +1990,13 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         "right hip": right_hip_text_info if 'right_hip_text_info' in locals() else "",
         "spine": spine_text_info if 'spine_text_info' in locals() else "",
 
-        "left ankle summary": left_ankle_text_summary if 'left_ankle_text_summary' in locals() else "",
+        "left ankle summary": left_ankle_text_summary if 'left_ankle_text_summary' in locals() else "",  # Make sure this line exists
         "left knee summary": left_knee_text_summary if 'left_knee_text_summary' in locals() else "",
         "left hip summary": left_hip_text_summary if 'left_hip_text_summary' in locals() else "",
         "right ankle summary": right_ankle_text_summary if 'right_ankle_text_summary' in locals() else "",
         "right knee summary": right_knee_text_summary if 'right_knee_text_summary' in locals() else "",
         "right hip summary": right_hip_text_summary if 'right_hip_text_summary' in locals() else "",
         "spine segment summary": spine_text_summary if 'spine_text_summary' in locals() else "",
-
     }
 
     with st.expander("Click here to see your spine segment angle data"):
