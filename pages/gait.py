@@ -235,9 +235,9 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
-    LABEL_SIZE  = 20         
-    TICK_SIZE   = 20
-    LEGEND_SIZE = 20
+    LABEL_SIZE  = 32         
+    TICK_SIZE   = 32
+    LEGEND_SIZE = 32
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE)
@@ -382,7 +382,10 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # --- Matplotlib Spider/Radar Plot ---
     spider_plot_path = tempfile.mktemp(suffix=".png")
     rom_values = [float(x) for x in df_rom['Range of Motion (°)']]
-    joint_labels = list(df_rom['Joint'])
+    rom_values = [rom_values[4], rom_values[2], rom_values[0], 
+                  rom_values[1], rom_values[3], rom_values[5], rom_values[6]]  # Reorder to match the plot   
+    joint_labels = ["Knee Right", "Hip Right", "Spine", "Hip Left", "Knee Left", "Ankle Left", "Ankle Right"]
+
 
     # Define ranges for color classification
     if camera_side == "side" and gait_type == "walking": 
@@ -522,7 +525,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=90)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=80, y=25, w=100)   # Move right, make smaller (w=80)
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
