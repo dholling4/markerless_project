@@ -354,7 +354,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     # add logo in the top right corner
     github_url = "https://raw.githubusercontent.com/dholling4/markerless_project/main/"
-    logo_path = github_url + "logo/stride sync logo.png"
+    logo_path = github_url + "stride sync logo.png"
     logo = requests.get(logo_path)
     logo_img = Image.open(BytesIO(logo.content))
     logo_img_path = tempfile.mktemp(suffix=".png")
