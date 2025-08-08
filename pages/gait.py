@@ -198,7 +198,6 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     reordered_ideal_rom_outer = [ideal_rom_outer[0], ideal_rom_outer[1], ideal_rom_outer[2], ideal_rom_outer[3], ideal_rom_outer[4], ideal_rom_outer[5], ideal_rom_outer[6]]
     reordered_ideal_rom_inner = [ideal_rom_inner[0], ideal_rom_inner[1], ideal_rom_inner[2], ideal_rom_inner[3], ideal_rom_inner[4], ideal_rom_inner[5], ideal_rom_inner[6]]
     
-    """Create and save a radar/spider plot using Matplotlib, including target ranges."""
     N = len(reordered_joint_labels)
     values = reordered_rom_values + [reordered_rom_values[0]]  # close the loop
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
@@ -2308,9 +2307,22 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         st.download_button("Download Stride Sync Report", file, "Stride_Sync_Report.pdf", "application/pdf", key=f"pdf_report_{video_index}_{camera_side}_{hash(video_path)}")
 
     # email me my Stride Sync Report
-    email = st.text_input("Enter your email address to receive your Stride Sync Report",  key=f"text_input_email_{video_index}_{camera_side}_{hash(video_path)}")
-    if st.button("Email Stride Sync Report", key=f"email_pdf_{video_index}_{camera_side}_{hash(video_path)}"):
-        send_email(email, pdf_path)
+    email = st.text_input("Enter your email address to receive your Stride Sync Report",  
+                        key=f"text_input_email_{video_index}_{camera_side}_{hash(video_path)}")
+
+    if st.button("Email Stride Sync Report", 
+                key=f"email_pdf_{video_index}_{camera_side}_{hash(video_path)}"):
+        
+        # Add validation
+        if not email:
+            st.error("❌ Please enter an email address.")
+        elif not email.__contains__("@"):
+            st.error("❌ Please enter a valid email address.")
+        elif 'pdf_path' not in locals():
+            st.error("❌ PDF report not generated. Please download the report first.")
+        else:
+            with st.spinner("Sending email..."):
+                send_email(email, pdf_path)
 
 def send_email(to_email, attachment_path):
     try:
