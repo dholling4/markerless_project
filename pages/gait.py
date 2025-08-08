@@ -2313,35 +2313,49 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         send_email(email, pdf_path)
 
 def send_email(to_email, attachment_path):
+    try:
+        # Get email credentials
+        if "EMAIL_ADDRESS" in st.secrets:
+            sender_email = st.secrets["EMAIL_ADDRESS"]
+            app_password = st.secrets["EMAIL_APP_PASSWORD"]
+        else:
+            load_dotenv()
+            sender_email = os.getenv("EMAIL_ADDRESS")
+            app_password = os.getenv("EMAIL_APP_PASSWORD")
 
-    if "EMAIL_ADDRESS" in st.secrets:
-        sender_email = st.secrets["EMAIL_ADDRESS"]
-        app_password = st.secrets["EMAIL_APP_PASSWORD"]
-    else:
-        load_dotenv()
-        sender_email = os.getenv("EMAIL_ADDRESS")
-        app_password = os.getenv("EMAIL_APP_PASSWORD")
+        # Validate credentials
+        if not sender_email or not app_password:
+            st.error("❌ Email credentials not found. Please check your environment variables.")
+            return
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(sender_email, app_password)     
-        st.write("✅ Email sent!") 
-    
-    msg = EmailMessage()
-    msg['Subject'] = "Stride Sync Report"
-    msg['From'] = sender_email
-    msg['To'] = to_email
-    msg.set_content("Hi! Attached is your personalized gait report from Stride Sync. Feel free to reach out if you have any questions or would like to setup an appointment to discuss your results.")
+        # Create email message
+        msg = EmailMessage()
+        msg['Subject'] = "Stride Sync Report"
+        msg['From'] = sender_email
+        msg['To'] = to_email
+        msg.set_content("Hi! Attached is your personalized gait report from Stride Sync. Feel free to reach out if you have any questions or would like to setup an appointment to discuss your results.")
 
-    # Attach PDF
-    with open(attachment_path, 'rb') as f:
-        file_data = f.read()
-        file_name = "Stride Sync Report " + str(datetime.now().strftime("%Y-%m-%d")) + ".pdf"
-        msg.add_attachment(file_data, maintype='application', subtype='pdf', filename=file_name)
+        # Attach PDF
+        with open(attachment_path, 'rb') as f:
+            file_data = f.read()
+            file_name = "Stride Sync Report " + str(datetime.now().strftime("%Y-%m-%d")) + ".pdf"
+            msg.add_attachment(file_data, maintype='application', subtype='pdf', filename=file_name)
 
-    # Send Email
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(sender_email, app_password)
-        smtp.send_message(msg)
+        # Send Email
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(sender_email, app_password)
+            smtp.send_message(msg)
+            
+        st.success("✅ Email sent successfully!")
+        
+    except smtplib.SMTPAuthenticationError:
+        st.error("❌ Email authentication failed. Please check your email credentials.")
+    except smtplib.SMTPException as e:
+        st.error(f"❌ Failed to send email: {str(e)}")
+    except FileNotFoundError:
+        st.error("❌ PDF file not found. Please generate the report first.")
+    except Exception as e:
+        st.error(f"❌ An error occurred: {str(e)}")
 
 # TO DO:
 # - Try to add article links like this: https://pmc.ncbi.nlm.nih.gov/articles/PMC3286897/
