@@ -603,7 +603,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     }
     font_size=12
 
-    for joint in ["spine segment summary", "left hip summary", "right hip summary", "left knee summary", "right knee summary", "left ankle summary", "right ankle summary"]:
+    for joint in ["Opportunities to improve", "left hip summary", "right hip summary", "left knee summary", "right knee summary", "left ankle summary", "right ankle summary"]:
         summary = text_info.get(joint, "")
         if summary:
             color = (255, 255, 255)
@@ -753,7 +753,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
-    pdf.ln(2)
+    pdf.ln(3)
     
     # Smart training recommendations based on biomechanics
     def recommend_training(rom_values, camera_side, gait_type, text_info):
@@ -780,18 +780,18 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             # Frontal plane issues - focus on stability and control
             if avg_ankle_rom > 15 or avg_knee_rom > 10:  # Overpronation/valgus
                 exercises.append({
-                    "name": "Single-Leg Glute Bridge",
+                    "name": "   Single-Leg Glute Bridge",
                     "description": "3x12 each leg. Strengthens hip abductors to control knee valgus and pelvic stability.",
                     "target": "Hip abductor strength, pelvic control"
                 })
                 exercises.append({
-                    "name": "Calf Raises with Inversion Hold", 
+                    "name": "   Calf Raises with Inversion Hold", 
                     "description": "3x15 with 3-sec hold. Strengthens posterior tibialis to control excessive pronation.",
                     "target": "Ankle stability, pronation control"
                 })
             else:  # Good frontal plane control
                 exercises.append({
-                    "name": "Lateral Band Walks",
+                    "name": "   Lateral Band Walks",
                     "description": "3x15 each direction. Maintains hip abductor strength and lateral stability.",
                     "target": "Hip stability maintenance"
                 })
@@ -800,28 +800,28 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             # Analyze specific joint limitations
             if avg_ankle_rom < 30 and gait_type in ["walking", "running"]:  # Limited ankle mobility
                 exercises.append({
-                    "name": "Wall Ankle Dorsiflexion Stretch",
+                    "name": "   Wall Ankle Dorsiflexion Stretch",
                     "description": "3x30 seconds each foot. Improves ankle mobility for better heel-to-toe transition.",
                     "target": "Ankle dorsiflexion, calf flexibility"
                 })
             
             if avg_hip_rom < 35 and gait_type in ["walking", "running"]:  # Limited hip ROM
                 exercises.append({
-                    "name": "90/90 Hip Stretch + Hip Flexor Activation",
+                    "name": "   90/90 Hip Stretch + Hip Flexor Activation",
                     "description": "3x30 sec stretch + 10 leg lifts. Improves hip flexion ROM and activation.",
                     "target": "Hip mobility and flexor strength"
                 })
             
             if avg_knee_rom < 60 and gait_type in ["walking", "running"]:  # Limited knee flexion
                 exercises.append({
-                    "name": "Wall Sits with Calf Raises",
+                    "name": "   Wall Sits with Calf Raises",
                     "description": "3x45 seconds. Builds knee flexion endurance and calf strength simultaneously.",
                     "target": "Knee flexion endurance, shock absorption"
                 })
             
             if spine_rom > 15 or spine_rom < 3:  # Poor trunk control
                 exercises.append({
-                    "name": "Dead Bug with Opposite Arm/Leg",
+                    "name": "   Dead Bug with Opposite Arm/Leg",
                     "description": "3x10 each side. Improves core stability and trunk control during movement.",
                     "target": "Core stability, trunk alignment"
                 })
@@ -829,12 +829,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         # If no specific deficits, provide general recommendations
         if not exercises:
             exercises.append({
-                "name": "Single-Leg Romanian Deadlift",
+                "name": "   Single-Leg Romanian Deadlift",
                 "description": "3x8 each leg. Maintains posterior chain strength and balance.",
                 "target": "Overall stability and strength"
             })
             exercises.append({
-                "name": "Calf Raise to Heel Walk",
+                "name": "   Calf Raise to Heel Walk",
                 "description": "3x10 transitions. Enhances ankle control through full range of motion.",
                 "target": "Ankle strength and control"
             })
