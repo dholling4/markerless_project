@@ -844,7 +844,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # Get training recommendations
     training_exercises = recommend_training(rom_values, camera_side, gait_type, text_info)
     
-    pdf.ln(2)
+    pdf.ln(3)
     for i, exercise in enumerate(training_exercises):
         # Exercise name in colored text
         pdf.set_text_color(150, 255, 150)  # Light green
@@ -863,7 +863,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.ln(2)
 
     # ✅ Invitation to Optional Coaching Session
-    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
+    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride."
     
     pdf.ln(3)
 
@@ -873,7 +873,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.set_text_color(255, 255, 255)  # White text for readability
     pdf.set_font("Arial", size=font_size)
-    pdf.multi_cell(0, 7, coaching_invite)
+    pdf.multi_cell(0, 5, coaching_invite)
 
     # Highlight Contact Info with Bigger, Bold White Text
     pdf.set_text_color(255, 255, 255)  # Bright green for attention
@@ -889,10 +889,10 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
-    pdf.set_xy(150, 245)  # Near the bottom of A4 (297mm height)
+    pdf.set_xy(150, 260)  # Near the bottom of A4 (297mm height)
     pdf.set_text_color(96, 194, 228)
-    pdf.set_font("Arial", style='B', size=10)
-    pdf.cell(0, 10, "Stride Sync. Every Step Counts.", ln=True)
+    pdf.set_font("Arial", style='B', size=9)
+    pdf.cell(0, 10, "Striding into peak gait performance", ln=True)
     #  A smarter stride with every step.
     # ✅ Add a QR Code for the Website
     qr_code_url = "https://stride-sync.streamlit.app"
@@ -902,7 +902,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # place text directly above the qr code image
     pdf.set_font("Arial", style='B', size=10)
     pdf.set_text_color(96, 194, 228)  
-    pdf.set_xy(160, 255)  # Position above the QR code
+    pdf.set_xy(160, 262)  # Position above the QR code
     pdf.cell(30, 5, "Scan QR code for more info.", align='C')
     pdf.image(qr_code_path, x=160, y=265, w=30)
 
