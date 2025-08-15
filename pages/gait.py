@@ -779,7 +779,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.set_text_color(255, 255, 255)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
-    pdf.write(6, "Recommended Training: ", ln=True)
+    pdf.write(6, "Recommended Training: ")
 
     # Place at bottom of page
     pdf.set_xy(150, 245)  # Near the bottom of A4 (297mm height)
