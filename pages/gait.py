@@ -755,11 +755,118 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
+    
+    # Smart training recommendations based on biomechanics
+    def recommend_training(rom_values, camera_side, gait_type, text_info):
+        """Recommend targeted exercises based on biomechanical deficits"""
+        
+        # Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right)
+        knee_right_rom = rom_values[0]
+        hip_right_rom = rom_values[1] 
+        spine_rom = rom_values[2]
+        hip_left_rom = rom_values[3]
+        knee_left_rom = rom_values[4]
+        ankle_left_rom = rom_values[5]
+        ankle_right_rom = rom_values[6]
+        
+        # Average bilateral values
+        avg_ankle_rom = (ankle_left_rom + ankle_right_rom) / 2
+        avg_knee_rom = (knee_left_rom + knee_right_rom) / 2
+        avg_hip_rom = (hip_left_rom + hip_right_rom) / 2
+        
+        exercises = []
+        
+        # Analyze deficits and recommend exercises
+        if camera_side == "back":
+            # Frontal plane issues - focus on stability and control
+            if avg_ankle_rom > 15 or avg_knee_rom > 10:  # Overpronation/valgus
+                exercises.append({
+                    "name": "Single-Leg Glute Bridge",
+                    "description": "3x12 each leg. Strengthens hip abductors to control knee valgus and pelvic stability.",
+                    "target": "Hip abductor strength, pelvic control"
+                })
+                exercises.append({
+                    "name": "Calf Raises with Inversion Hold", 
+                    "description": "3x15 with 3-sec hold. Strengthens posterior tibialis to control excessive pronation.",
+                    "target": "Ankle stability, pronation control"
+                })
+            else:  # Good frontal plane control
+                exercises.append({
+                    "name": "Lateral Band Walks",
+                    "description": "3x15 each direction. Maintains hip abductor strength and lateral stability.",
+                    "target": "Hip stability maintenance"
+                })
+        
+        else:  # Sagittal plane (side view)
+            # Analyze specific joint limitations
+            if avg_ankle_rom < 30 and gait_type in ["walking", "running"]:  # Limited ankle mobility
+                exercises.append({
+                    "name": "Wall Ankle Dorsiflexion Stretch",
+                    "description": "3x30 seconds each foot. Improves ankle mobility for better heel-to-toe transition.",
+                    "target": "Ankle dorsiflexion, calf flexibility"
+                })
+            
+            if avg_hip_rom < 35 and gait_type in ["walking", "running"]:  # Limited hip ROM
+                exercises.append({
+                    "name": "90/90 Hip Stretch + Hip Flexor Activation",
+                    "description": "3x30 sec stretch + 10 leg lifts. Improves hip flexion ROM and activation.",
+                    "target": "Hip mobility and flexor strength"
+                })
+            
+            if avg_knee_rom < 60 and gait_type in ["walking", "running"]:  # Limited knee flexion
+                exercises.append({
+                    "name": "Wall Sits with Calf Raises",
+                    "description": "3x45 seconds. Builds knee flexion endurance and calf strength simultaneously.",
+                    "target": "Knee flexion endurance, shock absorption"
+                })
+            
+            if spine_rom > 15 or spine_rom < 3:  # Poor trunk control
+                exercises.append({
+                    "name": "Dead Bug with Opposite Arm/Leg",
+                    "description": "3x10 each side. Improves core stability and trunk control during movement.",
+                    "target": "Core stability, trunk alignment"
+                })
+        
+        # If no specific deficits, provide general recommendations
+        if not exercises:
+            exercises.append({
+                "name": "Single-Leg Romanian Deadlift",
+                "description": "3x8 each leg. Maintains posterior chain strength and balance.",
+                "target": "Overall stability and strength"
+            })
+            exercises.append({
+                "name": "Calf Raise to Heel Walk",
+                "description": "3x10 transitions. Enhances ankle control through full range of motion.",
+                "target": "Ankle strength and control"
+            })
+        
+        return exercises[:2]  # Return top 2 recommendations
+    
+    # Get training recommendations
+    training_exercises = recommend_training(rom_values, camera_side, gait_type, text_info)
+    
+    pdf.ln(2)
+    for i, exercise in enumerate(training_exercises):
+        # Exercise name in colored text
+        pdf.set_text_color(150, 255, 150)  # Light green
+        pdf.set_font("Arial", style='B', size=11)
+        pdf.write(5, f"{i+1}. {exercise['name']}: ")
+        
+        # Exercise description in white
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Arial", size=10)
+        pdf.write(5, f"{exercise['description']}\n")
+        
+        # Target area in light blue
+        pdf.set_text_color(150, 200, 255)
+        pdf.set_font("Arial", style='I', size=9)
+        pdf.write(4, f"Target: {exercise['target']}\n")
+        pdf.ln(2)
 
     # ✅ Invitation to Optional Coaching Session
     coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
     
-    pdf.ln(2)
+    pdf.ln(5)
 
     pdf.set_text_color(255, 215, 0)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
