@@ -711,8 +711,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
     pdf.set_text_color(96, 194, 228)  
     pdf.ln(10)
-    pdf.cell(0, 30, "Stride Sync. Every Step Counts.", ln=True)
-#  A smarter stride with every step.
+    # Place at bottom of page
+    pdf.set_xy(10, 285)  # Near the bottom of A4 (297mm height)
+    pdf.set_text_color(96, 194, 228)
+    pdf.set_font("Arial", style='B', size=14)
+    pdf.cell(0, 10, "Stride Sync. Every Step Counts.", ln=True)
+    #  A smarter stride with every step.
     # ✅ Add a QR Code for the Website
     qr_code_url = "https://stride-sync.streamlit.app"
     qr_code_path = tempfile.mktemp(suffix=".png")
@@ -721,7 +725,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # place text directly above the qr code image
     pdf.set_font("Arial", style='B', size=9)
     pdf.set_text_color(96, 194, 228)  
-    pdf.set_xy(160, 265)  # Position above the QR code
+    pdf.set_xy(150, 255)  # Position above the QR code
     pdf.cell(30, 5, "Stride to the next level together. Scan QR code for more info.", align='C')
     pdf.image(qr_code_path, x=160, y=265, w=30)
 
