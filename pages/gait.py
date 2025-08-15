@@ -691,19 +691,19 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     joint_targets = {
     "Spine Segment Angle": {
         "text": spine_text,
-        "color": (255, 255, 255)  # white
+        "color": (200, 162, 200)  # Purple
     },
     "Hips": {
         "text": hip_text,
-        "color":  (255, 255, 255)  # white
+        "color": (144, 238, 144)  # Green
     },
     "Knees": {
         "text": knee_text,
-        "color": (255, 255, 255)  # white
+        "color": (173, 216, 230)  # Blue
     },
     "Ankles": {
         "text": ankle_text,
-        "color": (255, 255, 255)  # white
+        "color": (255, 182, 193)  # Red
     }
 }
 
