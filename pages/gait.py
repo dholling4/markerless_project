@@ -747,14 +747,15 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     pdf.set_text_color(255, 255, 255)  # White text
     pdf.set_font("Arial", size=10)
-    pdf.ln(2)
+    pdf.ln(1)
     pdf.multi_cell(0, 5, f"Reason: {footwear_reason}")
     
-    pdf.ln(3)
+    pdf.ln(2)
 
     pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
+    pdf.ln(1)
     
     # Smart training recommendations based on biomechanics
     def recommend_training(rom_values, camera_side, gait_type, text_info):
@@ -866,7 +867,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # ✅ Invitation to Optional Coaching Session
     coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
     
-    pdf.ln(5)
+    pdf.ln(3)
 
     pdf.set_text_color(255, 215, 0)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
