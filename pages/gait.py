@@ -753,7 +753,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
-    pdf.ln(1)
+    pdf.ln(2)
     
     # Smart training recommendations based on biomechanics
     def recommend_training(rom_values, camera_side, gait_type, text_info):
@@ -889,7 +889,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
-    pdf.set_xy(150, 260)  # Near the bottom of A4 (297mm height)
+    pdf.set_xy(150, 255)  # Near the bottom of A4 (297mm height)
     pdf.set_text_color(96, 194, 228)
     pdf.set_font("Arial", style='B', size=9)
     pdf.cell(0, 10, "Striding into peak gait performance", ln=True)
@@ -902,7 +902,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # place text directly above the qr code image
     pdf.set_font("Arial", style='B', size=10)
     pdf.set_text_color(96, 194, 228)  
-    pdf.set_xy(160, 262)  # Position above the QR code
+    pdf.set_xy(160, 260)  # Position above the QR code
     pdf.cell(30, 5, "Scan QR code for more info.", align='C')
     pdf.image(qr_code_path, x=160, y=265, w=30)
 
