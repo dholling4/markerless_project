@@ -903,7 +903,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_font("Arial", style='B', size=10)
     pdf.set_text_color(96, 194, 228)  
     pdf.set_xy(160, 260)  # Position above the QR code
-    pdf.cell(30, 5, "Scan QR code for more info.", align='C')
+    pdf.cell(0, 5, "Scan QR code for more info.", align='C')
     pdf.image(qr_code_path, x=160, y=265, w=30)
 
     # ✅ Save PDF
