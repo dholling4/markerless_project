@@ -712,9 +712,9 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228)  
     pdf.ln(10)
     # Place at bottom of page
-    pdf.set_xy(10, 265)  # Near the bottom of A4 (297mm height)
+    pdf.set_xy(150, 245)  # Near the bottom of A4 (297mm height)
     pdf.set_text_color(96, 194, 228)
-    pdf.set_font("Arial", style='B', size=14)
+    pdf.set_font("Arial", style='B', size=12)
     pdf.cell(0, 10, "Stride Sync. Every Step Counts.", ln=True)
     #  A smarter stride with every step.
     # ✅ Add a QR Code for the Website
