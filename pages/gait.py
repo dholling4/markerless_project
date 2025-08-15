@@ -657,7 +657,9 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
         pdf.ln(1)    
 
-    pdf.ln(12)  # Spacing before bottom text section
+   # pdf.ln(12)  # Spacing before bottom text section
+    # go to next page 
+    pdf.add_page()
     
     pdf.set_text_color(255, 215, 0)  # Gold Text for Highlights
     pdf.set_font("Arial", style='B', size=14)
