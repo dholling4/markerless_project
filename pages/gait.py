@@ -203,27 +203,15 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
     angles += [angles[0]]
 
-    fig, ax = plt.subplots(figsize=(15, 15), 
+    fig, ax = plt.subplots(figsize=(18, 18), 
                            subplot_kw=dict(polar=True),
                            dpi=300) 
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
-    # Plot target ranges if provided (outer and inner boundaries)
+    # Plot only the ideal range (Stride Sweet Spot) - removing Poor and Moderate bands
     alpha=0.3
     lw=2
-    if reordered_bad_rom_outer is not None and reordered_bad_rom_inner is not None:
-        bad_outer = list(reordered_bad_rom_outer) + [reordered_bad_rom_outer[0]]
-        bad_inner = list(reordered_bad_rom_inner) + [reordered_bad_rom_inner[0]]
-        ax.plot(angles, bad_outer, color='#FF4C4C', linewidth=lw, linestyle='-', label='Poor')
-        ax.plot(angles, bad_inner, color='#FF4C4C', linewidth=lw, linestyle='-', label='')
-        ax.fill_between(angles, bad_inner, bad_outer, color='#FF4C4C', alpha=alpha)
-    if reordered_moderate_rom_outer is not None and reordered_moderate_rom_inner is not None:
-        moderate_outer = list(reordered_moderate_rom_outer) + [reordered_moderate_rom_outer[0]]
-        moderate_inner = list(reordered_moderate_rom_inner) + [reordered_moderate_rom_inner[0]]
-        ax.plot(angles, moderate_outer, color='#FFD700', linewidth=lw, linestyle='-', label='Moderate')
-        ax.plot(angles, moderate_inner, color='#FFD700', linewidth=lw, linestyle='-', label='')
-        ax.fill_between(angles, moderate_inner, moderate_outer, color='#FFD700', alpha=alpha)
     if reordered_ideal_rom_outer is not None and reordered_ideal_rom_inner is not None:
         ideal_outer = list(reordered_ideal_rom_outer) + [reordered_ideal_rom_outer[0]]
         ideal_inner = list(reordered_ideal_rom_inner) + [reordered_ideal_rom_inner[0]]
@@ -240,8 +228,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(reordered_joint_labels, color='white', fontsize=LABEL_SIZE, zorder=10)
-    max_value = max(max(values), max(bad_rom_outer) if bad_rom_outer else 0, 
-                   max(ideal_rom_outer) if ideal_rom_outer else 0) + 10
+    max_value = max(max(values), max(ideal_rom_outer) if ideal_rom_outer else 0) + 10
     tick_values = [0, 30, 60, 90, 120, 150]
     tick_values = [val for val in tick_values if val <= max_value]
     
