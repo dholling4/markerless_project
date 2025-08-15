@@ -697,11 +697,11 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_font("Arial", style='B', size=11)
     pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
     pdf.set_text_color(96, 194, 228)  
-    pdf.ln(10)
+    pdf.ln(5)
 
-    pdf.set_text_color(255, 215, 0)  # Gold color for the title
+    pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
-    pdf.cell(0, 10, "Recommended Footwear", ln=True)
+    pdf.cell(0, 10, "Ways to Improve Your Next Stride", ln=True)
 
     # Smart footwear recommendation based on biomechanics
     def recommend_footwear(rom_values, camera_side, gait_type):
@@ -755,7 +755,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     pdf.set_text_color(255, 255, 255)  # White text
     pdf.set_font("Arial", style='B', size=12)
-    pdf.write(6, f"Recommended Type: ")
+    pdf.write(6, f"Recommended Footwear: ")
     
     # Color-code the recommendation
     if footwear_type == "Motion Control":
@@ -777,9 +777,9 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     pdf.ln(3)
 
-    pdf.set_text_color(255, 215, 0)  # Gold color for the title
-    pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
-    pdf.cell(0, 10, "Recommended Training to Improve Your Stride", ln=True)
+    pdf.set_text_color(255, 255, 255)  # Gold color for the title
+    pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
+    pdf.write(6, "Recommended Training: ", ln=True)
 
     # Place at bottom of page
     pdf.set_xy(150, 245)  # Near the bottom of A4 (297mm height)
