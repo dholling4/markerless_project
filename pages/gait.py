@@ -752,13 +752,15 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     pdf.ln(3)
 
-    pdf.set_text_color(255, 255, 255)  # Gold color for the title
+    pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
 
     # ✅ Invitation to Optional Coaching Session
     coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
     
+    pdf.ln(2)
+
     pdf.set_text_color(255, 215, 0)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
@@ -773,7 +775,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(2)
 
-    pdf.cell(0, 10, "Contact a Stride Syncer to schedule a personalized consultation: digitalathlete80@gmail.com", ln=True)
+    pdf.cell(0, 10, "Contact a Stride Syncer: digitalathlete80@gmail.com", ln=True)
 
     pdf.set_text_color(255, 255, 255)  
     pdf.set_font("Arial", style='B', size=11)
