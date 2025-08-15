@@ -2000,7 +2000,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Bad (<15° flexion-extension): Severe restriction (<10°) alters pelvic tilt and elevates lower back pain risk."
         if gait_type == "running" and camera_side == "side":
-            right_hip_text_info = "Severe restriction (<40°) or poorly controlled motion (>90°) alters pelvic tilt and elevates lower back pain risk."
+            right_hip_text_info = "Severe restriction (<40°) or poorly controlled motion (>90°) alters pelvic tilt and elevates lower back pain risk [read more](https://onlinelibrary.wiley.com/doi/10.1155/2019/9757369)"
         if gait_type == "walking" and camera_side == "back":
             right_hip_text_info = "Excessive adduction correlates with tibial stress fractures and labral impingement."
         if gait_type == "running" and camera_side == "back": 
