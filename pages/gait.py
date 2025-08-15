@@ -889,10 +889,10 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
-    pdf.set_xy(150, 255)  # Near the bottom of A4 (297mm height)
+    pdf.set_xy(150, 254)  # Near the bottom of A4 (297mm height)
     pdf.set_text_color(96, 194, 228)
     pdf.set_font("Arial", style='B', size=9)
-    pdf.cell(0, 10, "Striding into peak gait performance", ln=True)
+    pdf.cell(0, 10, "Stride into peak gait performance", ln=True)
     #  A smarter stride with every step.
     # ✅ Add a QR Code for the Website
     qr_code_url = "https://stride-sync.streamlit.app"
@@ -900,11 +900,11 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     qr_code = qrcode.make(qr_code_url)
     qr_code.save(qr_code_path)
     # place text directly above the qr code image
-    pdf.set_font("Arial", style='B', size=10)
+    pdf.set_font("Arial", style='B', size=9)
     pdf.set_text_color(96, 194, 228)  
     pdf.set_xy(160, 260)  # Position above the QR code
     pdf.cell(0, 5, "Scan QR code for more info.", align='C')
-    pdf.image(qr_code_path, x=160, y=265, w=30)
+    pdf.image(qr_code_path, x=161, y=265, w=30)
 
     # ✅ Save PDF
     pdf_file_path = tempfile.mktemp(suffix=".pdf")
@@ -1819,7 +1819,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         theta=joint_labels,
         fill= 'toself', # 'toself' if side walking
         fillcolor='rgba(255, 76, 76, 0.9)', # fillcolor='rgba(255, 0, 0, 0.6)'  # red with 60% opacity
-        name='Poor',
+        name='Major Improvement Opportunity',
         marker=dict(color='#FF4C4C', size=0.1),
         line=dict(color='#FF4C4C', width=2)  # Dashed green outline for ideal ROM
     ))
@@ -1829,7 +1829,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         theta=joint_labels,
         fill = 'toself',
         fillcolor='rgba(255, 215, 0, 0.9)',  # gold
-        name='Moderate',
+        name='Minor Improvement Opportunity',
         marker=dict(color='#FFD700', size=0.1),
         line=dict(color='#FFD700', width=2)  # Dashed green outline for ideal ROM
     ))
