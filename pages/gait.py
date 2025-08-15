@@ -603,7 +603,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     }
     font_size=12
 
-    for joint in ["Opportunities for major improvements", "Opportunities for minor improvements", "Sweet Stride Sport"]:
+    for joint in ["spine", "left hip", "right hip", "left knee", "right knee", "left ankle", "right ankle"]:
         summary = text_info.get(joint, "")
         if summary:
             color = (255, 255, 255)
