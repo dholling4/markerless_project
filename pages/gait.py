@@ -1976,7 +1976,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     if hip_good[0] <= hip_right_rom_mean <= hip_good[1]:
         right_hip_text_summary = "STRIDE SWEET SPOT"
         if gait_type == "walking" and camera_side == "side":
-            right_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion."
+            right_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion [Read more](https://pmc.ncbi.nlm.nih.gov/articles/PMC5753918/)"
         if gait_type == "running" and camera_side == "side":
             right_hip_text_info = "Hip flexion at initial contact (~50°) and extension during stance optimize propulsion"
         if gait_type == "walking" and camera_side == "back":
@@ -1989,7 +1989,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Moderately limited hip range of motion increases lumbar spine compensation and hamstring strain."
         if gait_type == "running" and camera_side == "side":
-            right_hip_text_info = "Moderately limited range of motion increases lumbar spine compensation and hamstring strain."
+            right_hip_text_info = "Moderately limited range of motion increases lumbar spine compensation and hamstring strain [Read more](https://onlinelibrary.wiley.com/doi/10.1155/2019/3812407)"
         if gait_type == "walking" and camera_side == "back":
             right_hip_text_info = "Moderate levels of increased pelvic drop heightens iliotibial band syndrome risk."
         if gait_type == "running" and camera_side == "back": 
