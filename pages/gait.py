@@ -703,6 +703,80 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Recommended Footwear", ln=True)
 
+    # Smart footwear recommendation based on biomechanics
+    def recommend_footwear(rom_values, camera_side, gait_type):
+        """Recommend footwear based on posterior/frontal and sagittal plane biomechanics"""
+        
+        # Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right)
+        knee_right_rom = rom_values[0]
+        hip_right_rom = rom_values[1] 
+        spine_rom = rom_values[2]
+        hip_left_rom = rom_values[3]
+        knee_left_rom = rom_values[4]
+        ankle_left_rom = rom_values[5]
+        ankle_right_rom = rom_values[6]
+        
+        # Average bilateral values
+        avg_ankle_rom = (ankle_left_rom + ankle_right_rom) / 2
+        avg_knee_rom = (knee_left_rom + knee_right_rom) / 2
+        avg_hip_rom = (hip_left_rom + hip_right_rom) / 2
+        
+        # Primary: Posterior/Frontal Plane Assessment
+        if camera_side == "back":
+            # Overpronation indicators (Motion Control/Stability needed)
+            if avg_ankle_rom > 15 or avg_knee_rom > 10 or avg_hip_rom > 15:
+                if avg_ankle_rom > 20 or avg_knee_rom > 15:
+                    return "Motion Control", "Excessive overpronation and knee valgus detected. Rigid heel counters and medial posts needed."
+                else:
+                    return "Stability", "Moderate overpronation detected. Dual-density midsole and guided motion control recommended."
+            else:
+                primary_rec = "Neutral"
+        else:
+            # Sagittal plane assessment for neutral/cushioned decision
+            primary_rec = "Neutral"
+        
+        # Supporting: Sagittal Plane Refinement
+        if camera_side == "side":
+            # Limited ankle dorsiflexion + heel striking = cushioned shoes
+            if gait_type in ["walking", "running"]:
+                if avg_ankle_rom < 30 and spine_rom > 10:  # Limited ankle ROM + heel striking posture
+                    return "Maximum Cushioning", "Limited ankle mobility and heel-strike pattern detected. Enhanced shock absorption needed."
+                elif avg_ankle_rom > 60 and avg_knee_rom > 100:  # Good mobility + forefoot striking
+                    return "Minimalist/Neutral", "Excellent mobility and efficient movement pattern. Minimal interference recommended."
+        
+        # Default recommendation
+        if primary_rec == "Neutral":
+            return "Neutral", "Balanced biomechanics detected. Standard neutral support recommended."
+        else:
+            return primary_rec, "Biomechanics analysis suggests standard neutral support."
+    
+    # Get footwear recommendation
+    footwear_type, footwear_reason = recommend_footwear(rom_values, camera_side, gait_type)
+    
+    pdf.set_text_color(255, 255, 255)  # White text
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.write(6, f"Recommended Type: ")
+    
+    # Color-code the recommendation
+    if footwear_type == "Motion Control":
+        pdf.set_text_color(255, 100, 100)  # Red
+    elif footwear_type == "Stability": 
+        pdf.set_text_color(255, 200, 100)  # Orange
+    elif footwear_type == "Maximum Cushioning":
+        pdf.set_text_color(150, 200, 255)  # Light blue
+    else:
+        pdf.set_text_color(150, 255, 150)  # Light green
+    
+    pdf.set_font("Arial", style='B', size=12)
+    pdf.write(6, f"{footwear_type}\n")
+    
+    pdf.set_text_color(255, 255, 255)  # White text
+    pdf.set_font("Arial", size=10)
+    pdf.ln(2)
+    pdf.multi_cell(0, 5, f"Reason: {footwear_reason}")
+    
+    pdf.ln(3)
+
     pdf.set_text_color(255, 215, 0)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Recommended Training to Improve Your Stride", ln=True)
