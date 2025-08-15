@@ -668,8 +668,8 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     for joint in ["spine", "left hip", "right hip", "left knee", "right knee", "left ankle", "right ankle"]:
         insight = text_info.get(joint, "")
         if insight:
-            color = (255,255, 255) # joint_color_map[joint]
-            pdf.set_text_color(color)
+            color = joint_color_map[joint]
+            pdf.set_text_color(*color)
             pdf.set_font("Arial", style='B', size=font_size)
             label = joint.title() + ": "
             pdf.write(font_size / 2, label)
