@@ -227,11 +227,11 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     if reordered_ideal_rom_outer is not None and reordered_ideal_rom_inner is not None:
         ideal_outer = list(reordered_ideal_rom_outer) + [reordered_ideal_rom_outer[0]]
         ideal_inner = list(reordered_ideal_rom_inner) + [reordered_ideal_rom_inner[0]]
-        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Ideal Target')
+        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Stride Sweet Spot')
         ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=lw, linestyle='-', label='')
         ax.fill_between(angles, ideal_inner, ideal_outer, color='#00FFAB', alpha=alpha)
 
-    ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Yours')
+    ax.plot(angles, values, color='deepskyblue', linewidth=lw, label='Your Current Stride')
     ax.fill(angles, values, color='deepskyblue', alpha=alpha)
 
     LABEL_SIZE  = 32         
@@ -255,7 +255,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.9, zorder=0)
 
-    ax.set_title(f"Range of Motion (°) vs. Ideal Target", 
+    ax.set_title(f"Range of Motion (°) vs. Stride Sweet Spot", 
                  color='white', fontsize=36,  fontweight='bold', pad=20, zorder=10)
 
     # Move legend outside to the right
@@ -353,7 +353,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     # add logo in the top right corner
     github_url = "https://raw.githubusercontent.com/dholling4/markerless_project/main/"
-    logo_path = github_url + "stride sycn logo stacked hi res.png"
+    logo_path = github_url + "stride sycn logo stacked white.png"
     logo = requests.get(logo_path)
     logo_img = Image.open(BytesIO(logo.content))
     logo_img_path = tempfile.mktemp(suffix=".png")
@@ -688,7 +688,8 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.ln(1)
 
     # ✅ Invitation to Optional Coaching Session
-    coaching_invite = "Want to Take Your Running to the Next Level? Consider scheduling an advanced gait analysis or personalized coaching session to fine-tune your stride, optimize efficiency, and reduce injury risk."
+    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
+    
     pdf.set_text_color(255, 215, 0)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
@@ -703,15 +704,16 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(2)
 
-    pdf.cell(0, 10, "Contact: digitalathlete80@gmail.com", ln=True)
+    pdf.cell(0, 10, "Contact a Stride Syncer to schedule a personalized consultation: digitalathlete80@gmail.com", ln=True)
 
     pdf.set_text_color(255, 255, 255)  # Bright red for the email
     pdf.set_font("Arial", style='B', size=11)
     pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
-    pdf.set_text_color(255, 255, 255)  # Bright red for the email
+    pdf.set_text_color(96, 194, 228)  # Bright red for the email
     pdf.set_font("Arial", style='B', size=11)
-    pdf.cell(0, 10, "Scan the QR Code for recommended training videos", ln=True)
+    pdf.cell(0, 30, "Stride to the next level together. Scan the QR Code for more info.", ln=True)
     pdf.ln(10)
+    pdf.cell(0, 30, "Stride Sync. Every Step Counts. A smarter stride with every step.", ln=True)
 
     # ✅ Add a QR Code for the Website
     qr_code_url = "https://stride-sync.streamlit.app"
@@ -1649,13 +1651,13 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         line=dict(color='#FFD700', width=2)  # Dashed green outline for ideal ROM
     ))
 
-    # Plot ideal target ROM values
+    # Plot Stride Sweet Spot ROM values
     spider_plot.add_trace(go.Scatterpolar(
         r=ideal_rom_outer,
         theta=joint_labels,
         fill='toself',
         fillcolor='rgba(0, 255, 171, 0.85)',  # mint green
-        name='Ideal Target',
+        name='Stride Sweet Spot',
         marker=dict(color='#00FFAB', size=0.1),
         line=dict(color='#00FFAB', width=2)  # Dashed green outline for ideal ROM
     ))
@@ -1665,7 +1667,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         r=rom_values,
         theta=joint_labels,
         fill='toself',
-        name = 'Yours',
+        name = 'Your Current Stride',
         fillcolor='rgba(30, 144, 255, 0.75)',  
         marker=dict(color='#1E90FF', size=0.01),
         line=dict(color='#1E90FF', width=2)
@@ -1685,7 +1687,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     max_all_joint_angles = max(max(rom_values), max(bad_rom_outer), max(bad_rom_inner), max(ideal_rom_outer)) + 10
 
     spider_plot.update_layout(
-        title="Range of Motion (°) vs Ideal Target",
+        title="Range of Motion (°) vs Stride Sweet Spot",
         title_font=dict(size=36, color='white'),  # Set title color to white
         polar=dict(
             bgcolor='black',
