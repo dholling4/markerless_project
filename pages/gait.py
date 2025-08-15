@@ -750,8 +750,6 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.ln(1)
     pdf.multi_cell(0, 5, f"Reason: {footwear_reason}")
     
-    pdf.ln(2)
-
     pdf.set_text_color(255, 255, 255)  # white color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
