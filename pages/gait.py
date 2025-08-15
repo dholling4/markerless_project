@@ -603,17 +603,59 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     }
     font_size=12
 
+    # Group joints by their summary status
+    stride_sweet_spots = []
+    major_opportunities = []
+    minor_opportunities = []
+    moderate_opportunities = []
+    
+    joint_name_mapping = {
+        "spine segment summary": "Spine Segment",
+        "left hip summary": "Left Hip", 
+        "right hip summary": "Right Hip",
+        "left knee summary": "Left Knee",
+        "right knee summary": "Right Knee", 
+        "left ankle summary": "Left Ankle",
+        "right ankle summary": "Right Ankle"
+    }
+    
     for joint in ["spine segment summary", "left hip summary", "right hip summary", "left knee summary", "right knee summary", "left ankle summary", "right ankle summary"]:
         summary = text_info.get(joint, "")
+        joint_display_name = joint_name_mapping.get(joint, joint.title())
+        
         if summary:
-            color = (255, 255, 255)
-            pdf.set_text_color(*color)
-            pdf.set_font("Arial", style='B', size=font_size)
-            label = joint.title() + ": "
-            pdf.write(font_size / 2, label)
-            pdf.set_font("Arial", size=font_size)
-            pdf.write(font_size / 2, summary + "\n")
-            pdf.ln(1)    
+            summary_upper = summary.upper()
+            if "STRIDE SWEET SPOT" in summary_upper or "GOOD" in summary_upper:
+                stride_sweet_spots.append(joint_display_name)
+            elif "MAJOR OPPORTUNITY" in summary_upper or "BAD" in summary_upper:
+                major_opportunities.append(joint_display_name)
+            elif "MINOR OPPORTUNITY" in summary_upper or "MODERATE" in summary_upper:
+                minor_opportunities.append(joint_display_name)
+    
+    # Print grouped summaries
+    if stride_sweet_spots:
+        pdf.set_text_color(150, 255, 150)  # Light green
+        pdf.set_font("Arial", style='B', size=font_size)
+        pdf.write(font_size / 2, "STRIDE SWEET SPOTS: ")
+        pdf.set_font("Arial", size=font_size)
+        pdf.write(font_size / 2, ", ".join(stride_sweet_spots) + "\n")
+        pdf.ln(1)
+    
+    if major_opportunities:
+        pdf.set_text_color(255, 100, 100)  # Light red
+        pdf.set_font("Arial", style='B', size=font_size)
+        pdf.write(font_size / 2, "MAJOR OPPORTUNITIES TO IMPROVE: ")
+        pdf.set_font("Arial", size=font_size)
+        pdf.write(font_size / 2, ", ".join(major_opportunities) + "\n")
+        pdf.ln(1)
+    
+    if minor_opportunities:
+        pdf.set_text_color(255, 200, 100)  # Light orange/yellow
+        pdf.set_font("Arial", style='B', size=font_size)
+        pdf.write(font_size / 2, "MINOR OPPORTUNITIES TO IMPROVE: ")
+        pdf.set_font("Arial", size=font_size)
+        pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
+        pdf.ln(1)    
 
     pdf.ln(12)  # Spacing before bottom text section
     
