@@ -661,15 +661,15 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # go to next page 
     pdf.add_page()
     
-    pdf.set_text_color(255, 215, 0)  # Gold Text for Highlights
+    pdf.set_text_color(96, 194, 228)  # blue Text for Highlights
     pdf.set_font("Arial", style='B', size=14)
     pdf.cell(0, 10, "Key Insights from Your Gait", ln=True)
     
     for joint in ["spine", "left hip", "right hip", "left knee", "right knee", "left ankle", "right ankle"]:
         insight = text_info.get(joint, "")
         if insight:
-            color = joint_color_map[joint]
-            pdf.set_text_color(*color)
+            color = (255,255, 255) # joint_color_map[joint]
+            pdf.set_text_color(color)
             pdf.set_font("Arial", style='B', size=font_size)
             label = joint.title() + ": "
             pdf.write(font_size / 2, label)
@@ -684,26 +684,26 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(5)
 
-    pdf.set_text_color(255, 215, 0)  # Gold for Header
+    pdf.set_text_color(96, 194, 228)  # blue for Header
     pdf.set_font("Arial", 'b', size=14)
     pdf.cell(0, 10, "Joint Target Analysis", ln=True)
 
     joint_targets = {
     "Spine Segment Angle": {
         "text": spine_text,
-        "color": (200, 162, 200)  # Purple
+        "color": (255, 255, 255)  # white
     },
     "Hips": {
         "text": hip_text,
-        "color": (144, 238, 144)  # Green
+        "color":  (255, 255, 255)  # white
     },
     "Knees": {
         "text": knee_text,
-        "color": (173, 216, 230)  # Blue
+        "color": (255, 255, 255)  # white
     },
     "Ankles": {
         "text": ankle_text,
-        "color": (255, 182, 193)  # Red
+        "color": (255, 255, 255)  # white
     }
 }
 
@@ -911,7 +911,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     pdf.ln(3)
 
-    pdf.set_text_color(255, 215, 0)  # Gold color for the title
+    pdf.set_text_color(96, 194, 228)  # blue color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
 
