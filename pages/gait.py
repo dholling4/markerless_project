@@ -674,31 +674,6 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(1)
 
-    # ✅ Invitation to Optional Coaching Session
-    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
-    
-    pdf.set_text_color(255, 215, 0)  # Gold color for the title
-    pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
-    pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
-
-    pdf.set_text_color(255, 255, 255)  # White text for readability
-    pdf.set_font("Arial", size=font_size)
-    pdf.multi_cell(0, 7, coaching_invite)
-
-    # Highlight Contact Info with Bigger, Bold White Text
-    pdf.set_text_color(255, 255, 255)  # Bright green for attention
-    pdf.set_font("Arial", style='B', size=11)  # Bigger and bold
-
-    pdf.ln(2)
-
-    pdf.cell(0, 10, "Contact a Stride Syncer to schedule a personalized consultation: digitalathlete80@gmail.com", ln=True)
-
-    pdf.set_text_color(255, 255, 255)  
-    pdf.set_font("Arial", style='B', size=11)
-    pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
-    pdf.set_text_color(96, 194, 228)  
-    pdf.ln(5)
-
     pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Ways to Improve Your Next Stride", ln=True)
@@ -780,6 +755,30 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(255, 255, 255)  # Gold color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
+
+    # ✅ Invitation to Optional Coaching Session
+    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride, optimize efficiency, and reduce injury risk."
+    
+    pdf.set_text_color(255, 215, 0)  # Gold color for the title
+    pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
+    pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
+
+    pdf.set_text_color(255, 255, 255)  # White text for readability
+    pdf.set_font("Arial", size=font_size)
+    pdf.multi_cell(0, 7, coaching_invite)
+
+    # Highlight Contact Info with Bigger, Bold White Text
+    pdf.set_text_color(255, 255, 255)  # Bright green for attention
+    pdf.set_font("Arial", style='B', size=11)  # Bigger and bold
+
+    pdf.ln(2)
+
+    pdf.cell(0, 10, "Contact a Stride Syncer to schedule a personalized consultation: digitalathlete80@gmail.com", ln=True)
+
+    pdf.set_text_color(255, 255, 255)  
+    pdf.set_font("Arial", style='B', size=11)
+    pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
+    pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
     pdf.set_xy(150, 245)  # Near the bottom of A4 (297mm height)
