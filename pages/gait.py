@@ -287,7 +287,7 @@ def create_asymmetry_bar_matplotlib(asymmetry_dict, save_path):
     ax.set_xlim(-30, 30)                                 # keep your fixed range
     ax.set_xlabel("← Left Asymmetry          Right Asymmetry →", color="white")
     ax.set_title("Range of Motion Asymmetry",
-                 color="white", fontweight="bold", fontsize=16)
+                 color="white", fontweight="bold", fontsize=14)
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')
 
@@ -1499,12 +1499,17 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     duration = total_frames / fps
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        for _ in range(start_frame_crop, end_frame_crop):
+        # Process only the frames in the analysis window
+        frames_processed = 0
+        target_frames = end_frame_crop - start_frame_crop
+        
+        while frames_processed < target_frames:
             ret, frame = cap.read()
-            if rotated:
-                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
             if not ret:
                 break
+                
+            if rotated:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
 
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(frame_rgb)
@@ -1551,6 +1556,9 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
                 right_knee_angles.append(calculate_angle(right_thigh_vector, right_shank_vector))
                 left_ankle_angles.append(calculate_angle(left_shank_vector, left_foot_vector))
                 right_ankle_angles.append(calculate_angle(right_shank_vector, right_foot_vector))
+            
+            # Increment frame counter
+            frames_processed += 1
 
     time = np.arange(0, len(left_hip_angles)) / fps # Time in seconds  
     cap.release()
@@ -2023,7 +2031,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_hip_text_info = "Minimal motion maintains coronal alignment and reduces hip abductor fatigue."
 
     elif hip_moderate[0] <= hip_right_rom_mean <= hip_moderate[1]:
-        right_hip_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        right_hip_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Moderately limited hip range of motion increases lumbar spine compensation and hamstring strain."
         if gait_type == "running" and camera_side == "side":
@@ -2034,7 +2042,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_hip_text_info = "Moderate levels of increased pelvic drop heightens iliotibial band syndrome risk."
 
     elif hip_bad[0] <= hip_right_rom_mean <= hip_bad[1]:
-        right_hip_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        right_hip_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Bad (<15° flexion-extension): Severe restriction (<10°) alters pelvic tilt and elevates lower back pain risk."
         if gait_type == "running" and camera_side == "side":
@@ -2056,7 +2064,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_hip_text_info = "Minimal motion maintains coronal alignment and reduces hip abductor fatigue."
 
     elif hip_moderate[0] <= hip_left_rom_mean <= hip_moderate[1]:
-        left_hip_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        left_hip_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_hip_text_info = "Moderately limited hip range of motion increases lumbar spine compensation and hamstring strain."
         if gait_type == "running" and camera_side == "side":
@@ -2067,7 +2075,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_hip_text_info = "Moderate levels of increased pelvic drop heightens iliotibial band syndrome risk."
 
     elif hip_bad[0] <= hip_left_rom_mean <= hip_bad[1]:
-        left_hip_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        left_hip_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_hip_text_info = "Bad (<15° flexion-extension): Severe restriction (<10°) alters pelvic tilt and elevates lower back pain risk."
         if gait_type == "running" and camera_side == "side":
@@ -2090,7 +2098,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_knee_text_info = "Minimal medial knee deviation protects against patellofemoral knee pain."
 
     elif knee_moderate[0] <= knee_right_rom_mean <= knee_moderate[1]:
-        right_knee_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        right_knee_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_knee_text_info = "Moderately reduced flexion increases patellofemoral joint stress."
         if gait_type == "running" and camera_side == "side":
@@ -2101,7 +2109,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_knee_text_info = "Moderate adduction/abduction correlates with early cartilage wear."
 
     elif knee_bad[0] < knee_right_rom_mean:
-        right_knee_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        right_knee_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_knee_text_info = "You have limited knee flexion, which may reduce running efficiency. Consider deep squats, hamstring stretches, and eccentric loading to improve flexibility."
         if gait_type == "running" and camera_side == "side":
@@ -2123,7 +2131,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_knee_text_info = "Minimal valgus/varus motion protects against patellofemoral knee pain."
 
     elif knee_moderate[0] <= knee_left_rom_mean <= knee_moderate[1]:
-        left_knee_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        left_knee_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_knee_text_info = "Moderately reduced flexion increases patellofemoral joint stress."
         if gait_type == "running" and camera_side == "side":
@@ -2134,7 +2142,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_knee_text_info = "Moderate adduction/abduction correlates with early cartilage wear."
 
     elif knee_bad[0] >= knee_left_rom_mean or knee_left_rom_mean >= knee_bad[1]:
-        left_knee_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        left_knee_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_knee_text_info = "You have limited knee flexion, which may reduce running efficiency. Consider deep squats, hamstring stretches, and eccentric loading to improve flexibility."
         if gait_type == "running" and camera_side == "side":
@@ -2157,7 +2165,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_ankle_text_info = "Healthy ankle range of motion in the frontal plane allows the foot to move inward (inversion) and outward (eversion) smoothly, with a total range of about 35 degrees-typically up to 23 degrees of inversion and 12 degrees of eversion. This range supports stable, adaptable movement during running, helping the foot absorb shock and adjust to uneven surfaces."
 
     elif ankle_moderate[0] <= ankle_right_rom_mean <= ankle_moderate[1]:
-        right_ankle_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        right_ankle_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_ankle_text_info = "Slightly reduced ankle range of motion increases forefoot loading and compensatory knee motion."
         if gait_type == "running" and camera_side == "side":
@@ -2168,7 +2176,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_ankle_text_info = "Moderately limits lateral balance control, reducing walking stablity in older adults."
 
     elif ankle_bad[0] >= ankle_right_rom_mean or ankle_right_rom_mean >= ankle_bad[1]:
-        right_ankle_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        right_ankle_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             right_ankle_text_info = "Severe dorsiflexion deficits (<5°) or excessive plantarflexion (>50°) elevates risk of plantar fasciitis and Achilles tendinopathy."
         if gait_type == "running" and camera_side == "side":
@@ -2190,7 +2198,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_ankle_text_info = "Healthy ankle range of motion in the frontal plane allows the foot to move inward (inversion) and outward (eversion) smoothly, with a total range of about 35 degrees-typically up to 23 degrees of inversion and 12 degrees of eversion. This range supports stable, adaptable movement during running, helping the foot absorb shock and adjust to uneven surfaces."
 
     elif ankle_moderate[0] <= ankle_left_rom_mean <= ankle_moderate[1]:
-        left_ankle_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        left_ankle_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_ankle_text_info = "Reduced ankle range of motion increases forefoot loading and compensatory knee motion."
         if gait_type == "running" and camera_side == "side":
@@ -2201,7 +2209,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             left_ankle_text_info = "Moderately limits lateral balance control, reducing walking stablity in older adults."
 
     elif ankle_bad[0] >= ankle_left_rom_mean or ankle_left_rom_mean >= ankle_bad[1]:
-        left_ankle_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        left_ankle_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             left_ankle_text_info = "Limited ankle range of motion elevates risks of plantar fasciitis and reduces lower-limb efficiency to push off during each stride."
         if gait_type == "running" and camera_side == "side":
@@ -2224,7 +2232,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             spine_text_info = "Minimal lateral deviation (<5° per side) which correlates with hip abductor strength and balanced step width."
 
     elif spine_moderate[0] <= spine_segment_rom_mean <= spine_moderate[1]:
-        spine_text_summary = "MINOR OPPORTUNITY TO IMPROVE"
+        spine_text_summary = "MINOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             spine_text_info = "Moderate forward lean (5-7°) or backward lean (3-5°) is associated with reduced hip extension or ankle mobility deficits, increasing lumbar spine compensatory flexion."
         if gait_type == "running" and camera_side == "side":
@@ -2235,7 +2243,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             spine_text_info = "Moderate lateral lean (5-10° per side), often compensating for hip adduction or ankle inversion/eversion asymmetry"
 
     elif spine_bad[0] <= spine_segment_rom_mean <= spine_bad[1]:
-        spine_text_summary = "MAJOR OPPORTUNITY TO IMPROVE"
+        spine_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
             spine_text_info = '''Not enough trunk lean: Lack of forward lean (walking too upright) reduces forward propulsion, which limits ankle propulsion and increases risk of calf strain. " \
                            Too much trunk lean: Severe anterior/posterior tilt, altering pelvic orientation, is linked to hamstring strain (excessive forward lean) or facet joint compression (excessive backward lean).'''
