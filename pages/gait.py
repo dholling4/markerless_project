@@ -657,12 +657,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
         pdf.ln(3)
-
-    # Add recommendation sections right after minor opportunities
-    pdf.set_text_color(96, 194, 228)  # Light blue color for the title
-    pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
-    pdf.cell(0, 10, "Ways to Improve Your Next Stride", ln=True)
-
+   
     # Smart footwear recommendation based on biomechanics
     def recommend_footwear(rom_values, camera_side, gait_type):
         """Recommend footwear based on posterior/frontal and sagittal plane biomechanics"""
@@ -712,8 +707,8 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     
     # Get footwear recommendation
     footwear_type, footwear_reason = recommend_footwear(rom_values, camera_side, gait_type)
-    
-    pdf.set_text_color(255, 255, 255)  # White text
+
+    pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=12)
     pdf.write(6, f"Recommended Footwear: ")
     
@@ -735,7 +730,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.ln(1)
     pdf.multi_cell(0, 5, f"Reason: {footwear_reason}")
     
-    pdf.set_text_color(255, 255, 255)  # white color for the title
+    pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
     pdf.ln(3)
