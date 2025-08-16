@@ -728,6 +728,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.set_font("Arial", style='B', size=font_size)
         pdf.write(font_size / 2, f"{joint_label}: ")
 
+        if joint_label == "Hips":
+            pdf.set_text_color(100, 150, 255)  # Blue color for link
+            pdf.write(font_size / 2, "Read study")
+            pdf.link(pdf.get_x()-20, pdf.get_y(), 20, 5, "https://pmc.ncbi.nlm.nih.gov/articles/PMC5753918/")
+
+
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, data["text"] + "\n")
         pdf.ln(1)
@@ -774,7 +780,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         if camera_side == "side":
             # Limited ankle dorsiflexion + heel striking = cushioned shoes
             if gait_type in ["walking", "running"]:
-                if avg_ankle_rom < 30 and spine_rom > 10:  # Limited ankle ROM + heel striking posture
+                if avg_ankle_rom < 30 and spine_rom > 10:  # Limited ankle ROM + heel-strike posture
                     return "Maximum Cushioning", "Limited ankle mobility and heel-strike pattern detected. Enhanced shock absorption needed."
                 elif avg_ankle_rom > 60 and avg_knee_rom > 100:  # Good mobility + forefoot striking
                     return "Minimalist/Neutral", "Excellent mobility and efficient movement pattern. Minimal interference recommended."
@@ -1285,7 +1291,7 @@ def perform_pca(df, video_index):
         data=pca_plot_csv,
         file_name="pca_plot_data.csv",
         mime="text/csv",
-        key=f"pca_plot_{video_index}"
+        key=f"pca_{video_index}"
     )
 
     # st.dataframe(top_features)
@@ -1992,9 +1998,9 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     if hip_good[0] <= hip_right_rom_mean <= hip_good[1]:
         right_hip_text_summary = "STRIDE SWEET SPOT"
         if gait_type == "walking" and camera_side == "side":
-            right_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion [Read more](https://pmc.ncbi.nlm.nih.gov/articles/PMC5753918/)"
+            right_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion."
         if gait_type == "running" and camera_side == "side":
-            right_hip_text_info = "Hip flexion at initial contact (~50°) and extension during stance optimize propulsion"
+            right_hip_text_info = "Hip flexion at initial contact (~50°) and extension during stance optimize propulsion."
         if gait_type == "walking" and camera_side == "back":
             right_hip_text_info = "Minimal motion maintains coronal alignment and reduces hip abductor fatigue."
         if gait_type == "running" and camera_side == "back":
