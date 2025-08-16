@@ -2753,7 +2753,21 @@ def main():
                 temp_video_path = temp_video_file.name
                 temp_video_file.close()
                 output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
+                # OPTIMIZATION: Check video duration before processing
+                cap = cv2.VideoCapture(temp_video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = total_frames / fps
+                cap.release()
+                
+                if duration > 12:  # For longer videos, skip frame selection
+                    st.info(f"📊 Video duration: {duration:.1f}s - Using optimized processing (middle 12 seconds)")
+                    frame_time = duration / 2  # Use middle frame timestamp
+                    image_path = None  # Skip image generation for optimization
+                else:
+                    frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
 
     # File uploader for user to upload their own video
@@ -2769,7 +2783,21 @@ def main():
                 temp_video_path = temp_video_file.name
                 temp_video_file.close()
                 output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
+                # OPTIMIZATION: Check video duration before processing
+                cap = cv2.VideoCapture(temp_video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = total_frames / fps
+                cap.release()
+                
+                if duration > 12:  # For longer videos, skip frame selection
+                    st.info(f"📊 Video duration: {duration:.1f}s - Using optimized processing (middle 12 seconds)")
+                    frame_time = duration / 2  # Use middle frame timestamp
+                    image_path = None  # Skip image generation for optimization
+                else:
+                    frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
                 
                 # Add a button to clear the uploaded file
@@ -2789,7 +2817,21 @@ def main():
                 temp_video_path = temp_video_file.name
                 temp_video_file.close()
                 output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
+                # OPTIMIZATION: Check video duration before processing
+                cap = cv2.VideoCapture(temp_video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = total_frames / fps
+                cap.release()
+                
+                if duration > 12:  # For longer videos, skip frame selection
+                    st.info(f"📊 Video duration: {duration:.1f}s - Using optimized processing (middle 12 seconds)")
+                    frame_time = duration / 2  # Use middle frame timestamp
+                    image_path = None  # Skip image generation for optimization
+                else:
+                    frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
 
     # File uploader for back video(s)
@@ -2811,8 +2853,21 @@ def main():
                 temp_video_path = temp_video_file.name
                 temp_video_file.close()
                 output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                # process_first_frame(temp_video_path, video_index=idx)
-                frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
+                # OPTIMIZATION: Check video duration before processing
+                cap = cv2.VideoCapture(temp_video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = total_frames / fps
+                cap.release()
+                
+                if duration > 12:  # For longer videos, skip frame selection
+                    st.info(f"📊 Video duration: {duration:.1f}s - Using optimized processing (middle 12 seconds)")
+                    frame_time = duration / 2  # Use middle frame timestamp
+                    image_path = None  # Skip image generation for optimization
+                else:
+                    frame_number, frame_time, image_path = process_first_frame(temp_video_path, video_index=idx)
+                
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
 
 if __name__ == "__main__":
