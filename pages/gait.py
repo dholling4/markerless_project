@@ -707,35 +707,57 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     joint_targets = {
     "Spine Segment Angle": {
         "text": spine_text,
-        "color": (200, 162, 200)  # Purple
+        "color": (200, 162, 200),  # Purple
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1896074/" if camera_side == "side" and gait_type == "running" else None
     },
     "Hips": {
         "text": hip_text,
-        "color": (144, 238, 144)  # Green
+        "color": (144, 238, 144),  # Green
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else None
     },
     "Knees": {
         "text": knee_text,
-        "color": (173, 216, 230)  # Blue
+        "color": (173, 216, 230),  # Blue
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else None
     },
     "Ankles": {
         "text": ankle_text,
-        "color": (255, 182, 193)  # Red
+        "color": (255, 182, 193),  # Red
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4994968/" if camera_side == "side" and gait_type == "running" else None
     }
 }
 
     for joint_label, data in joint_targets.items():
         pdf.set_text_color(*data["color"])
-        pdf.set_font("Arial", style='B', size=font_size)
+        pdf.set_font("Arial", style='B', size=font_size)        
         pdf.write(font_size / 2, f"{joint_label}: ")
-
-        if joint_label == "Hips":
-            pdf.set_text_color(100, 150, 255)  # Blue color for link
-            pdf.write(font_size / 2, "Read study")
-            pdf.link(pdf.get_x()-20, pdf.get_y(), 20, 5, "https://pmc.ncbi.nlm.nih.gov/articles/PMC5753918/")
-
-
         pdf.set_font("Arial", size=font_size)
-        pdf.write(font_size / 2, data["text"] + "\n")
+        pdf.write(font_size / 2, data["text"])
+        
+        # Add hyperlink if study URL is provided
+        if data.get("study_url"):
+            pdf.write(font_size / 2, " ")  # Add space before link
+            # Store current position for link
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
+            
+            # Write link text in blue
+            pdf.set_text_color(0, 100, 200)  # Blue color for link
+            pdf.set_font("Arial", style='U', size=font_size-1)  # Underlined, slightly smaller
+            link_text = "(study)"
+            pdf.write(font_size / 2, link_text)
+            
+            # Get link dimensions
+            link_width = pdf.get_string_width(link_text)
+            link_height = font_size / 2
+            
+            # Add the actual hyperlink
+            pdf.link(x_start, y_start, link_width, link_height, data["study_url"])
+            
+            # Reset text color
+            pdf.set_text_color(*data["color"])
+        
+        pdf.write(font_size / 2, "\n")
         pdf.ln(1)
 
     pdf.ln(1)
