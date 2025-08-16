@@ -2671,36 +2671,37 @@ def main():
     persons = [
         {"image_url": github_url + "photos/runner treadmill figure.png", "name": "Joint Center Detection", "Motion Analysis from Video": " "}, 
     ]  
-    st.image(persons[0]["image_url"], caption=f"{persons[0]['name']}")
+    # st.image(persons[0]["image_url"], caption=f"{persons[0]['name']}")
     
-    example_video_checkbox = st.checkbox("Try Example Videos", value=False)
-    if example_video_checkbox:
-        example_video = st.radio("Select an example video", 
-                ["Running video", "Pickup pen video"],
-                index=0)  
+    # example_video_checkbox = st.checkbox("Try Example Videos", value=False)
+    # if example_video_checkbox:
+    #     example_video = st.radio("Select an example video", 
+    #             ["Running video", "Pickup pen video"],
+    #             index=0)  
         
-        if example_video == "Running video":
-            user_footwear = "Barefoot"
-            camera_side = "side"
-            video_url = github_url + "photos/barefoot running side trimmed 30-34.mov"
-            st.video(video_url)
-            for idx, video_file in enumerate([video_url]):
-                output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                frame_number, frame_time, image_path = process_first_frame(video_file, video_index=idx)
-                gait_type = "running"
-                process_video(user_footwear, gait_type, camera_side, video_file, output_txt_path, frame_time, video_index=idx)
+    #     if example_video == "Running video":
+    #         user_footwear = "Barefoot"
+    #         camera_side = "side"
+    #         video_url = github_url + "photos/barefoot running side trimmed 30-34.mov"
+    #         st.video(video_url)
+    #         for idx, video_file in enumerate([video_url]):
+    #             output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
+    #             frame_number, frame_time, image_path = process_first_frame(video_file, video_index=idx)
+    #             gait_type = "running"
+    #             process_video(user_footwear, gait_type, camera_side, video_file, output_txt_path, frame_time, video_index=idx)
 
-        if example_video == "Pickup pen video":
-            user_footwear  = "Nike"
-            camera_side = "side"
-            gait_type = "pickup pen"
-            video_url = github_url + "photos/pickup pen 3 sec demo.mp4"
-            st.video(video_url)
-            for idx, video_file in enumerate([video_url]):
-                output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
-                frame_number, frame_time, image_path = process_first_frame(video_file, video_index=idx)
-                process_video(user_footwear, gait_type, camera_side, video_file, output_txt_path, frame_time, video_index=idx)
+    #     if example_video == "Pickup pen video":
+    #         user_footwear  = "Nike"
+    #         camera_side = "side"
+    #         gait_type = "pickup pen"
+    #         video_url = github_url + "photos/pickup pen 3 sec demo.mp4"
+    #         st.video(video_url)
+    #         for idx, video_file in enumerate([video_url]):
+    #             output_txt_path = '/workspaces/PolarPlotter/results/joint_angles.txt'
+    #             frame_number, frame_time, image_path = process_first_frame(video_file, video_index=idx)
+    #             process_video(user_footwear, gait_type, camera_side, video_file, output_txt_path, frame_time, video_index=idx)
 
+    user_email = st.text_input("Enter your Email", key="user_email")
     user_footwear = st.text_input("Enter your footwear", key="user_footwear") # maybe checkbox neutral, support, stability --> Opens up a catalogue at their stores...
 
     # File uploader for user to upload their own video
