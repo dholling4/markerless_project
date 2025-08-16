@@ -708,22 +708,22 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     "Spine Segment Angle": {
         "text": spine_text,
         "color": (200, 162, 200),  # Purple
-        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1896074/" if camera_side == "side" and gait_type == "running" else None
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1896074/" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26618444/" if camera_side == "back" and gait_type == "running" else None
     },
     "Hips": {
         "text": hip_text,
         "color": (144, 238, 144),  # Green
-        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else None
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26364243/" if camera_side == "back" and gait_type == "running" else None
     },
     "Knees": {
         "text": knee_text,
         "color": (173, 216, 230),  # Blue
-        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else None
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC3537459/" if camera_side == "back" and gait_type == "running" else None
     },
     "Ankles": {
         "text": ankle_text,
         "color": (255, 182, 193),  # Red
-        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4994968/" if camera_side == "side" and gait_type == "running" else None
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4994968/" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC9310770/" if camera_side == "back" and (gait_type == "running" or gait_type == "walking") else None
     }
 }
 
@@ -789,7 +789,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             # Overpronation indicators (Motion Control/Stability needed)
             if avg_ankle_rom > 15 or avg_knee_rom > 10 or avg_hip_rom > 15:
                 if avg_ankle_rom > 20 or avg_knee_rom > 15:
-                    return "Motion Control", "Excessive overpronation and knee valgus detected. Rigid heel counters and medial posts needed."
+                    return "Motion Control", "Excessive overpronation and knee valgus detected. Shoes with extra support on the inside of the foot help guide your stride and reduce extra inward rolling."
                 else:
                     return "Stability", "Moderate overpronation detected. Dual-density midsole and guided motion control recommended."
             else:
@@ -2033,7 +2033,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Moderately limited hip range of motion increases lumbar spine compensation and hamstring strain."
         if gait_type == "running" and camera_side == "side":
-            right_hip_text_info = "Moderately limited range of motion increases lumbar spine compensation and hamstring strain [Read more](https://onlinelibrary.wiley.com/doi/10.1155/2019/3812407)"
+            right_hip_text_info = "Moderately limited range of motion increases lumbar spine compensation and hamstring strain."
         if gait_type == "walking" and camera_side == "back":
             right_hip_text_info = "Moderate levels of increased pelvic drop heightens iliotibial band syndrome risk."
         if gait_type == "running" and camera_side == "back": 
@@ -2044,7 +2044,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Bad (<15° flexion-extension): Severe restriction (<10°) alters pelvic tilt and elevates lower back pain risk."
         if gait_type == "running" and camera_side == "side":
-            right_hip_text_info = "Severe restriction (<40°) or poorly controlled motion (>90°) alters pelvic tilt and elevates lower back pain risk [read more](https://onlinelibrary.wiley.com/doi/10.1155/2019/9757369)"
+            right_hip_text_info = "Severe restriction (<40°) or poorly controlled motion (>90°) alters pelvic tilt and elevates lower back pain risk."
         if gait_type == "walking" and camera_side == "back":
             right_hip_text_info = "Excessive adduction correlates with tibial stress fractures and labral impingement."
         if gait_type == "running" and camera_side == "back": 
