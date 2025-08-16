@@ -360,7 +360,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         padded_img.save(padded_pose_path)
 
         # 🔹 Reduce image size in the PDF
-        pdf.image(padded_pose_path, x=10, y=25, h=88, w=49)  # Make it smaller (1/8 of the page)
+        pdf.image(padded_pose_path, x=10, y=25, h=75, w=42)  # Make it smaller - reduced from h=88, w=49
 
       # --- Matplotlib Spider/Radar Plot ---
     # --- Matplotlib Spider/Radar Plot ---
@@ -676,11 +676,27 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             pdf.set_font("Arial", size=font_size)
             pdf.write(font_size / 2, insight + "\n")
             pdf.ln(2)
-        
-    spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-15 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
-    hip_text = '''A critical joint for power generation and stability. A consistent angle of about 30-50 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
-    knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 160-180 degrees at heel strike and 120-140 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
-    ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 90-100 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    
+    if camera_side == "side" and gait_type == "running":        
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-15 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 30-50 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 160-180 degrees at heel strike and 120-140 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 90-100 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "back" and gait_type == "running":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-12 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "side" and gait_type == "walking":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 25-45 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 50-70 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 10-25 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "back" and gait_type == "walking":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of <10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-10 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
 
     pdf.ln(5)
 
@@ -877,13 +893,13 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
                 "description": "3x8 each leg. Maintains posterior chain strength and balance.",
                 "target": "Overall stability and strength"
             })
-        #    exercises.append({
-        #        "name": "   Calf Raise to Heel Walk",
-        #        "description": "3x10 transitions. Enhances ankle control through full range of motion.",
-        #        "target": "Ankle strength and control"
-        #    })
+            exercises.append({
+               "name": "   Calf Raise to Heel Walk",
+               "description": "3x10 transitions. Enhances ankle control through full range of motion.",
+               "target": "Ankle strength and control"
+           })
 
-        return exercises[:2]  # Return top 2 recommendations
+        return exercises[:1]  # Return top 1 recommendations
     
     # Get training recommendations
     training_exercises = recommend_training(rom_values, camera_side, gait_type, text_info)
