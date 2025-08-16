@@ -958,7 +958,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.cell(0, 10, "Coaching & Gait Review", ln=True)
 
     pdf.set_text_color(255, 255, 255)  # White text for readability
-    pdf.set_font("Arial", size=font_size)
+    pdf.set_font("Arial", style='B', size=font_size)
     pdf.multi_cell(0, 5, coaching_invite)
 
     # Highlight Contact Info with Bigger, Bold White Text
@@ -973,7 +973,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_font("Arial", style='B', size=11)
     # Add clickable website link
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Arial", style='U', size=11)
+    pdf.set_font("Arial", style='B', size=11)
     link_text = "Website: stride-sync.b12sites.com"
     pdf.cell(0, 10, link_text, ln=True, link="https://stride-sync.b12sites.com")
     pdf.set_text_color(96, 194, 228) 
