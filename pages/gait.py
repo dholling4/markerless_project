@@ -336,6 +336,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # ✅ Report Title (Centered)
     pdf.set_xy(10, 10)  # Reset cursor
     pdf.set_font("Arial", style='BU', size=20)
+    pdf.set_text_color(96, 194, 228) # blue color
     pdf.cell(190, 10, "Stride Sync Report", ln=True, align='C')
 
     # add logo in the top right corner
