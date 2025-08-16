@@ -656,113 +656,9 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.write(font_size / 2, "MINOR OPPORTUNITIES TO IMPROVE: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
-        pdf.ln(1)    
+        pdf.ln(3)
 
-   # pdf.ln(12)  # Spacing before bottom text section
-    # go to next page 
-    pdf.add_page()
-    
-    pdf.set_text_color(96, 194, 228)  # blue Text for Highlights
-    pdf.set_font("Arial", style='B', size=14)
-    pdf.cell(0, 10, "Key Insights from Your Gait", ln=True)
-    
-    for joint in ["spine", "left hip", "right hip", "left knee", "right knee", "left ankle", "right ankle"]:
-        insight = text_info.get(joint, "")
-        if insight:
-            color = joint_color_map[joint]
-            pdf.set_text_color(*color)
-            pdf.set_font("Arial", style='B', size=font_size)
-            label = joint.title() + ": "
-            pdf.write(font_size / 2, label)
-            pdf.set_font("Arial", size=font_size)
-            pdf.write(font_size / 2, insight + "\n")
-            pdf.ln(2)
-    
-    if camera_side == "side" and gait_type == "running":        
-        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-15 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
-        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 30-50 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
-        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 160-180 degrees at heel strike and 120-140 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
-        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 90-100 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
-    elif camera_side == "back" and gait_type == "running":
-        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
-        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
-        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-12 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
-        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
-    elif camera_side == "side" and gait_type == "walking":
-        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
-        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 25-45 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
-        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 50-70 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
-        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 10-25 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
-    elif camera_side == "back" and gait_type == "walking":
-        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
-        hip_text = '''A critical joint for power generation and stability. A consistent angle of <10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
-        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-10 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
-        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
-
-    pdf.ln(5)
-
-    pdf.set_text_color(96, 194, 228)  # blue for Header
-    pdf.set_font("Arial", 'b', size=14)
-    pdf.cell(0, 10, "Stride Sweet Spot", ln=True)
-
-    joint_targets = {
-    "Spine Segment Angle": {
-        "text": spine_text,
-        "color": (200, 162, 200),  # Purple
-        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1896074/" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26618444/" if camera_side == "back" and gait_type == "running" else None
-    },
-    "Hips": {
-        "text": hip_text,
-        "color": (144, 238, 144),  # Green
-        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26364243/" if camera_side == "back" and gait_type == "running" else None
-    },
-    "Knees": {
-        "text": knee_text,
-        "color": (173, 216, 230),  # Blue
-        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC3537459/" if camera_side == "back" and gait_type == "running" else None
-    },
-    "Ankles": {
-        "text": ankle_text,
-        "color": (255, 182, 193),  # Red
-        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4994968/" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC9310770/" if camera_side == "back" and (gait_type == "running" or gait_type == "walking") else None
-    }
-}
-
-    for joint_label, data in joint_targets.items():
-        pdf.set_text_color(*data["color"])
-        pdf.set_font("Arial", style='B', size=font_size)        
-        pdf.write(font_size / 2, f"{joint_label}: ")
-        pdf.set_font("Arial", size=font_size)
-        pdf.write(font_size / 2, data["text"])
-        
-        # Add hyperlink if study URL is provided
-        if data.get("study_url"):
-            pdf.write(font_size / 2, " ")  # Add space before link
-            # Store current position for link
-            x_start = pdf.get_x()
-            y_start = pdf.get_y()
-            
-            # Write link text in blue
-            pdf.set_text_color(0, 100, 200)  # Blue color for link
-            pdf.set_font("Arial", style='U', size=font_size-1)  # Underlined, slightly smaller
-            link_text = "(study)"
-            pdf.write(font_size / 2, link_text)
-            
-            # Get link dimensions
-            link_width = pdf.get_string_width(link_text)
-            link_height = font_size / 2
-            
-            # Add the actual hyperlink
-            pdf.link(x_start, y_start, link_width, link_height, data["study_url"])
-            
-            # Reset text color
-            pdf.set_text_color(*data["color"])
-        
-        pdf.write(font_size / 2, "\n")
-        pdf.ln(1)
-
-    pdf.ln(1)
-
+    # Add recommendation sections right after minor opportunities
     pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=13)  # Bold and slightly larger
     pdf.cell(0, 10, "Ways to Improve Your Next Stride", ln=True)
@@ -951,8 +847,113 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.write(4, f"Target: {exercise['target']}\n")
         pdf.ln(2)
 
+   # pdf.ln(12)  # Spacing before bottom text section
+    # go to next page 
+    pdf.add_page()
+    
+    pdf.set_text_color(96, 194, 228)  # blue Text for Highlights
+    pdf.set_font("Arial", style='B', size=14)
+    pdf.cell(0, 10, "Key Insights from Your Gait", ln=True)
+    
+    for joint in ["spine", "left hip", "right hip", "left knee", "right knee", "left ankle", "right ankle"]:
+        insight = text_info.get(joint, "")
+        if insight:
+            color = joint_color_map[joint]
+            pdf.set_text_color(*color)
+            pdf.set_font("Arial", style='B', size=font_size)
+            label = joint.title() + ": "
+            pdf.write(font_size / 2, label)
+            pdf.set_font("Arial", size=font_size)
+            pdf.write(font_size / 2, insight + "\n")
+            pdf.ln(2)
+    
+    if camera_side == "side" and gait_type == "running":        
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-15 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 30-50 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 160-180 degrees at heel strike and 120-140 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 90-100 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "back" and gait_type == "running":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 5-10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-12 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "side" and gait_type == "walking":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of about 25-45 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of about 50-70 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of about 10-25 degrees at heel strike and 20-30 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+    elif camera_side == "back" and gait_type == "walking":
+        spine_text = '''A key indicator of your posture and alignment. A consistent angle of <5 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your core stability or posture.'''
+        hip_text = '''A critical joint for power generation and stability. A consistent angle of <10 degrees throughout your stride is ideal, and any significant deviations may indicate potential issues with your hip flexor or glute strength.'''
+        knee_text = 'A key joint for shock absorption and propulsion. A consistent angle of <5 degrees at heel strike and 5-10 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your quadriceps or hamstrings.'
+        ankle_text = 'Plays an essential roll for push-off and stability. A consistent angle of <5 degrees at heel strike and >20 degrees at toe-off is ideal, and any significant deviations may indicate potential issues with your calf or Achilles tendon.'
+
+    pdf.ln(5)
+
+    pdf.set_text_color(96, 194, 228)  # blue for Header
+    pdf.set_font("Arial", 'b', size=14)
+    pdf.cell(0, 10, "Stride Sweet Spot", ln=True)
+
+    joint_targets = {
+    "Spine Segment Angle": {
+        "text": spine_text,
+        "color": (200, 162, 200),  # Purple
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1896074/" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26618444/" if camera_side == "back" and gait_type == "running" else None
+    },
+    "Hips": {
+        "text": hip_text,
+        "color": (144, 238, 144),  # Green
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pubmed.ncbi.nlm.nih.gov/26364243/" if camera_side == "back" and gait_type == "running" else None
+    },
+    "Knees": {
+        "text": knee_text,
+        "color": (173, 216, 230),  # Blue
+        "study_url": "https://www.niccostiff.co.uk/wp-content/uploads/2020/02/Biomechanics-of-running-gait.pdf" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC3537459/" if camera_side == "back" and gait_type == "running" else None
+    },
+    "Ankles": {
+        "text": ankle_text,
+        "color": (255, 182, 193),  # Red
+        "study_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4994968/" if camera_side == "side" and gait_type == "running" else "https://pmc.ncbi.nlm.nih.gov/articles/PMC9310770/" if camera_side == "back" and (gait_type == "running" or gait_type == "walking") else None
+    }
+}
+
+    for joint_label, data in joint_targets.items():
+        pdf.set_text_color(*data["color"])
+        pdf.set_font("Arial", style='B', size=font_size)        
+        pdf.write(font_size / 2, f"{joint_label}: ")
+        pdf.set_font("Arial", size=font_size)
+        pdf.write(font_size / 2, data["text"])
+        
+        # Add hyperlink if study URL is provided
+        if data.get("study_url"):
+            pdf.write(font_size / 2, " ")  # Add space before link
+            # Store current position for link
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
+            
+            # Write link text in blue
+            pdf.set_text_color(0, 100, 200)  # Blue color for link
+            pdf.set_font("Arial", style='U', size=font_size-1)  # Underlined, slightly smaller
+            link_text = "(study)"
+            pdf.write(font_size / 2, link_text)
+            
+            # Get link dimensions
+            link_width = pdf.get_string_width(link_text)
+            link_height = font_size / 2
+            
+            # Add the actual hyperlink
+            pdf.link(x_start, y_start, link_width, link_height, data["study_url"])
+            
+            # Reset text color
+            pdf.set_text_color(*data["color"])
+        
+        pdf.write(font_size / 2, "\n")
+        pdf.ln(1)
+
+    pdf.ln(3)
+
     # ✅ Invitation to Optional Coaching Session
-    coaching_invite = "You've made strides today. Let's make more tomorrow. Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride."
+    coaching_invite = "Get expert-level insights from a biomechanist (Stride Syncer) to fine-tune your stride."
     
     pdf.ln(3)
 
@@ -1484,23 +1485,16 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     thorax_angles, lumbar_angles = [], []
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    end_frame_crop = total_frames
-    start_frame_crop = 0
-    # if the length is greater than 10 seconds, only capture the middle N seconds
-    # start_frame_crop = int(total_frames // 2 - (5 * fps))
-    # end_frame_crop = int(total_frames // 2 + (5 * fps))
-    # else capture the whole video
-    # if duration > 10:
-    # start_frame_crop = int(total_frames // 2 - (5 * fps))
-    # end_frame_crop = int(total_frames // 2 + (5 * fps))
-    # cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_crop)
-  
-    total_frames = int(end_frame_crop - start_frame_crop)
-    duration = total_frames / fps
-    # else:
-    start_frame_crop = 0
-    end_frame_crop = total_frames
- 
+    
+    # If the video is longer than 20 seconds, capture only the middle 20 seconds
+    if duration > 20:
+        start_frame_crop = int(total_frames // 2 - (10 * fps))  # 10 seconds before center
+        end_frame_crop = int(total_frames // 2 + (10 * fps))    # 10 seconds after center
+    else:
+        # If video is 20 seconds or shorter, use the entire video
+        start_frame_crop = 0
+        end_frame_crop = total_frames
+    
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_crop)
     total_frames = int(end_frame_crop - start_frame_crop)
     duration = total_frames / fps
