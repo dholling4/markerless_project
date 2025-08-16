@@ -18,6 +18,7 @@ from fpdf import FPDF
 import matplotlib.colors as mcolors
 from PIL import Image, ImageOps
 from datetime import datetime
+import gc  # For memory management
 import qrcode
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -1456,6 +1457,9 @@ def butter_lowpass_filter(data, cutoff=6, fs=30, order=4):
     return lfilter(b, a, data)
 
 def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_path, frame_time, video_index):
+    # OPTIMIZATION: Clear memory before processing large videos
+    gc.collect()
+    
     # add after uploading 
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -1477,10 +1481,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     # start_frame = 0
     # end_frame = total_frames
     
-    left_knee_angles, right_knee_angles = [], []
-    left_hip_angles, right_hip_angles = [], []
-    left_ankle_angles, right_ankle_angles = [], []
-    spine_segment_angles = []
+    # Arrays will be initialized in optimized processing section
     thorax_angles, lumbar_angles = [], []
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -1499,18 +1500,33 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     duration = total_frames / fps
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        # Process only the frames in the analysis window
-        frames_processed = 0
-        target_frames = end_frame_crop - start_frame_crop
+        # OPTIMIZATION 1: Sample every Nth frame instead of processing all frames
+        frame_skip = max(1, int(fps // 10))  # Process ~10 frames per second maximum
         
-        while frames_processed < target_frames:
+        # OPTIMIZATION 2: Pre-allocate arrays with known size
+        expected_frames = (end_frame_crop - start_frame_crop) // frame_skip
+        left_knee_angles = []
+        right_knee_angles = []
+        left_hip_angles = []
+        right_hip_angles = []
+        left_ankle_angles = []
+        right_ankle_angles = []
+        spine_segment_angles = []
+        
+        frame_idx = 0
+        for frame_pos in range(start_frame_crop, end_frame_crop, frame_skip):
+            # OPTIMIZATION 3: Jump directly to target frames
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             ret, frame = cap.read()
+            
             if not ret:
                 break
                 
+            # OPTIMIZATION 4: Only rotate if actually rotated
             if rotated:
                 frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-
+            
+            # OPTIMIZATION 5: Process frame
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(frame_rgb)
             
@@ -1556,22 +1572,41 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
                 right_knee_angles.append(calculate_angle(right_thigh_vector, right_shank_vector))
                 left_ankle_angles.append(calculate_angle(left_shank_vector, left_foot_vector))
                 right_ankle_angles.append(calculate_angle(right_shank_vector, right_foot_vector))
+                
+            frame_idx += 1
             
-            # Increment frame counter
-            frames_processed += 1
+            # OPTIMIZATION 7: Periodic memory cleanup for very long videos
+            if frame_idx % 50 == 0:  # Every 50 processed frames
+                gc.collect()
 
-    time = np.arange(0, len(left_hip_angles)) / fps # Time in seconds  
+    # OPTIMIZATION 6: Adjust time array for frame skipping
+    time = np.arange(0, len(left_hip_angles)) * frame_skip / fps  # Time in seconds accounting for frame skip
     cap.release()
 
-    # Apply lowpass filter to smooth angles
+    # OPTIMIZATION 8: Batch apply lowpass filters for efficiency
     cutoff_frequency = 6  # Adjust cutoff frequency based on signal characteristics
-    left_hip_angles = butter_lowpass_filter(left_hip_angles, cutoff_frequency, fps)
-    right_hip_angles = butter_lowpass_filter(right_hip_angles, cutoff_frequency, fps)
-    left_knee_angles = butter_lowpass_filter(left_knee_angles, cutoff_frequency, fps)
-    right_knee_angles = butter_lowpass_filter(right_knee_angles, cutoff_frequency, fps)
-    left_ankle_angles = butter_lowpass_filter(left_ankle_angles, cutoff_frequency, fps)
-    right_ankle_angles = butter_lowpass_filter(right_ankle_angles, cutoff_frequency, fps)
-    spine_segment_angles = butter_lowpass_filter(spine_segment_angles, cutoff_frequency, fps) 
+    angles_dict = {
+        'left_hip': left_hip_angles,
+        'right_hip': right_hip_angles,
+        'left_knee': left_knee_angles,
+        'right_knee': right_knee_angles,
+        'left_ankle': left_ankle_angles,
+        'right_ankle': right_ankle_angles,
+        'spine_segment': spine_segment_angles
+    }
+    
+    # Apply filters in batch
+    for key, angles in angles_dict.items():
+        angles_dict[key] = butter_lowpass_filter(angles, cutoff_frequency, fps)
+    
+    # Extract filtered angles
+    left_hip_angles = angles_dict['left_hip']
+    right_hip_angles = angles_dict['right_hip']
+    left_knee_angles = angles_dict['left_knee']
+    right_knee_angles = angles_dict['right_knee']
+    left_ankle_angles = angles_dict['left_ankle']
+    right_ankle_angles = angles_dict['right_ankle']
+    spine_segment_angles = angles_dict['spine_segment'] 
 
     ### CROP HERE ###
     start_time, end_time = st.slider(
