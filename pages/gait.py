@@ -636,7 +636,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     if stride_sweet_spots:
         pdf.set_text_color(150, 255, 150)  # Light green
         pdf.set_font("Arial", style='B', size=font_size)
-        pdf.write(font_size / 2, "STRIDE SWEET SPOTS: ")
+        pdf.write(font_size / 2, "STRIDE SWEET SPOT: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(stride_sweet_spots) + "\n")
         pdf.ln(1)
@@ -686,7 +686,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.set_text_color(96, 194, 228)  # blue for Header
     pdf.set_font("Arial", 'b', size=14)
-    pdf.cell(0, 10, "Joint Target Analysis", ln=True)
+    pdf.cell(0, 10, "Stride Sweet Spot", ln=True)
 
     joint_targets = {
     "Spine Segment Angle": {
@@ -877,12 +877,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
                 "description": "3x8 each leg. Maintains posterior chain strength and balance.",
                 "target": "Overall stability and strength"
             })
-            exercises.append({
-                "name": "   Calf Raise to Heel Walk",
-                "description": "3x10 transitions. Enhances ankle control through full range of motion.",
-                "target": "Ankle strength and control"
-            })
-        
+        #    exercises.append({
+        #        "name": "   Calf Raise to Heel Walk",
+        #        "description": "3x10 transitions. Enhances ankle control through full range of motion.",
+        #        "target": "Ankle strength and control"
+        #    })
+
         return exercises[:2]  # Return top 2 recommendations
     
     # Get training recommendations
