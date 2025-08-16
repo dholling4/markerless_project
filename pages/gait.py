@@ -984,7 +984,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.cell(0, 10, "Stride into peak gait performance", ln=True)
     #  A smarter stride with every step.
     # ✅ Add a QR Code for the Website
-    qr_code_url = "https://stride-sync.streamlit.app"
+    qr_code_url = "https://stride-sync.b12sites.com/index"
     qr_code_path = tempfile.mktemp(suffix=".png")
     qr_code = qrcode.make(qr_code_url)
     qr_code.save(qr_code_path)
