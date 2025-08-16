@@ -236,14 +236,14 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.set_yticks(tick_values)
     ax.set_yticklabels([str(val) for val in tick_values], color='white', fontsize=28, zorder=10)
 
-    ax.tick_params(axis="x", pad=20, colors="white", labelsize=LABEL_SIZE, which='major', zorder=10)
+    ax.tick_params(axis="x", pad=45, colors="white", labelsize=LABEL_SIZE, which='major', zorder=10)
     ax.tick_params(axis="y", colors="white", labelsize=28, which='major', zorder=10)
 
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.9, zorder=0)
 
     ax.set_title(f"Range of Motion (°) vs. Stride Sweet Spot", 
-                 color='white', fontsize=36,  fontweight='bold', pad=20, zorder=10)
+                 color='white', fontsize=42,  fontweight='bold', pad=20, zorder=10)
 
     # Move legend outside to the right
     leg = ax.legend(
