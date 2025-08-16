@@ -971,12 +971,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(2)
 
-    pdf.cell(0, 10, "Contact a Stride Syncer: digitalathlete80@gmail.com", ln=True)
+    pdf.cell(0, 10, "Contact a Stride Syncer: dholling4@gmail.com", ln=True)
 
     pdf.set_text_color(255, 255, 255)  
     pdf.set_font("Arial", style='B', size=11)
     # Add clickable website link
-    pdf.set_text_color(96, 194, 228)
+    pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", style='U', size=11)
     link_text = "Website: stride-sync.b12sites.com"
     pdf.cell(0, 10, link_text, ln=True, link="https://stride-sync.b12sites.com")
@@ -1490,12 +1490,12 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
-    # If the video is longer than 20 seconds, capture only the middle 20 seconds
-    if duration > 20:
-        start_frame_crop = int(total_frames // 2 - (10 * fps))  # 10 seconds before center
-        end_frame_crop = int(total_frames // 2 + (10 * fps))    # 10 seconds after center
+    # If the video is longer than 12 seconds, capture only the middle 12 seconds
+    if duration > 12:
+        start_frame_crop = int(total_frames // 2 - (6 * fps))  # 6 seconds before center
+        end_frame_crop = int(total_frames // 2 + (6 * fps))    # 6 seconds after center
     else:
-        # If video is 20 seconds or shorter, use the entire video
+        # If video is 12 seconds or shorter, use the entire video
         start_frame_crop = 0
         end_frame_crop = total_frames
     
