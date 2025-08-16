@@ -975,7 +975,11 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.set_text_color(255, 255, 255)  
     pdf.set_font("Arial", style='B', size=11)
-    pdf.cell(0, 10, "Website: stride-sync.streamlit.app", ln=True)
+    # Add clickable website link
+    pdf.set_text_color(96, 194, 228)
+    pdf.set_font("Arial", style='U', size=11)
+    link_text = "Website: stride-sync.b12sites.com"
+    pdf.cell(0, 10, link_text, ln=True, link="https://stride-sync.b12sites.com")
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
