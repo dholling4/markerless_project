@@ -2640,67 +2640,67 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         st.download_button("Download Stride Sync Report", file, "Stride_Sync_Report.pdf", "application/pdf", key=f"pdf_report_{video_index}_{camera_side}_{hash(video_path)}")
 
     # email me my Stride Sync Report
-    email = st.text_input("Enter your email address to receive your Stride Sync Report",  
-                        key=f"text_input_email_{video_index}_{camera_side}_{hash(video_path)}")
+#     email = st.text_input("Enter your email address to receive your Stride Sync Report",  
+#                         key=f"text_input_email_{video_index}_{camera_side}_{hash(video_path)}")
 
-    if st.button("Email Stride Sync Report", 
-                key=f"email_pdf_{video_index}_{camera_side}_{hash(video_path)}"):
+#     if st.button("Email Stride Sync Report", 
+#                 key=f"email_pdf_{video_index}_{camera_side}_{hash(video_path)}"):
         
-        # Add validation
-        if not email:
-            st.error("❌ Please enter an email address.")
-        elif not email.__contains__("@"):
-            st.error("❌ Please enter a valid email address.")
-        elif 'pdf_path' not in locals():
-            st.error("❌ PDF report not generated. Please download the report first.")
-        else:
-            with st.spinner("Sending email..."):
-                send_email(email, pdf_path)
+#         # Add validation
+#         if not email:
+#             st.error("❌ Please enter an email address.")
+#         elif not email.__contains__("@"):
+#             st.error("❌ Please enter a valid email address.")
+#         elif 'pdf_path' not in locals():
+#             st.error("❌ PDF report not generated. Please download the report first.")
+#         else:
+#             with st.spinner("Sending email..."):
+#                 send_email(email, pdf_path)
 
-def send_email(to_email, attachment_path):
-    try:
-        # Get email credentials
-        if "EMAIL_ADDRESS" in st.secrets:
-            sender_email = st.secrets["EMAIL_ADDRESS"]
-            app_password = st.secrets["EMAIL_APP_PASSWORD"]
-        else:
-            load_dotenv()
-            sender_email = os.getenv("EMAIL_ADDRESS")
-            app_password = os.getenv("EMAIL_APP_PASSWORD")
+# def send_email(to_email, attachment_path):
+#     try:
+#         # Get email credentials
+#         if "EMAIL_ADDRESS" in st.secrets:
+#             sender_email = st.secrets["EMAIL_ADDRESS"]
+#             app_password = st.secrets["EMAIL_APP_PASSWORD"]
+#         else:
+#             load_dotenv()
+#             sender_email = os.getenv("EMAIL_ADDRESS")
+#             app_password = os.getenv("EMAIL_APP_PASSWORD")
 
-        # Validate credentials
-        if not sender_email or not app_password:
-            st.error("❌ Email credentials not found. Please check your environment variables.")
-            return
+#         # Validate credentials
+#         if not sender_email or not app_password:
+#             st.error("❌ Email credentials not found. Please check your environment variables.")
+#             return
 
-        # Create email message
-        msg = EmailMessage()
-        msg['Subject'] = "Stride Sync Report"
-        msg['From'] = sender_email
-        msg['To'] = to_email
-        msg.set_content("Hi! Attached is your personalized gait report from Stride Sync. Feel free to reach out if you have any questions or would like to setup an appointment to discuss your results.")
+#         # Create email message
+#         msg = EmailMessage()
+#         msg['Subject'] = "Stride Sync Report"
+#         msg['From'] = sender_email
+#         msg['To'] = to_email
+#         msg.set_content("Hi! Attached is your personalized gait report from Stride Sync. Feel free to reach out if you have any questions or would like to setup an appointment to discuss your results.")
 
-        # Attach PDF
-        with open(attachment_path, 'rb') as f:
-            file_data = f.read()
-            file_name = "Stride Sync Report " + str(datetime.now().strftime("%Y-%m-%d")) + ".pdf"
-            msg.add_attachment(file_data, maintype='application', subtype='pdf', filename=file_name)
+#         # Attach PDF
+#         with open(attachment_path, 'rb') as f:
+#             file_data = f.read()
+#             file_name = "Stride Sync Report " + str(datetime.now().strftime("%Y-%m-%d")) + ".pdf"
+#             msg.add_attachment(file_data, maintype='application', subtype='pdf', filename=file_name)
 
-        # Send Email
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(sender_email, app_password)
-            smtp.send_message(msg)
+#         # Send Email
+#         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+#             smtp.login(sender_email, app_password)
+#             smtp.send_message(msg)
             
-        st.success("✅ Email sent successfully!")
+#         st.success("✅ Email sent successfully!")
         
-    except smtplib.SMTPAuthenticationError:
-        st.error("❌ Email authentication failed. Please check your email credentials.")
-    except smtplib.SMTPException as e:
-        st.error(f"❌ Failed to send email: {str(e)}")
-    except FileNotFoundError:
-        st.error("❌ PDF file not found. Please generate the report first.")
-    except Exception as e:
-        st.error(f"❌ An error occurred: {str(e)}")
+#     except smtplib.SMTPAuthenticationError:
+#         st.error("❌ Email authentication failed. Please check your email credentials.")
+#     except smtplib.SMTPException as e:
+#         st.error(f"❌ Failed to send email: {str(e)}")
+#     except FileNotFoundError:
+#         st.error("❌ PDF file not found. Please generate the report first.")
+#     except Exception as e:
+#         st.error(f"❌ An error occurred: {str(e)}")
 
 # TO DO:
 # - Try to add article links like this: https://pmc.ncbi.nlm.nih.gov/articles/PMC3286897/
@@ -2760,7 +2760,7 @@ def main():
     #             frame_number, frame_time, image_path = process_first_frame(video_file, video_index=idx)
     #             process_video(user_footwear, gait_type, camera_side, video_file, output_txt_path, frame_time, video_index=idx)
 
-    user_email = st.text_input("Enter your Email", key="user_email")
+    # user_email = st.text_input("Enter your Email", key="user_email")
     user_footwear = st.text_input("Enter your footwear", key="user_footwear") # maybe checkbox neutral, support, stability --> Opens up a catalogue at their stores...
 
     # File uploader for user to upload their own video
