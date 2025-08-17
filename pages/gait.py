@@ -359,7 +359,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_xy(10, 10)  # Reset cursor
     pdf.set_font("Arial", style='BU', size=20)
     pdf.set_text_color(96, 194, 228) # blue color
-    pdf.cell(190, 10, "Stride Sync Report", ln=True, align='C')
+    pdf.cell(190, 10, "StrideSync Report", ln=True, align='C')
 
     # add logo in the top right corner
     github_url = "https://raw.githubusercontent.com/dholling4/markerless_project/main/"
@@ -532,7 +532,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         ideal_rom_outer=ideal_rom_outer,
         ideal_rom_inner=ideal_rom_inner
     )
-    pdf.image(spider_plot_path, x=80, y=25, w=120)   # Move right, make smaller (w=80)
+    pdf.image(spider_plot_path, x=70, y=25, w=135)   # Slightly increased size from 130 to 135, adjusted x position
 
     # --- Matplotlib Asymmetry Bar Chart ---
     asymmetry_plot_path = tempfile.mktemp(suffix=".png")
@@ -552,7 +552,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         "Hip": right_hip - left_hip
     }
     create_asymmetry_bar_matplotlib(asymmetry_dict, asymmetry_plot_path)
-    pdf.image(asymmetry_plot_path, x=10, y=115, w=130)
+    pdf.image(asymmetry_plot_path, x=40, y=105, w=130)  # Moved up from 110 to 105, centered more
 
     pdf.ln(1)  # Extra spacing before next plot
 
@@ -610,10 +610,10 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
                 bbox_inches="tight",
                 facecolor=fig.get_facecolor())
 
-    # Place ROM Table
-    pdf.image(rom_chart_path, x=10, y=175, w=130) 
+    # Place ROM Table - moved up and centered
+    pdf.image(rom_chart_path, x=40, y=165, w=130)  # Moved up from 170 to 165, centered more 
 
-    pdf.ln(195)  # Adjust based on vertical layout
+    pdf.ln(185)  # Moved up from 195 to 185 to bring training section higher
    
     joint_color_map = {
         "spine": (200, 162, 200),  # Purple
@@ -678,7 +678,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         pdf.write(font_size / 2, "MINOR IMPROVEMENT OPPORTUNITY: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
-        pdf.ln(3)
+        pdf.ln(2)  # Reduced spacing from 3 to 2
    
     # Smart footwear recommendation based on biomechanics
     def recommend_footwear(rom_values, camera_side, gait_type):
@@ -1002,22 +1002,22 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
-    pdf.set_xy(150, 254)  # Near the bottom of A4 (297mm height)
+    pdf.set_xy(110, 250)  # Centered positioning for the main text
     pdf.set_text_color(96, 194, 228)
-    pdf.set_font("Arial", style='B', size=9)
-    pdf.cell(0, 10, "Stride into peak gait performance", ln=True)
-    #  A smarter stride with every step.
+    pdf.set_font("Arial", style='B', size=12)  # Increased from 9 to 12, made bold
+    pdf.cell(90, 5, "Stride into peak gait performance", ln=True, align='C')
+    
     # ✅ Add a QR Code for the Website
     qr_code_url = "https://stride-sync.b12sites.com/index"
     qr_code_path = tempfile.mktemp(suffix=".png")
     qr_code = qrcode.make(qr_code_url)
     qr_code.save(qr_code_path)
     # place text directly above the qr code image
-    pdf.set_font("Arial", style='B', size=9)
+    pdf.set_font("Arial", style='B', size=11)  # Increased from 9 to 11, made bold
     pdf.set_text_color(96, 194, 228)  
-    pdf.set_xy(160, 260)  # Position above the QR code
-    pdf.cell(0, 5, "Scan QR code for more info.", align='C')
-    pdf.image(qr_code_path, x=161, y=265, w=30)
+    pdf.set_xy(110, 256)  # Centered positioning above QR code
+    pdf.cell(90, 5, "Scan QR code for more info.", align='C')
+    pdf.image(qr_code_path, x=155, y=265, w=30)  # Adjusted x position for better centering
 
     # ✅ Save PDF
     pdf_file_path = tempfile.mktemp(suffix=".pdf")
