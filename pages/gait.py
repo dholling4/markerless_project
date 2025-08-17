@@ -1002,7 +1002,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228) 
 
     # Place at bottom of page
-    pdf.set_xy(114, 250)  # Centered positioning for the main text
+    pdf.set_xy(116, 250)  # Centered positioning for the main text
     pdf.set_text_color(96, 194, 228)
     pdf.set_font("Arial", style='B', size=12)  # Increased from 9 to 12, made bold
     pdf.cell(90, 5, "Stride into peak gait performance", ln=True, align='C')
@@ -1015,8 +1015,8 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # place text directly above the qr code image
     pdf.set_font("Arial", style='B', size=12)  # Increased from 9 to 11, made bold
     pdf.set_text_color(96, 194, 228)  
-    pdf.set_xy(114, 256)  # Centered positioning above QR code
-    pdf.cell(90, 5, "Scan QR code for more info.", align='C')
+    pdf.set_xy(116, 256)  # Centered positioning above QR code
+    pdf.cell(90, 5, "Scan QR code for more info", align='C')
     pdf.image(qr_code_path, x=155, y=265, w=30)  # Adjusted x position for better centering
 
     # ✅ Save PDF
