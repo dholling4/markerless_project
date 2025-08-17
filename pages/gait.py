@@ -35,22 +35,22 @@ from matplotlib.colors import LinearSegmentedColormap
 from google.cloud import storage
 import time
 
-project_ID = "stride-sync-469315"
-BUCKET = "stride-sync-data-5678"
+# project_ID = "stride-sync-469315"
+# BUCKET = "stride-sync-data-5678"
 
-st.title("Stride Sync Uploader (Simple)")
-runner = st.text_input("Runner code (e.g., A23)")
-mode = st.selectbox("Mode", ["WALK","RUN"])
-view = st.selectbox("View", ["SIDE","BACK"])
-video = st.file_uploader("Upload 1-minute clip (mp4)", type=["mp4"])
+# st.title("Stride Sync Uploader (Simple)")
+# runner = st.text_input("Runner code (e.g., A23)")
+# mode = st.selectbox("Mode", ["WALK","RUN"])
+# view = st.selectbox("View", ["SIDE","BACK"])
+# video = st.file_uploader("Upload 1-minute clip (mp4)", type=["mp4"])
 
-if st.button("Save to Cloud") and video and runner:
-    key = f"raw/{int(time.time())}_{runner}_{mode}_{view}.mp4"
-    client = storage.Client()
-    bucket = client.bucket(BUCKET)
-    blob = bucket.blob(key)
-    blob.upload_from_file(video, content_type="video/mp4")
-    st.success(f"Uploaded to gs://{BUCKET}/{key}")
+# if st.button("Save to Cloud") and video and runner:
+#     key = f"raw/{int(time.time())}_{runner}_{mode}_{view}.mp4"
+#     client = storage.Client()
+#     bucket = client.bucket(BUCKET)
+#     blob = bucket.blob(key)
+#     blob.upload_from_file(video, content_type="video/mp4")
+#     st.success(f"Uploaded to gs://{BUCKET}/{key}")
 
 
 # # GENERAL
