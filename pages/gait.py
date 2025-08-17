@@ -734,7 +734,6 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(96, 194, 228)  # Light blue color for the title
     pdf.set_font("Arial", style='B', size=12)  # Bold and slightly larger
     pdf.write(6, "Recommended Training: ")
-    pdf.ln(3)
     
     # Smart training recommendations based on biomechanics
     def recommend_training(rom_values, camera_side, gait_type, text_info):
@@ -761,18 +760,18 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             # Frontal plane issues - focus on stability and control
             if avg_ankle_rom > 15 or avg_knee_rom > 10:  # Overpronation/valgus
                 exercises.append({
-                    "name": "   Single-Leg Glute Bridge",
+                    "name": "Single-Leg Glute Bridge",
                     "description": "3x12 each leg. Strengthens hip abductors to control knee valgus and pelvic stability.",
                     "target": "Hip abductor strength, pelvic control"
                 })
                 exercises.append({
-                    "name": "   Calf Raises with Inversion Hold", 
+                    "name": "Calf Raises with Inversion Hold", 
                     "description": "3x15 with 3-sec hold. Strengthens posterior tibialis to control excessive pronation.",
                     "target": "Ankle stability, pronation control"
                 })
             else:  # Good frontal plane control
                 exercises.append({
-                    "name": "   Lateral Band Walks",
+                    "name": "Lateral Band Walks",
                     "description": "3x15 each direction. Maintains hip abductor strength and lateral stability.",
                     "target": "Hip stability maintenance"
                 })
@@ -781,28 +780,28 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             # Analyze specific joint limitations
             if avg_ankle_rom < 30 and gait_type in ["walking", "running"]:  # Limited ankle mobility
                 exercises.append({
-                    "name": "   Wall Ankle Dorsiflexion Stretch",
+                    "name": "Wall Ankle Dorsiflexion Stretch",
                     "description": "3x30 seconds each foot. Improves ankle mobility for better heel-to-toe transition.",
                     "target": "Ankle dorsiflexion, calf flexibility"
                 })
             
             if avg_hip_rom < 35 and gait_type in ["walking", "running"]:  # Limited hip ROM
                 exercises.append({
-                    "name": "   90/90 Hip Stretch + Hip Flexor Activation",
+                    "name": "90/90 Hip Stretch + Hip Flexor Activation",
                     "description": "3x30 sec stretch + 10 leg lifts. Improves hip flexion ROM and activation.",
                     "target": "Hip mobility and flexor strength"
                 })
             
             if avg_knee_rom < 60 and gait_type in ["walking", "running"]:  # Limited knee flexion
                 exercises.append({
-                    "name": "   Wall Sits with Calf Raises",
+                    "name": "Wall Sits with Calf Raises",
                     "description": "3x45 seconds. Builds knee flexion endurance and calf strength simultaneously.",
                     "target": "Knee flexion endurance, shock absorption"
                 })
             
             if spine_rom > 15 or spine_rom < 3:  # Poor trunk control
                 exercises.append({
-                    "name": "   Dead Bug with Opposite Arm/Leg",
+                    "name": "Dead Bug with Opposite Arm/Leg",
                     "description": "3x10 each side. Improves core stability and trunk control during movement.",
                     "target": "Core stability, trunk alignment"
                 })
@@ -810,12 +809,12 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         # If no specific deficits, provide general recommendations
         if not exercises:
             exercises.append({
-                "name": "   Single-Leg Romanian Deadlift",
+                "name": "Single-Leg Romanian Deadlift",
                 "description": "3x8 each leg. Maintains posterior chain strength and balance.",
                 "target": "Overall stability and strength"
             })
             exercises.append({
-               "name": "   Calf Raise to Heel Walk",
+               "name": "Calf Raise to Heel Walk",
                "description": "3x10 transitions. Enhances ankle control through full range of motion.",
                "target": "Ankle strength and control"
            })
@@ -825,22 +824,25 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     # Get training recommendations
     training_exercises = recommend_training(rom_values, camera_side, gait_type, text_info)
     
-    pdf.ln(3)
-    for i, exercise in enumerate(training_exercises):
-        # Exercise name in colored text
-        pdf.set_text_color(150, 255, 150)  # Light green
-        pdf.set_font("Arial", style='B', size=11)
-        pdf.write(5, f"{i+1}. {exercise['name']}: ")
+    # Format training recommendations to match footwear format
+    if training_exercises:
+        exercise = training_exercises[0]  # Get the first (and only) exercise
         
-        # Exercise description in white
-        pdf.set_text_color(255, 255, 255)
+        # Exercise name in green on the same line as "Recommended Training:"
+        pdf.set_text_color(150, 255, 150)  # Light green for exercise name
+        pdf.set_font("Arial", style='B', size=12)
+        pdf.write(6, f"{exercise['name']}\n")
+        
+        # Exercise description in white below (similar to footwear reason)
+        pdf.set_text_color(255, 255, 255)  # White text
         pdf.set_font("Arial", size=10)
-        pdf.write(5, f"{exercise['description']}\n")
+        pdf.ln(1)
+        pdf.multi_cell(0, 5, f"{exercise['description']}")
         
-        # Target area in light blue
-        pdf.set_text_color(150, 200, 255)
+        # Target area as additional info
+        pdf.set_text_color(150, 200, 255)  # Light blue
         pdf.set_font("Arial", style='I', size=9)
-        pdf.write(4, f"Target: {exercise['target']}\n")
+        pdf.write(4, f"Target: {exercise['target']}")
         pdf.ln(2)
 
    # pdf.ln(12)  # Spacing before bottom text section
