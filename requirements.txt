@@ -1,14 +1,83 @@
-opencv-python
-mediapipe
-moviepy
+# opencv-python
+# mediapipe
+# moviepy
+# streamlit-webrtc==0.32.0
+# git+https://github.com/tensorflow/docs
+# absl-py==2.0.0
+# altair==5.2.0
+# astor==0.8.1
+# asttokens==2.4.1
+# astunparse==1.6.3
+# attrs==23.1.0
+# blinker==1.7.0
+# cachetools==5.3.2
+# certifi==2023.11.17
+# charset-normalizer==3.3.2
+# click==8.1.7
+# contourpy==1.2.0
+# cycler==0.12.1
+# FPDF == 1.7.2
+# langchain
+# transformers
+# openai
+# python-dotenv
+# ipython==8.18.1
+# matplotlib==3.8.2
+# nbformat==5.9.2
+# oauthlib==3.2.2
+# opencv-python-headless
+# opt-einsum==3.3.0
+# packaging==23.2
+# parso==0.8.3
+# pexpect==4.9.0
+# Pillow==10.1.0
+# platformdirs==4.1.0
+# kaleido
+# plotly
+# qrcode==7.3
+# scikit-learn>=1.0,<1.4
+# streamlit
+# tensorflow==2.15.0
+# tensorflow-io
+# tensorflow-estimator==2.15.0
+# tensorflow-hub==0.15.0
+# tensorflow-io-gcs-filesystem==0.34.0
+# xlrd
+# Core Streamlit and web
+streamlit
 streamlit-webrtc==0.32.0
-git+https://github.com/tensorflow/docs
+
+# Computer Vision
+opencv-python-headless
+mediapipe
+
+# Data processing 
+numpy
+pandas
+scipy
+scikit-learn>=1.0,<1.4
+matplotlib==3.8.2
+plotly
+
+# PDF and file handling
+fpdf2
+Pillow==10.1.0
+requests
+qrcode==7.3
+
+# Email functionality
+python-dotenv
+
+# Additional utilities
+kaleido
+xlrd
+
+# Google Cloud (optional)
+google-cloud-storage
+
+# Core dependencies (auto-installed with above packages)
 absl-py==2.0.0
 altair==5.2.0
-astor==0.8.1
-asttokens==2.4.1
-astunparse==1.6.3
-attrs==23.1.0
 blinker==1.7.0
 cachetools==5.3.2
 certifi==2023.11.17
@@ -16,30 +85,4 @@ charset-normalizer==3.3.2
 click==8.1.7
 contourpy==1.2.0
 cycler==0.12.1
-FPDF == 1.7.2
-langchain
-transformers
-openai
-python-dotenv
-ipython==8.18.1
-matplotlib==3.8.2
-nbformat==5.9.2
-oauthlib==3.2.2
-opencv-python-headless
-opt-einsum==3.3.0
 packaging==23.2
-parso==0.8.3
-pexpect==4.9.0
-Pillow==10.1.0
-platformdirs==4.1.0
-kaleido
-plotly
-qrcode==7.3
-scikit-learn>=1.0,<1.4
-streamlit
-tensorflow==2.15.0
-tensorflow-io
-tensorflow-estimator==2.15.0
-tensorflow-hub==0.15.0
-tensorflow-io-gcs-filesystem==0.34.0
-xlrd
