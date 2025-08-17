@@ -32,6 +32,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
+from google.cloud import storage
+import time
+
+project_ID = "stride-sync-469315"
+BUCKET = "stride-sync-data-5678"
+
+st.title("Stride Sync Uploader (Simple)")
+runner = st.text_input("Runner code (e.g., A23)")
+mode = st.selectbox("Mode", ["WALK","RUN"])
+view = st.selectbox("View", ["SIDE","BACK"])
+video = st.file_uploader("Upload 1-minute clip (mp4)", type=["mp4"])
+
+if st.button("Save to Cloud") and video and runner:
+    key = f"raw/{int(time.time())}_{runner}_{mode}_{view}.mp4"
+    client = storage.Client()
+    bucket = client.bucket(BUCKET)
+    blob = bucket.blob(key)
+    blob.upload_from_file(video, content_type="video/mp4")
+    st.success(f"Uploaded to gs://{BUCKET}/{key}")
+
+
 # # GENERAL
 # - Fix when video is uploaded 90 deg sideways (gives wrong results, uh oh!) --> it should be vertical, not landscape recording
 # - Try to merge the side and back videos into one report (if feasible)
@@ -210,13 +231,13 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.set_facecolor('black')
     fig.patch.set_facecolor('black')
 
-    # Plot only the ideal range (Stride Sweet Spot) - removing Poor and Moderate bands
+    # Plot only the ideal range (Peak Performance Zone) - removing Poor and Moderate bands
     alpha=0.3
     lw=2
     if reordered_ideal_rom_outer is not None and reordered_ideal_rom_inner is not None:
         ideal_outer = list(reordered_ideal_rom_outer) + [reordered_ideal_rom_outer[0]]
         ideal_inner = list(reordered_ideal_rom_inner) + [reordered_ideal_rom_inner[0]]
-        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Stride Sweet Spot')
+        ax.plot(angles, ideal_outer, color='#00FFAB', linewidth=lw, linestyle='-', label='Peak Performance Zone')
         ax.plot(angles, ideal_inner, color='#00FFAB', linewidth=lw, linestyle='-', label='')
         ax.fill_between(angles, ideal_inner, ideal_outer, color='#00FFAB', alpha=alpha)
 
@@ -243,7 +264,7 @@ def create_spider_matplotlib(camera_side, gait_type, rom_values, joint_labels, s
     ax.spines['polar'].set_color('white')
     ax.grid(color='gray', linestyle='dotted', linewidth=1, alpha=0.9, zorder=0)
 
-    ax.set_title(f"Range of Motion (°) vs. Stride Sweet Spot", 
+    ax.set_title(f"Range of Motion (°) vs. Peak Performance Zone", 
                  color='white', fontsize=42,  fontweight='bold', pad=20, zorder=10)
 
     # Move legend outside to the right
@@ -627,7 +648,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         
         if summary:
             summary_upper = summary.upper()
-            if "STRIDE SWEET SPOT" in summary_upper or "GOOD" in summary_upper:
+            if "PEAK PERFORMANCE ZONE" in summary_upper or "GOOD" in summary_upper:
                 stride_sweet_spots.append(joint_display_name)
             elif "MAJOR IMPROVEMENT OPPORTUNITY" in summary_upper or "BAD" in summary_upper:
                 major_opportunities.append(joint_display_name)
@@ -638,7 +659,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     if stride_sweet_spots:
         pdf.set_text_color(150, 255, 150)  # Light green
         pdf.set_font("Arial", style='B', size=font_size)
-        pdf.write(font_size / 2, "STRIDE SWEET SPOT: ")
+        pdf.write(font_size / 2, "PEAK PERFORMANCE ZONE: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(stride_sweet_spots) + "\n")
         pdf.ln(1)
@@ -890,7 +911,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.set_text_color(96, 194, 228)  # blue for Header
     pdf.set_font("Arial", 'b', size=14)
-    pdf.cell(0, 10, "Stride Sweet Spot", ln=True)
+    pdf.cell(0, 10, "Peak Performance Zone", ln=True)
 
     joint_targets = {
     "Spine Segment Angle": {
@@ -1961,13 +1982,13 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
         line=dict(color='#FFD700', width=2)  # Dashed green outline for ideal ROM
     ))
 
-    # Plot Stride Sweet Spot ROM values
+    # Plot Peak Performance Zone ROM values
     spider_plot.add_trace(go.Scatterpolar(
         r=ideal_rom_outer,
         theta=joint_labels,
         fill='toself',
         fillcolor='rgba(0, 255, 171, 0.85)',  # mint green
-        name='Stride Sweet Spot',
+        name='Peak Performance Zone',
         marker=dict(color='#00FFAB', size=0.1),
         line=dict(color='#00FFAB', width=2)  # Dashed green outline for ideal ROM
     ))
@@ -1997,7 +2018,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     max_all_joint_angles = max(max(rom_values), max(bad_rom_outer), max(bad_rom_inner), max(ideal_rom_outer)) + 10
 
     spider_plot.update_layout(
-        title="Range of Motion (°) vs Stride Sweet Spot",
+        title="Range of Motion (°) vs Peak Performance Zone",
         title_font=dict(size=36, color='white'),  # Set title color to white
         polar=dict(
             bgcolor='black',
@@ -2057,7 +2078,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
 
     # HIP FEEDBACK
     if hip_good[0] <= hip_right_rom_mean <= hip_good[1]:
-        right_hip_text_summary = "STRIDE SWEET SPOT"
+        right_hip_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             right_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion."
         if gait_type == "running" and camera_side == "side":
@@ -2090,7 +2111,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_hip_text_info = "Excessive adduction correlates with tibial stress fractures and labral impingement."
 
     if hip_good[0] <= hip_left_rom_mean <= hip_good[1]:
-        left_hip_text_summary = "STRIDE SWEET SPOT"
+        left_hip_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             left_hip_text_info = "Hip flexion at initial contact (~30°) and extension during stance optimize propulsion"
         if gait_type == "running" and camera_side == "side":
@@ -2124,7 +2145,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
 
    # KNEE FEEDBACK
     if knee_good[0] <= knee_right_rom_mean <= knee_good[1]:
-        right_knee_text_summary = "STRIDE SWEET SPOT"
+        right_knee_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             right_knee_text_info = "50-70° flexion during stance phase optimizes shock absorption."
         if gait_type == "running" and camera_side == "side":
@@ -2157,7 +2178,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_knee_text_info = "High knee adduction valgus/varus motion can result in patellofemoral knee pain."
 
     if knee_good[0] < knee_left_rom_mean:
-        left_knee_text_summary = "STRIDE SWEET SPOT"
+        left_knee_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             left_knee_text_info = "50-70° knee flexion during stance phase optimizes shock absorption."
         if gait_type == "running" and camera_side == "side":
@@ -2191,7 +2212,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
 
     # ANKLE FEEDBACK ---
     if ankle_good[0] <= ankle_right_rom_mean <= ankle_good[1]:
-        right_ankle_text_summary = "STRIDE SWEET SPOT"
+        right_ankle_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             right_ankle_text_info = "Good ankle motion facilitates smooth heel-to-toe transition and shock absorption."
         if gait_type == "running" and camera_side == "side":
@@ -2224,7 +2245,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
             right_ankle_text_info = "Associated with instability, compensatory pelvic motion, and medial tibial stress syndrome."
 
     if ankle_good[0] <= ankle_left_rom_mean <= ankle_good[1]:
-        left_ankle_text_summary = "STRIDE SWEET SPOT"
+        left_ankle_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             left_ankle_text_info = "Good ankle motion facilitates smooth heel-to-toe transition and shock absorption."
         if gait_type == "running" and camera_side == "side":
@@ -2258,7 +2279,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
 
     # SPINE FEEDBACK ---
     if spine_good[0] <= spine_segment_rom_mean <= spine_good[1]:
-        spine_text_summary = "STRIDE SWEET SPOT"
+        spine_text_summary = "PEAK PERFORMANCE ZONE"
         if gait_type == "walking" and camera_side == "side":
             spine_text_info = "Neutral alignment (±2.5° from vertical) helps maintain natural lumbar lordosis/thoracic kyphosis for optimal shock absorption and energy transfer."    
         if gait_type == "running" and camera_side == "side":

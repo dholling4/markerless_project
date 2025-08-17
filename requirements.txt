@@ -13,3 +13,4 @@ Pillow
 qrcode
 python-dotenv
 kaleido
+google-cloud-storage
