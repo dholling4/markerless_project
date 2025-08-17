@@ -629,9 +629,9 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
             summary_upper = summary.upper()
             if "STRIDE SWEET SPOT" in summary_upper or "GOOD" in summary_upper:
                 stride_sweet_spots.append(joint_display_name)
-            elif "MAJOR OPPORTUNITY" in summary_upper or "BAD" in summary_upper:
+            elif "MAJOR IMPROVEMENT OPPORTUNITY" in summary_upper or "BAD" in summary_upper:
                 major_opportunities.append(joint_display_name)
-            elif "MINOR OPPORTUNITY" in summary_upper or "MODERATE" in summary_upper:
+            elif "MINOR IMPROVEMENT OPPORTUNITY" in summary_upper or "MODERATE" in summary_upper:
                 minor_opportunities.append(joint_display_name)
     
     # Print grouped summaries
@@ -646,7 +646,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     if major_opportunities:
         pdf.set_text_color(255, 100, 100)  # Light red
         pdf.set_font("Arial", style='B', size=font_size)
-        pdf.write(font_size / 2, "MAJOR OPPORTUNITIES TO IMPROVE: ")
+        pdf.write(font_size / 2, "MAJOR IMPROVEMENT OPPORTUNITY: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(major_opportunities) + "\n")
         pdf.ln(1)
@@ -654,7 +654,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     if minor_opportunities:
         pdf.set_text_color(255, 200, 100)  # Light orange/yellow
         pdf.set_font("Arial", style='B', size=font_size)
-        pdf.write(font_size / 2, "MINOR OPPORTUNITIES TO IMPROVE: ")
+        pdf.write(font_size / 2, "MINOR IMPROVEMENT OPPORTUNITY: ")
         pdf.set_font("Arial", size=font_size)
         pdf.write(font_size / 2, ", ".join(minor_opportunities) + "\n")
         pdf.ln(3)
