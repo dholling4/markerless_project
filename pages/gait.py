@@ -2764,6 +2764,7 @@ def main():
     user_footwear = st.text_input("Enter your footwear", key="user_footwear") # maybe checkbox neutral, support, stability --> Opens up a catalogue at their stores...
 
     # File uploader for user to upload their own video
+    st.title('🚶 Side Walking Gait Analysis')
     video_files = st.file_uploader("Upload side walking video(s)", type=["mp4", "avi", "mov"], accept_multiple_files=True, key="side_walking")
     if video_files:
         camera_side = "side"
@@ -2794,6 +2795,7 @@ def main():
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
 
     # File uploader for user to upload their own video
+    st.title('📹 Back Walking Gait Analysis')
     video_files = st.file_uploader("Upload back walking video(s)", type=["mp4", "avi", "mov"], accept_multiple_files=True, key="back_walking")
     if video_files:
         camera_side = "back"
@@ -2827,7 +2829,7 @@ def main():
                 if st.button("Clear Uploaded Video"):
                     st.session_state.uploaded_file = None # Clear the file from session state
                     st.session_state.video_uploader = None # Clear the widget's internal state
-
+    st.title('🏃 Side Running Gait Analysis')
     video_files = st.file_uploader("Upload side running video(s)", type=["mp4", "avi", "mov"], accept_multiple_files=True, key="side_running")
     if video_files:
         camera_side = "side"
@@ -2858,6 +2860,8 @@ def main():
                 process_video(user_footwear, gait_type, camera_side, temp_video_path, output_txt_path, frame_time, video_index=idx)
 
     # File uploader for back video(s)
+    st.title('🏃 Back Running Gait Analysis')
+
     video_files = st.file_uploader("Upload back running video(s)", type=["mp4", "avi", "mov"], accept_multiple_files=True, key="back_running")
     
     if video_files:
