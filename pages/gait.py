@@ -990,7 +990,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
 
     pdf.ln(2)
 
-    pdf.cell(0, 10, "Contact a Stride Syncer: dholling4@gmail.com", ln=True)
+    pdf.cell(0, 10, "Contact a Stride Syncer: stridesync1@gmail.com", ln=True)
 
     pdf.set_text_color(255, 255, 255)  
     pdf.set_font("Arial", style='B', size=11)
