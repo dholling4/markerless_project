@@ -1,4 +1,17 @@
-runtime: python313
+runtime: python
 env: flex
+entrypoint: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 
-entrypoint: streamlit run app.py --browser.serverAddress 0.0.0.0 --server.port 8080
+resources:
+  cpu: 1
+  memory_gb: 4
+  disk_size_gb: 10
+  # Configure your resources based on your needs
+
+manual_scaling:
+  instances: 1
+  # Or use automatic_scaling
+
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "3.12"
