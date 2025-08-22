@@ -1,0 +1,4 @@
+runtime: python312
+env: flex
+
+entrypoint: streamlit run app.py --browser.serverAddress 0.0.0.0 --server.port 8080
