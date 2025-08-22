@@ -700,7 +700,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
         
         # Primary: Posterior/Frontal Plane Assessment
         if camera_side == "back":
-            # Overpronation indicators (Motion Control/Stability needed)
+            # Overpronation indicators (Motion Control/Stability needed) ... maybe increase ankle ROM > 20 to 25 for motion control?
             if avg_ankle_rom > 15 or avg_knee_rom > 10 or avg_hip_rom > 15:
                 if avg_ankle_rom > 20 or avg_knee_rom > 15:
                     return "Motion Control", "Excessive overpronation and knee valgus detected. Shoes with extra support on the inside of the foot help guide your stride and reduce extra inward rolling."
