@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libxext6 \
+    zlib1g-dev \
     libsm6 \
     libxrender1 \
     && rm -rf /var/lib/apt/lists/*
