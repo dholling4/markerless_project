@@ -16,7 +16,7 @@ plotly
 
 # PDF and file handling
 fpdf2
-Pillow==1.0
+Pillow
 requests
 qrcode==7.3
 
