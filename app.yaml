@@ -1,4 +1,4 @@
-runtime: custom
+runtime: python
 env: flex
 entrypoint: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 
@@ -10,3 +10,8 @@ resources:
 
 manual_scaling:
   instances: 1
+  # Or use automatic_scaling
+
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "3.12"
