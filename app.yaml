@@ -1,19 +1,7 @@
-# This file is configured for App Engine Flex.
-# The error "Memory limit of ... exceeded" suggests you are deploying to Cloud Run,
-# which ignores the `resources` section below.
-#
-# To fix the memory error on Cloud Run, you need to specify the memory limit
-# during deployment. For example, using the gcloud CLI:
-#
-# gcloud run deploy YOUR_SERVICE_NAME --source . --memory=2Gi
-#
-# A memory setting of 2GiB is a good starting point for video processing.
-
 runtime: python
 env: flex
 entrypoint: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 
-# The resources below are for App Engine Flex and are NOT applied to Cloud Run.
 resources:
   cpu: 1
   memory_gb: 4

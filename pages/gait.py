@@ -1,39 +1,34 @@
-import streamlit as st
-import cv2
-import mediapipe as mp
-from mediapipe import solutions
-import numpy as np
-import tempfile
-import os
-from matplotlib import pyplot as plt
-import plotly.graph_objects as go
-import pandas as pd
-from scipy.signal import butter, lfilter
-from sklearn.decomposition import PCA
-from scipy.signal import find_peaks
-import tempfile
-import requests
-from io import BytesIO
-from fpdf import FPDF
-import matplotlib.colors as mcolors
-from PIL import Image, ImageOps
-from datetime import datetime
 import gc  # For memory management
-import qrcode
+import os
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
+import tempfile
+import time
+from datetime import datetime
 from email import encoders
 from email.message import EmailMessage
-from dotenv import load_dotenv
-import streamlit as st
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from io import BytesIO
 
+import cv2
+import mediapipe as mp
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import qrcode
+import requests
+import streamlit as st
+from dotenv import load_dotenv
+from fpdf import FPDF
 from google.cloud import storage
-import time
+from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.colors import LinearSegmentedColormap
+from mediapipe import solutions
+from PIL import Image, ImageOps
+from scipy.signal import butter, find_peaks, lfilter
+from sklearn.decomposition import PCA
 
 # project_ID = "stride-sync-469315"
 # BUCKET = "stride-sync-data-5678"
@@ -2902,4 +2897,3 @@ if __name__ == "__main__":
 
 
   
-
