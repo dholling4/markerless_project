@@ -1105,7 +1105,7 @@ def process_first_frame_report(video_path, video_index):
 
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         results = pose.process(frame_rgb)
         if results.pose_landmarks:
             annotated_frame = frame.copy()
@@ -1182,7 +1182,7 @@ def process_first_frame(video_path, video_index):
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # ✅ Run pose detection
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         results = pose.process(frame_rgb)
         if results.pose_landmarks:
             annotated_frame = frame.copy()
@@ -1517,7 +1517,7 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     total_frames = int(end_frame_crop - start_frame_crop)
     duration = total_frames / fps
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(model_complexity=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         # OPTIMIZATION 1: Sample every Nth frame instead of processing all frames
         frame_skip = max(1, int(fps // 10))  # Process ~10 frames per second maximum
         
