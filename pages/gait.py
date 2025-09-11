@@ -347,7 +347,7 @@ def generate_pdf(pose_image_path, df_rom, spider_plot, asymmetry_plot, text_info
     pdf.set_text_color(255, 255, 255)  # White text
     pdf.set_font("Arial", size=9)  # Small font
     current_date = datetime.today().strftime("%m/%d/%Y")  # Automatically fetch today's date
-    location_text = f"Date: {current_date}\nLocation: Run-N-Tri Mobile, AL\nGait Type: {gait_type.capitalize()} ({camera_side.capitalize()})\nFootwear: {user_footwear}"
+    location_text = f"Date: {current_date}\nLocation: \nGait Type: {gait_type.capitalize()} ({camera_side.capitalize()})\nFootwear: {user_footwear}"
     pdf.multi_cell(0, 3.5, location_text)  # Multi-line cell to properly format text
 
     # ✅ Report Title (Centered)
