@@ -2298,10 +2298,9 @@ def process_video(user_footwear, gait_type, camera_side, video_path, output_txt_
     elif spine_bad[0] <= spine_segment_rom_mean <= spine_bad[1]:
         spine_text_summary = "MAJOR IMPROVEMENT OPPORTUNITY"
         if gait_type == "walking" and camera_side == "side":
-            spine_text_info = '''Not enough trunk lean: Lack of forward lean (walking too upright) reduces forward propulsion, which limits ankle propulsion and increases risk of calf strain. " \
-                           Too much trunk lean: Severe anterior/posterior tilt, altering pelvic orientation, is linked to hamstring strain (excessive forward lean) or facet joint compression (excessive backward lean).'''
+            spine_text_info = "Too much trunk lean: Severe anterior/posterior tilt, altering pelvic orientation, is linked to hamstring strain (excessive forward lean) or facet joint compression (excessive backward lean)."
         if gait_type == "running" and camera_side == "side":
-            spine_text_info = "Not enough trunk lean: Lack of forward lean (running too upright) reduces forward propulsion, which limits ankle propulsion and increases risk of calf strain. Too much trunk lean: Severe anterior/posterior tilt, altering pelvic orientation, is linked to hamstring strain (excessive forward lean) or facet joint compression (excessive backward lean)."
+            spine_text_info = "Too much trunk lean: Severe anterior/posterior tilt, altering pelvic orientation, is linked to hamstring strain (excessive forward lean) or facet joint compression (excessive backward lean)."
         if gait_type == "walking" and camera_side == "back":
             spine_text_info = "Pronounced lateral bending (>10° per side), increases spinal disc shear forces and is associated with unilateral hip weakness or ankle instability."
         if gait_type == "running" and camera_side == "back":
