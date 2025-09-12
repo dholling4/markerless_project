@@ -1,3 +1,9 @@
+# to do
+# spine asymetry score --> Back view: left vs. right from the back view... Side view: forward vs. backwards lean
+# on the webpage --> show the snapshot of the pose model for the max and min angles frame
+
+
+
 import gc  # For memory management
 import os
 import smtplib
