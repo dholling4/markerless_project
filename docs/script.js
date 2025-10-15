@@ -580,20 +580,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Generate grade based on ROM values and asymmetry
         const grade = calculateGaitGrade(leftROM, rightROM, asymmetry);
         
-        // ROM data table matching Python df_rom structure
-        const romTable = [
-            { joint: 'Spine Segment', minAngle: Math.min(...leftAngles.spine), maxAngle: Math.max(...leftAngles.spine), rom: romValues[2] },
-            { joint: 'Left Hip', minAngle: Math.min(...leftAngles.hip), maxAngle: Math.max(...leftAngles.hip), rom: romValues[3] },
-            { joint: 'Right Hip', minAngle: Math.min(...rightAngles.hip), maxAngle: Math.max(...rightAngles.hip), rom: romValues[1] },
-            { joint: 'Left Knee', minAngle: Math.min(...leftAngles.knee), maxAngle: Math.max(...leftAngles.knee), rom: romValues[4] },
-            { joint: 'Right Knee', minAngle: Math.min(...rightAngles.knee), maxAngle: Math.max(...rightAngles.knee), rom: romValues[0] },
-            { joint: 'Left Ankle', minAngle: Math.min(...leftAngles.ankle), maxAngle: Math.max(...leftAngles.ankle), rom: romValues[5] },
-            { joint: 'Right Ankle', minAngle: Math.min(...rightAngles.ankle), maxAngle: Math.max(...rightAngles.ankle), rom: romValues[6] }
-        ];
-        
         // Determine what model was used and ankle calculation method
         const modelUsed = gaitCycleFrames.length > 0 ? gaitCycleFrames[0].modelType : 'Simulation';
         const usingTibialSurrogate = modelUsed === 'MoveNet';
+        
+        // Dynamic joint labels based on calculation method
+        const getJointLabel = (joint, side) => {
+            if (joint === 'ankle') {
+                return usingTibialSurrogate ? `${side} Tibial Inclination` : `${side} Ankle`;
+            }
+            return `${side} ${joint.charAt(0).toUpperCase() + joint.slice(1)}`;
+        };
+        
+        // ROM data table with dynamic labels
+        const romTable = [
+            { joint: getJointLabel('spine', 'Trunk'), minAngle: Math.min(...leftAngles.spine), maxAngle: Math.max(...leftAngles.spine), rom: romValues[2] },
+            { joint: getJointLabel('hip', 'Left'), minAngle: Math.min(...leftAngles.hip), maxAngle: Math.max(...leftAngles.hip), rom: romValues[3] },
+            { joint: getJointLabel('hip', 'Right'), minAngle: Math.min(...rightAngles.hip), maxAngle: Math.max(...rightAngles.hip), rom: romValues[1] },
+            { joint: getJointLabel('knee', 'Left'), minAngle: Math.min(...leftAngles.knee), maxAngle: Math.max(...leftAngles.knee), rom: romValues[4] },
+            { joint: getJointLabel('knee', 'Right'), minAngle: Math.min(...rightAngles.knee), maxAngle: Math.max(...rightAngles.knee), rom: romValues[0] },
+            { joint: getJointLabel('ankle', 'Left'), minAngle: Math.min(...leftAngles.ankle), maxAngle: Math.max(...leftAngles.ankle), rom: romValues[5] },
+            { joint: getJointLabel('ankle', 'Right'), minAngle: Math.min(...rightAngles.ankle), maxAngle: Math.max(...rightAngles.ankle), rom: romValues[6] }
+        ];
         
         return {
             cadence: cadence,
@@ -618,7 +626,10 @@ document.addEventListener('DOMContentLoaded', function() {
             romTable: romTable,
             // Model and calculation metadata
             poseModel: modelUsed,
-            ankleCalculationMethod: usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle'
+            ankleCalculationMethod: usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle',
+            // Label helper for charts
+            usingTibialSurrogate: usingTibialSurrogate,
+            getJointLabel: getJointLabel
         };
     }
 
@@ -796,7 +807,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Real ROM data from pose estimation calculations
-        const joints = ['Ankle', 'Knee', 'Hip', 'Spine'];
+        const ankleLabel = analysisResults.usingTibialSurrogate ? 'Tibial Incl.' : 'Ankle';
+        const joints = [ankleLabel, 'Knee', 'Hip', 'Spine'];
         const leftROM = [
             jointAngles.left.ankle.max - jointAngles.left.ankle.min,
             jointAngles.left.knee.max - jointAngles.left.knee.min,
@@ -959,7 +971,10 @@ document.addEventListener('DOMContentLoaded', function() {
             originalRomValues[4], // knee left
             originalRomValues[3]  // hip left
         ];
-        const joints = ['Spine', 'Hip R', 'Knee R', 'Ankle R', 'Ankle L', 'Knee L', 'Hip L'];
+        // Dynamic joint labels based on calculation method
+        const ankleLabel = analysisResults.usingTibialSurrogate ? 'Tibial R' : 'Ankle R';
+        const ankleLabelLeft = analysisResults.usingTibialSurrogate ? 'Tibial L' : 'Ankle L';
+        const joints = ['Spine', 'Hip R', 'Knee R', ankleLabel, ankleLabelLeft, 'Knee L', 'Hip L'];
         
         // Get gait parameters
         const gaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
@@ -1121,7 +1136,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate asymmetries using ROM values from Python order
         // romValues: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
         const romValues = analysisResults.romValues;
-        const joints = ['Ankle', 'Knee', 'Hip'];
+        const ankleAsymmetryLabel = analysisResults.usingTibialSurrogate ? 'Tibial Inclination' : 'Ankle';
+        const joints = [ankleAsymmetryLabel, 'Knee', 'Hip'];
         const asymmetries = [
             romValues[6] - romValues[5],  // Right ankle - Left ankle  
             romValues[0] - romValues[4],  // Right knee - Left knee
