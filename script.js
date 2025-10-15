@@ -17,29 +17,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Check for TensorFlow.js pose detection
             if (typeof poseDetection !== 'undefined') {
-                console.log('✅ PoseDetection library loaded');
+                console.log('✅ TensorFlow.js PoseDetection library loaded');
                 
-                // Try to initialize MediaPipe
                 try {
                     await tf.ready();
                     console.log('✅ TensorFlow.js ready');
                     console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
                     
-                    // Test MediaPipe availability
                     if (poseDetection.SupportedModels.MediaPipePose) {
-                        console.log('✅ MediaPipe Pose model available');
+                        console.log('✅ MediaPipe Pose model available via TensorFlow.js');
                     } else {
-                        console.warn('⚠️ MediaPipe Pose model not found in supported models');
+                        console.warn('⚠️ MediaPipe Pose model not found in TensorFlow models');
                     }
                     
                 } catch (error) {
                     console.error('❌ TensorFlow.js initialization failed:', error);
                 }
             } else {
-                console.error('❌ PoseDetection library not loaded');
-                console.log('Available globals:', Object.keys(window).filter(key => key.includes('pose') || key.includes('tf')));
+                console.warn('⚠️ TensorFlow.js PoseDetection library not loaded');
             }
+            
+            // Check for direct MediaPipe libraries
+            if (typeof Pose !== 'undefined') {
+                console.log('✅ Direct MediaPipe Pose library loaded');
+            } else {
+                console.warn('⚠️ Direct MediaPipe Pose library not loaded');
+            }
+            
+            // Show available globals for debugging
+            const mediaRelated = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('pose') || 
+                key.toLowerCase().includes('tf') || 
+                key.toLowerCase().includes('mediapipe')
+            );
+            console.log('🔍 Media-related globals:', mediaRelated);
         }, 3000); // Wait 3 seconds for all libraries to load
     });
 
