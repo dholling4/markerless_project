@@ -271,11 +271,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display pose model and ankle calculation method information
             if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
                 console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
-                console.log(`🦴 Ankle Calculation: ${analysisResults.ankleCalculationMethod}`);
+                console.log(`🦴 Lower Limb Calculation: ${analysisResults.ankleCalculationMethod}`);
                 
                 // Add visual indicator for MoveNet tibial surrogate
                 if (analysisResults.poseModel === 'MoveNet') {
-                    console.log('ℹ️ Note: Ankle angles calculated using tibial inclination (shank-to-vertical angle) due to MoveNet model limitations');
+                    console.log('ℹ️ Note: Tibial inclination angles calculated using shank-to-vertical measurement due to MoveNet model limitations');
                 }
             }
         
@@ -719,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let leftAnkleAngle, rightAnkleAngle;
             
             if (hasFootSegments) {
-                // Traditional ankle angle: shank-to-foot vector angle (MediaPipe)
+                // Traditional lower limb angle: shank-to-foot vector angle (MediaPipe)
                 const leftFootVector = {
                     x: leftAnkle.x - leftFoot.x,
                     y: leftAnkle.y - leftFoot.y
@@ -738,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Log the surrogate method for user awareness
                 if (frame === gaitCycleFrames[0]) {  // Only log once per analysis
-                    console.log('🦴 Using tibial inclination angle as ankle surrogate for MoveNet (no foot keypoints available)');
+                    console.log('🦴 Using tibial inclination angle measurement for MoveNet (no foot keypoints available)');
                 }
             }
 
@@ -801,8 +801,8 @@ document.addEventListener('DOMContentLoaded', function() {
             Math.max(...leftAngles.spine) - Math.min(...leftAngles.spine),    // Spine ROM (same for both sides)
             Math.max(...leftAngles.hip) - Math.min(...leftAngles.hip),        // Left hip ROM
             Math.max(...leftAngles.knee) - Math.min(...leftAngles.knee),      // Left knee ROM
-            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left ankle ROM
-            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right ankle ROM
+            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left tibial inclination ROM
+            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right tibial inclination ROM
         ];
         
         // Calculate asymmetry as difference in ROM between sides

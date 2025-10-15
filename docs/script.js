@@ -233,11 +233,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Display pose model and ankle calculation method information
         if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
             console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
-            console.log(`🦴 Ankle Calculation: ${analysisResults.ankleCalculationMethod}`);
+            console.log(`🦴 Lower Limb Calculation: ${analysisResults.ankleCalculationMethod}`);
             
             // Add visual indicator for MoveNet tibial surrogate
             if (analysisResults.poseModel === 'MoveNet') {
-                console.log('ℹ️ Note: Ankle angles calculated using tibial inclination (shank-to-vertical angle) due to MoveNet model limitations');
+                console.log('ℹ️ Note: Tibial inclination angles calculated using shank-to-vertical measurement due to MoveNet model limitations');
             }
         }
         
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Log the surrogate method for user awareness
                 if (frame === gaitCycleFrames[0]) {  // Only log once per analysis
-                    console.log('🦴 Using tibial inclination angle as ankle surrogate for MoveNet (no foot keypoints available)');
+                    console.log('🦴 Using tibial inclination angle measurement for MoveNet (no foot keypoints available)');
                 }
             }
 
