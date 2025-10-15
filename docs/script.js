@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Frame skipping optimization (matching Python)
                     if (frameCount % frameSkip === 0) {
                         ctx.drawImage(video, 0, 0);
-                        mediaPipePose.send({imageData: canvas.getImageData(0, 0, canvas.width, canvas.height)});
+                        mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
                     }
                     
                     frameCount++;
@@ -394,24 +394,10 @@ document.addEventListener('DOMContentLoaded', function() {
     async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
         let gaitCycleFrames;
         
-        // Try to use real MediaPipe if video file is provided
-        if (videoFile && typeof Pose !== 'undefined') {
-            console.log('Processing with real MediaPipe pose estimation...');
-            try {
-                gaitCycleFrames = await processVideoWithMediaPipe(videoFile);
-                if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
-                    throw new Error('No pose data extracted');
-                }
-                console.log(`Processed ${gaitCycleFrames.length} frames with MediaPipe`);
-            } catch (error) {
-                console.warn('MediaPipe processing failed, falling back to simulation:', error);
-                gaitCycleFrames = simulateGaitCycle(gaitType);
-            }
-        } else {
-            // Fall back to simulation if no video or MediaPipe not available
-            console.log('Using simulated gait cycle data...');
-            gaitCycleFrames = simulateGaitCycle(gaitType);
-        }
+        // For now, always use simulation since MediaPipe setup is complex
+        // TODO: Implement full MediaPipe integration in production
+        console.log('📊 Using simulated gait cycle data for demo...');
+        gaitCycleFrames = simulateGaitCycle(gaitType);
         
         // Calculate joint angles for each frame
         const leftAngles = { ankle: [], knee: [], hip: [], spine: [] };

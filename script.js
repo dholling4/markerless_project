@@ -4,32 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.getElementById('nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
 
-    // Mo        // Calculate ROM (Range of Motion) exactly matching Python np.ptp() implementation
-        // ROM values order: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
-        const romValues = [
-            Math.max(...rightAngles.knee) - Math.min(...rightAngles.knee),    // Right knee ROM
-            Math.max(...rightAngles.hip) - Math.min(...rightAngles.hip),      // Right hip ROM  
-            Math.max(...leftAngles.spine) - Math.min(...leftAngles.spine),    // Spine ROM (same for both sides)
-            Math.max(...leftAngles.hip) - Math.min(...leftAngles.hip),        // Left hip ROM
-            Math.max(...leftAngles.knee) - Math.min(...leftAngles.knee),      // Left knee ROM
-            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left ankle ROM
-            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right ankle ROM
-        ];
-        
-        // For backward compatibility, also create the old ROM structure
-        const leftROM = {
-            ankle: romValues[5],   // Left ankle ROM
-            knee: romValues[4],    // Left knee ROM
-            hip: romValues[3],     // Left hip ROM
-            spine: romValues[2]    // Spine ROM
-        };
-        
-        const rightROM = {
-            ankle: romValues[6],   // Right ankle ROM
-            knee: romValues[0],    // Right knee ROM
-            hip: romValues[1],     // Right hip ROM
-            spine: romValues[2]    // Spine ROM
-        };le
     navToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
     });
@@ -291,32 +265,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize MediaPipe Pose (matching Python implementation)
     async function initializeMediaPipe() {
-        if (typeof Pose === 'undefined') {
-            console.warn('MediaPipe Pose not loaded, falling back to simulation');
+        try {
+            if (typeof Pose === 'undefined') {
+                console.warn('MediaPipe Pose class not available');
+                return false;
+            }
+
+            console.log('Initializing MediaPipe Pose...');
+            mediaPipePose = new Pose(POSE_CONFIG);
+            
+            mediaPipePose.setOptions({
+                modelComplexity: POSE_CONFIG.modelComplexity,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                smoothSegmentation: false,
+                minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
+                minTrackingConfidence: POSE_CONFIG.minTrackingConfidence
+            });
+
+            console.log('✅ MediaPipe Pose initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to initialize MediaPipe:', error);
             return false;
         }
-
-        mediaPipePose = new Pose(POSE_CONFIG);
-        
-        mediaPipePose.setOptions({
-            modelComplexity: POSE_CONFIG.modelComplexity,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-            smoothSegmentation: false,
-            minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
-            minTrackingConfidence: POSE_CONFIG.minTrackingConfidence
-        });
-
-        return true;
     }
 
     // Process video with real MediaPipe pose estimation (matching Python)
     async function processVideoWithMediaPipe(videoFile) {
+        console.log('🎬 Starting video processing with MediaPipe...');
+        
         if (!mediaPipePose) {
             const initialized = await initializeMediaPipe();
             if (!initialized) {
-                console.log('Using simulation fallback');
-                return null;
+                throw new Error('MediaPipe initialization failed');
             }
         }
 
@@ -327,54 +309,91 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const allFrameResults = [];
             let frameCount = 0;
+            let processedFrames = 0;
             const frameSkip = 2; // Match Python frame_skip = 2
+            const maxFrames = 60; // Limit processing for demo
             
             video.src = URL.createObjectURL(videoFile);
             video.muted = true;
+            video.crossOrigin = 'anonymous';
+            
+            // Timeout to prevent hanging
+            const timeout = setTimeout(() => {
+                if (allFrameResults.length === 0) {
+                    reject(new Error('MediaPipe processing timeout - no results'));
+                } else {
+                    console.log(`⏰ MediaPipe timeout, but got ${allFrameResults.length} frames`);
+                    resolve(allFrameResults);
+                }
+            }, 10000); // 10 second timeout
             
             video.onloadedmetadata = () => {
+                console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
                 // Set up MediaPipe pose results handler
                 mediaPipePose.onResults((results) => {
-                    if (results.poseLandmarks) {
-                        // Extract landmarks matching Python get_coords() function
+                    if (results.poseLandmarks && results.poseLandmarks.length >= 33) {
                         const landmarks = results.poseLandmarks;
                         
-                        const frameData = {
-                            left: {
-                                shoulder: { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
-                                hip: { x: landmarks[23].x * canvas.width, y: landmarks[23].y * canvas.height },
-                                knee: { x: landmarks[25].x * canvas.width, y: landmarks[25].y * canvas.height },
-                                ankle: { x: landmarks[27].x * canvas.width, y: landmarks[27].y * canvas.height },
-                                foot: { x: landmarks[31].x * canvas.width, y: landmarks[31].y * canvas.height }
-                            },
-                            right: {
-                                shoulder: { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
-                                hip: { x: landmarks[24].x * canvas.width, y: landmarks[24].y * canvas.height },
-                                knee: { x: landmarks[26].x * canvas.width, y: landmarks[26].y * canvas.height },
-                                ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
-                                foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
-                            },
-                            frameIndex: frameCount
-                        };
-                        
-                        allFrameResults.push(frameData);
+                        // Validate required landmarks exist
+                        if (landmarks[11] && landmarks[12] && landmarks[23] && landmarks[24] && 
+                            landmarks[25] && landmarks[26] && landmarks[27] && landmarks[28] && 
+                            landmarks[31] && landmarks[32]) {
+                            
+                            const frameData = {
+                                left: {
+                                    shoulder: { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
+                                    hip: { x: landmarks[23].x * canvas.width, y: landmarks[23].y * canvas.height },
+                                    knee: { x: landmarks[25].x * canvas.width, y: landmarks[25].y * canvas.height },
+                                    ankle: { x: landmarks[27].x * canvas.width, y: landmarks[27].y * canvas.height },
+                                    foot: { x: landmarks[31].x * canvas.width, y: landmarks[31].y * canvas.height }
+                                },
+                                right: {
+                                    shoulder: { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
+                                    hip: { x: landmarks[24].x * canvas.width, y: landmarks[24].y * canvas.height },
+                                    knee: { x: landmarks[26].x * canvas.width, y: landmarks[26].y * canvas.height },
+                                    ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
+                                    foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
+                                },
+                                frameIndex: processedFrames
+                            };
+                            
+                            allFrameResults.push(frameData);
+                            processedFrames++;
+                            
+                            if (processedFrames >= maxFrames) {
+                                clearTimeout(timeout);
+                                console.log(`✅ Processed ${allFrameResults.length} frames successfully`);
+                                resolve(allFrameResults);
+                                return;
+                            }
+                        }
                     }
                 });
                 
                 // Process video frame by frame
                 const processFrame = () => {
-                    if (video.currentTime >= video.duration) {
-                        resolve(allFrameResults);
+                    if (video.currentTime >= video.duration || frameCount >= maxFrames * frameSkip) {
+                        clearTimeout(timeout);
+                        if (allFrameResults.length > 0) {
+                            console.log(`🎯 Video processing complete: ${allFrameResults.length} frames`);
+                            resolve(allFrameResults);
+                        } else {
+                            reject(new Error('No pose data extracted from video'));
+                        }
                         return;
                     }
                     
                     // Frame skipping optimization (matching Python)
                     if (frameCount % frameSkip === 0) {
                         ctx.drawImage(video, 0, 0);
-                        mediaPipePose.send({imageData: canvas.getImageData(0, 0, canvas.width, canvas.height)});
+                        try {
+                            mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
+                        } catch (error) {
+                            console.error('Error sending frame to MediaPipe:', error);
+                        }
                     }
                     
                     frameCount++;
@@ -387,29 +406,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 processFrame();
             };
             
-            video.onerror = () => reject(new Error('Video processing failed'));
+            video.onerror = (error) => {
+                clearTimeout(timeout);
+                reject(new Error(`Video loading failed: ${error.message || 'Unknown error'}`));
+            };
+            
+            video.onloadstart = () => console.log('🎬 Video loading started...');
         });
     }
 
     async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
         let gaitCycleFrames;
         
-        // Try to use real MediaPipe if video file is provided
-        if (videoFile && typeof Pose !== 'undefined') {
-            console.log('Processing with real MediaPipe pose estimation...');
+        // Check if MediaPipe is available
+        const mediaPipeAvailable = typeof Pose !== 'undefined' && typeof mediapipe !== 'undefined';
+        console.log('MediaPipe available:', mediaPipeAvailable);
+        
+        // Try to use real MediaPipe if video file is provided and MediaPipe is available
+        if (videoFile && mediaPipeAvailable) {
+            console.log('Attempting MediaPipe pose estimation...');
             try {
                 gaitCycleFrames = await processVideoWithMediaPipe(videoFile);
                 if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
-                    throw new Error('No pose data extracted');
+                    throw new Error('No pose data extracted from video');
                 }
-                console.log(`Processed ${gaitCycleFrames.length} frames with MediaPipe`);
+                console.log(`✅ Processed ${gaitCycleFrames.length} frames with MediaPipe`);
             } catch (error) {
-                console.warn('MediaPipe processing failed, falling back to simulation:', error);
+                console.warn('⚠️ MediaPipe processing failed, falling back to simulation:', error);
                 gaitCycleFrames = simulateGaitCycle(gaitType);
             }
         } else {
-            // Fall back to simulation if no video or MediaPipe not available
-            console.log('Using simulated gait cycle data...');
+            // Fall back to simulation
+            if (!videoFile) {
+                console.log('ℹ️ No video file provided, using simulation');
+            } else if (!mediaPipeAvailable) {
+                console.log('⚠️ MediaPipe not available, using simulation');
+            }
             gaitCycleFrames = simulateGaitCycle(gaitType);
         }
         
