@@ -4,16 +4,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.getElementById('nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
     
-    // Initialize TensorFlow.js MediaPipe on page load
-    setTimeout(async () => {
-        console.log('🚀 Initializing TensorFlow.js MediaPipe on page load...');
-        const success = await initializeMediaPipe();
-        if (success) {
-            console.log('✅ MediaPipe ready for video processing');
-        } else {
-            console.log('⚠️ MediaPipe initialization failed, will use simulation fallback');
-        }
-    }, 1000); // Wait 1 second for libraries to load
+    // Initialize TensorFlow.js MediaPipe when libraries are loaded
+    window.addEventListener('load', () => {
+        setTimeout(async () => {
+            console.log('🚀 Checking TensorFlow.js and MediaPipe libraries...');
+            
+            // Check if libraries are loaded
+            if (typeof tf !== 'undefined') {
+                console.log('✅ TensorFlow.js loaded, version:', tf.version?.tfjs || 'unknown');
+            } else {
+                console.error('❌ TensorFlow.js not loaded');
+                return;
+            }
+            
+            if (typeof poseDetection !== 'undefined') {
+                console.log('✅ PoseDetection library loaded');
+                
+                // Try to initialize MediaPipe
+                try {
+                    await tf.ready();
+                    console.log('✅ TensorFlow.js ready');
+                    console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
+                    
+                    // Test MediaPipe availability
+                    if (poseDetection.SupportedModels.MediaPipePose) {
+                        console.log('✅ MediaPipe Pose model available');
+                    } else {
+                        console.warn('⚠️ MediaPipe Pose model not found in supported models');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ TensorFlow.js initialization failed:', error);
+                }
+            } else {
+                console.error('❌ PoseDetection library not loaded');
+                console.log('Available globals:', Object.keys(window).filter(key => key.includes('pose') || key.includes('tf')));
+            }
+        }, 3000); // Wait 3 seconds for all libraries to load
+    });
 
     navToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
@@ -277,11 +305,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // MediaPipe Pose configuration (matching Python settings exactly)
     const POSE_CONFIG = {
         runtime: 'mediapipe', // Use MediaPipe backend like Python
-        modelType: 'full',    // Equivalent to model_complexity = 1 in Python
+        modelType: 'full',    // Equivalent to model_complexity = 1 in Python  
         minDetectionConfidence: 0.5,  // Matching Python min_detection_confidence
         minTrackingConfidence: 0.5,   // Matching Python min_tracking_confidence
-        enableSmoothing: true,
-        enableSegmentation: false
+        enableSmoothing: true
     };
 
     // Global variables for TensorFlow.js MediaPipe processing
@@ -314,14 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Create MediaPipe pose detector (equivalent to mp_pose.Pose() in Python)
             poseDetector = await poseDetection.createDetector(
                 poseDetection.SupportedModels.MediaPipePose,
-                {
-                    runtime: POSE_CONFIG.runtime,
-                    modelType: POSE_CONFIG.modelType,
-                    minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
-                    minTrackingConfidence: POSE_CONFIG.minTrackingConfidence,
-                    enableSmoothing: POSE_CONFIG.enableSmoothing,
-                    enableSegmentation: POSE_CONFIG.enableSegmentation
-                }
+                POSE_CONFIG
             );
 
             console.log('✅ MediaPipe Pose detector initialized successfully');
