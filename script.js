@@ -315,24 +315,121 @@ document.addEventListener('DOMContentLoaded', function() {
         32: "Right Foot"
     };
 
-    // MediaPipe Pose configuration (matching Python settings exactly)
+    // Pose Detection configuration (using MoveNet as primary, MediaPipe as backup)
     const POSE_CONFIG = {
-        runtime: 'mediapipe', // Use MediaPipe backend like Python
-        modelType: 'full',    // Equivalent to model_complexity = 1 in Python  
-        minDetectionConfidence: 0.5,  // Matching Python min_detection_confidence
-        minTrackingConfidence: 0.5,   // Matching Python min_tracking_confidence
-        enableSmoothing: true
+        // Primary: MoveNet (more reliable in TensorFlow.js)
+        moveNet: {
+            modelType: poseDetection?.movenet?.modelType?.SINGLEPOSE_THUNDER || 'SinglePose.Thunder',
+            minScore: 0.5,  // Matching Python confidence thresholds
+            multiPoseMaxDimension: 256,
+            enableSmoothing: true,
+            enableTracking: true
+        },
+        // Backup: MediaPipe (if available)
+        mediaPipe: {
+            runtime: 'mediapipe',
+            modelType: 'full',
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+            enableSmoothing: true
+        }
     };
 
-    // Global variables for TensorFlow.js MediaPipe processing
+    // Global variables for TensorFlow.js pose detection processing
     let poseDetector = null;
     let tfReady = false;
     let isProcessingVideo = false;
+    let currentPoseModel = null;
 
-    // Initialize TensorFlow.js MediaPipe Pose (matching Python mp_pose setup)
-    async function initializeMediaPipe() {
+    // Universal keypoint mapping for different pose models
+    const KEYPOINT_MAPPING = {
+        // MoveNet uses COCO format (17 keypoints)
+        MoveNet: {
+            leftShoulder: 5,   // Left shoulder
+            rightShoulder: 6,  // Right shoulder  
+            leftElbow: 7,      // Left elbow (proxy for better shoulder-hip line)
+            rightElbow: 8,     // Right elbow
+            leftWrist: 9,      // Left wrist
+            rightWrist: 10,    // Right wrist
+            leftHip: 11,       // Left hip
+            rightHip: 12,      // Right hip
+            leftKnee: 13,      // Left knee
+            rightKnee: 14,     // Right knee
+            leftAnkle: 15,     // Left ankle
+            rightAnkle: 16     // Right ankle
+        },
+        // MediaPipe uses its own format (33 keypoints)
+        MediaPipe: {
+            leftShoulder: 11,  // Left shoulder
+            rightShoulder: 12, // Right shoulder
+            leftHip: 23,       // Left hip
+            rightHip: 24,      // Right hip
+            leftKnee: 25,      // Left knee
+            rightKnee: 26,     // Right knee
+            leftAnkle: 27,     // Left ankle
+            rightAnkle: 28,    // Right ankle
+            leftFoot: 31,      // Left foot index
+            rightFoot: 32      // Right foot index
+        }
+    };
+
+    // Extract keypoints in universal format (matching Python gait.py structure)
+    function extractUniversalKeypoints(keypoints, width, height) {
+        // Determine model type based on keypoints length
+        const modelType = keypoints.length >= 30 ? 'MediaPipe' : 'MoveNet';
+        const mapping = KEYPOINT_MAPPING[modelType];
+        
+        console.log(`🎯 Using ${modelType} keypoint mapping`);
+        
+        // Validate required keypoints exist with sufficient confidence
+        const requiredPoints = ['leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 
+                               'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle'];
+        
+        const minScore = 0.3; // Lower threshold for broader compatibility
+        const validPoints = requiredPoints.every(pointName => {
+            const idx = mapping[pointName];
+            return keypoints[idx] && keypoints[idx].score > minScore;
+        });
+        
+        if (!validPoints) {
+            console.warn(`⚠️ Required keypoints not detected with sufficient confidence (${modelType})`);
+            return null;
+        }
+        
+        // Extract coordinates in consistent format
+        const getCoords = (pointName) => {
+            const idx = mapping[pointName];
+            const kp = keypoints[idx];
+            return kp ? { x: kp.x, y: kp.y, score: kp.score } : null;
+        };
+        
+        // For MoveNet, use ankle as foot since it doesn't have separate foot points
+        const leftFoot = modelType === 'MediaPipe' ? getCoords('leftFoot') : getCoords('leftAnkle');
+        const rightFoot = modelType === 'MediaPipe' ? getCoords('rightFoot') : getCoords('rightAnkle');
+        
+        return {
+            left: {
+                shoulder: getCoords('leftShoulder'),
+                hip: getCoords('leftHip'),
+                knee: getCoords('leftKnee'),
+                ankle: getCoords('leftAnkle'),
+                foot: leftFoot
+            },
+            right: {
+                shoulder: getCoords('rightShoulder'),
+                hip: getCoords('rightHip'),
+                knee: getCoords('rightKnee'),
+                ankle: getCoords('rightAnkle'),
+                foot: rightFoot
+            },
+            modelType: modelType
+        };
+    }
+
+    // Initialize pose detection (try MoveNet first, then MediaPipe backup)
+    async function initializePoseDetection() {
         try {
-            console.log('🤖 Checking TensorFlow.js availability...');
+            console.log('🤖 Initializing pose detection with TensorFlow.js...');
             
             // Check if TensorFlow.js and PoseDetection are loaded
             if (typeof tf === 'undefined') {
@@ -343,40 +440,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('PoseDetection library not loaded');
             }
 
-            console.log('🚀 Initializing MediaPipe Pose with TensorFlow.js...');
-            console.log('TF version:', tf.version.tfjs);
+            console.log('🚀 TensorFlow.js version:', tf.version.tfjs);
             
             // Wait for TensorFlow.js to be ready
             await tf.ready();
             tfReady = true;
             console.log('✅ TensorFlow.js ready');
 
-            // Create MediaPipe pose detector (equivalent to mp_pose.Pose() in Python)
-            poseDetector = await poseDetection.createDetector(
-                poseDetection.SupportedModels.MediaPipePose,
-                POSE_CONFIG
-            );
-
-            console.log('✅ MediaPipe Pose detector initialized successfully');
-            console.log('🎯 Configuration:', POSE_CONFIG);
-            return true;
+            // Try MoveNet first (more reliable)
+            console.log('🎯 Attempting to load MoveNet model...');
+            try {
+                poseDetector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.MoveNet,
+                    POSE_CONFIG.moveNet
+                );
+                console.log('✅ MoveNet pose detector initialized successfully');
+                console.log('📊 Model config:', POSE_CONFIG.moveNet);
+                return { success: true, model: 'MoveNet' };
+                
+            } catch (moveNetError) {
+                console.warn('⚠️ MoveNet failed, trying MediaPipe...', moveNetError);
+                
+                // Fallback to MediaPipe
+                try {
+                    poseDetector = await poseDetection.createDetector(
+                        poseDetection.SupportedModels.MediaPipePose,
+                        POSE_CONFIG.mediaPipe
+                    );
+                    console.log('✅ MediaPipe pose detector initialized as backup');
+                    console.log('📊 Model config:', POSE_CONFIG.mediaPipe);
+                    return { success: true, model: 'MediaPipe' };
+                    
+                } catch (mediaPipeError) {
+                    console.error('❌ Both MoveNet and MediaPipe failed:', mediaPipeError);
+                    throw new Error('No pose detection models available');
+                }
+            }
             
         } catch (error) {
-            console.error('❌ Failed to initialize MediaPipe with TensorFlow.js:', error);
+            console.error('❌ Failed to initialize any pose detection model:', error);
             tfReady = false;
-            return false;
+            return { success: false, model: null };
         }
     }
 
-    // Process video with TensorFlow.js MediaPipe (matching Python pose.process() exactly)
-    async function processVideoWithMediaPipe(videoFile) {
-        console.log('🎬 Starting video processing with TensorFlow.js MediaPipe...');
+    // Process video with TensorFlow.js pose detection (matching Python pose.process() exactly)
+    async function processVideoWithPoseDetection(videoFile) {
+        console.log('🎬 Starting video processing with TensorFlow.js pose detection...');
         
         if (!poseDetector || !tfReady) {
-            const initialized = await initializeMediaPipe();
-            if (!initialized) {
-                throw new Error('TensorFlow.js MediaPipe initialization failed');
+            const result = await initializePoseDetection();
+            if (!result.success) {
+                throw new Error(`Pose detection initialization failed: ${result.model || 'unknown'}`);
             }
+            console.log(`🎯 Using ${result.model} model for pose detection`);
         }
 
         return new Promise((resolve, reject) => {
@@ -437,36 +554,20 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Clean up tensor to prevent memory leaks
                             imageTensor.dispose();
                             
-                            // Process pose results (matching Python results.pose_landmarks handling)
-                            if (poses.length > 0 && poses[0].keypoints.length >= 33) {
-                                const keypoints = poses[0].keypoints;
+                            // Process pose results (supporting both MoveNet and MediaPipe formats)
+                            if (poses.length > 0) {
+                                const pose = poses[0];
+                                const keypoints = pose.keypoints;
                                 
-                                // Extract keypoints matching Python landmarks indices exactly
-                                // Validate required landmarks exist with confidence > threshold
-                                const requiredPoints = [11, 12, 23, 24, 25, 26, 27, 28, 31, 32];
-                                const validPoints = requiredPoints.every(idx => 
-                                    keypoints[idx] && keypoints[idx].score > POSE_CONFIG.minDetectionConfidence
-                                );
+                                console.log(`🔍 Detected ${keypoints.length} keypoints`);
                                 
-                                if (validPoints) {
-                                    const frameData = {
-                                        left: {
-                                            shoulder: { x: keypoints[11].x, y: keypoints[11].y },
-                                            hip: { x: keypoints[23].x, y: keypoints[23].y },
-                                            knee: { x: keypoints[25].x, y: keypoints[25].y },
-                                            ankle: { x: keypoints[27].x, y: keypoints[27].y },
-                                            foot: { x: keypoints[31].x, y: keypoints[31].y }
-                                        },
-                                        right: {
-                                            shoulder: { x: keypoints[12].x, y: keypoints[12].y },
-                                            hip: { x: keypoints[24].x, y: keypoints[24].y },
-                                            knee: { x: keypoints[26].x, y: keypoints[26].y },
-                                            ankle: { x: keypoints[28].x, y: keypoints[28].y },
-                                            foot: { x: keypoints[32].x, y: keypoints[32].y }
-                                        },
-                                        frameIndex: processedFrames,
-                                        confidence: poses[0].score || 0.5
-                                    };
+                                // Extract keypoints with universal mapping (works for both MoveNet and MediaPipe)
+                                const frameData = extractUniversalKeypoints(keypoints, canvas.width, canvas.height);
+                                
+                                if (frameData) {
+                                    frameData.frameIndex = processedFrames;
+                                    frameData.confidence = pose.score || 0.5;
+                                    frameData.model = poseDetector.model || 'unknown';
                                     
                                     allFrameResults.push(frameData);
                                     processedFrames++;
@@ -477,6 +578,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                         resolve(allFrameResults);
                                         return;
                                     }
+                                } else {
+                                    console.warn('⚠️ Could not extract required keypoints from frame');
                                 }
                             }
                             
@@ -512,17 +615,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
         console.log('TensorFlow.js MediaPipe available:', mediaPipeAvailable);
         
-        // Try to use real MediaPipe if video file is provided and TensorFlow.js is available
+        // Try to use real pose detection if video file is provided and TensorFlow.js is available
         if (videoFile && mediaPipeAvailable) {
-            console.log('Attempting MediaPipe pose estimation...');
+            console.log('🎯 Attempting pose detection with TensorFlow.js...');
             try {
-                gaitCycleFrames = await processVideoWithMediaPipe(videoFile);
+                gaitCycleFrames = await processVideoWithPoseDetection(videoFile);
                 if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
                     throw new Error('No pose data extracted from video');
                 }
-                console.log(`✅ Processed ${gaitCycleFrames.length} frames with MediaPipe`);
+                console.log(`✅ Processed ${gaitCycleFrames.length} frames with pose detection`);
             } catch (error) {
-                console.warn('⚠️ MediaPipe processing failed, falling back to simulation:', error);
+                console.warn('⚠️ Pose detection processing failed, falling back to simulation:', error);
                 gaitCycleFrames = simulateGaitCycle(gaitType);
             }
         } else {
@@ -530,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!videoFile) {
                 console.log('ℹ️ No video file provided, using simulation');
             } else if (!mediaPipeAvailable) {
-                console.log('⚠️ TensorFlow.js MediaPipe not available, using simulation');
+                console.log('⚠️ TensorFlow.js pose detection not available, using simulation');
             }
             gaitCycleFrames = simulateGaitCycle(gaitType);
         }
