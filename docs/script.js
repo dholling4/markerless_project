@@ -184,26 +184,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    function showResults() {
+    async function showResults() {
         console.log('showResults() called');
         // Hide progress and show results
-        setTimeout(() => {
+        setTimeout(async () => {
             console.log('Hiding progress, showing results');
             progressContainer.style.display = 'none';
             resultsPreview.style.display = 'block';
             
-            // Simulate results
+            // Generate results with real MediaPipe processing
             console.log('About to call generateMockResults');
-            generateMockResults();
+            await generateMockResults();
             
             // Scroll to results
             resultsPreview.scrollIntoView({ behavior: 'smooth' });
         }, 500);
     }
 
-    function generateMockResults() {
+    async function generateMockResults() {
         console.log('generateMockResults() called');
-        // Simulate pose estimation data processing
+        // Process real pose estimation data or simulate
         const gaitTypeElement = document.querySelector('input[name="gait-type"]:checked');
         const cameraAngleElement = document.querySelector('input[name="camera-angle"]:checked');
         
@@ -220,9 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const cameraAngle = cameraAngleElement.value;
         console.log('Gait type:', gaitType, 'Camera angle:', cameraAngle);
         
-        // Generate biomechanically accurate results
-        console.log('About to call performBiomechanicalAnalysis');
-        const analysisResults = performBiomechanicalAnalysis(gaitType, cameraAngle);
+        // Generate biomechanically accurate results with real MediaPipe processing
+        console.log('About to call performBiomechanicalAnalysis with video file');
+        const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile);
         console.log('performBiomechanicalAnalysis completed');
         
         // Update UI with calculated results
@@ -277,19 +277,141 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // MediaPipe Pose configuration (matching Python settings)
     const POSE_CONFIG = {
-        min_detection_confidence: 0.5,
-        min_tracking_confidence: 0.5,
-        model_complexity: 1  // Default complexity level
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+        minDetectionConfidence: 0.5,  // Matching Python min_detection_confidence
+        minTrackingConfidence: 0.5,   // Matching Python min_tracking_confidence
+        modelComplexity: 1            // Default complexity level
     };
 
-    function performBiomechanicalAnalysis(gaitType, cameraAngle) {
-        // Simulate pose estimation keypoint detection over gait cycle
-        // Note: In production, this would use real MediaPipe Pose with the above config
-        // Matching Python implementation parameters:
-        // - frame_skip = 2 (process every 2nd frame for efficiency)
-        // - fps = 30 (assumed video frame rate)
-        // - MediaPipe confidence thresholds: detection=0.5, tracking=0.5
-        const gaitCycleFrames = simulateGaitCycle(gaitType);
+    // Global variables for MediaPipe processing
+    let mediaPipePose = null;
+    let isProcessingVideo = false;
+    let videoElement = null;
+    let canvasElement = null;
+
+    // Initialize MediaPipe Pose (matching Python implementation)
+    async function initializeMediaPipe() {
+        if (typeof Pose === 'undefined') {
+            console.warn('MediaPipe Pose not loaded, falling back to simulation');
+            return false;
+        }
+
+        mediaPipePose = new Pose(POSE_CONFIG);
+        
+        mediaPipePose.setOptions({
+            modelComplexity: POSE_CONFIG.modelComplexity,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
+            minTrackingConfidence: POSE_CONFIG.minTrackingConfidence
+        });
+
+        return true;
+    }
+
+    // Process video with real MediaPipe pose estimation (matching Python)
+    async function processVideoWithMediaPipe(videoFile) {
+        if (!mediaPipePose) {
+            const initialized = await initializeMediaPipe();
+            if (!initialized) {
+                console.log('Using simulation fallback');
+                return null;
+            }
+        }
+
+        return new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const allFrameResults = [];
+            let frameCount = 0;
+            const frameSkip = 2; // Match Python frame_skip = 2
+            
+            video.src = URL.createObjectURL(videoFile);
+            video.muted = true;
+            
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // Set up MediaPipe pose results handler
+                mediaPipePose.onResults((results) => {
+                    if (results.poseLandmarks) {
+                        // Extract landmarks matching Python get_coords() function
+                        const landmarks = results.poseLandmarks;
+                        
+                        const frameData = {
+                            left: {
+                                shoulder: { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
+                                hip: { x: landmarks[23].x * canvas.width, y: landmarks[23].y * canvas.height },
+                                knee: { x: landmarks[25].x * canvas.width, y: landmarks[25].y * canvas.height },
+                                ankle: { x: landmarks[27].x * canvas.width, y: landmarks[27].y * canvas.height },
+                                foot: { x: landmarks[31].x * canvas.width, y: landmarks[31].y * canvas.height }
+                            },
+                            right: {
+                                shoulder: { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
+                                hip: { x: landmarks[24].x * canvas.width, y: landmarks[24].y * canvas.height },
+                                knee: { x: landmarks[26].x * canvas.width, y: landmarks[26].y * canvas.height },
+                                ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
+                                foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
+                            },
+                            frameIndex: frameCount
+                        };
+                        
+                        allFrameResults.push(frameData);
+                    }
+                });
+                
+                // Process video frame by frame
+                const processFrame = () => {
+                    if (video.currentTime >= video.duration) {
+                        resolve(allFrameResults);
+                        return;
+                    }
+                    
+                    // Frame skipping optimization (matching Python)
+                    if (frameCount % frameSkip === 0) {
+                        ctx.drawImage(video, 0, 0);
+                        mediaPipePose.send({imageData: canvas.getImageData(0, 0, canvas.width, canvas.height)});
+                    }
+                    
+                    frameCount++;
+                    video.currentTime = frameCount / 30; // Assume 30 FPS
+                    
+                    requestAnimationFrame(processFrame);
+                };
+                
+                video.currentTime = 0;
+                processFrame();
+            };
+            
+            video.onerror = () => reject(new Error('Video processing failed'));
+        });
+    }
+
+    async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
+        let gaitCycleFrames;
+        
+        // Try to use real MediaPipe if video file is provided
+        if (videoFile && typeof Pose !== 'undefined') {
+            console.log('Processing with real MediaPipe pose estimation...');
+            try {
+                gaitCycleFrames = await processVideoWithMediaPipe(videoFile);
+                if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
+                    throw new Error('No pose data extracted');
+                }
+                console.log(`Processed ${gaitCycleFrames.length} frames with MediaPipe`);
+            } catch (error) {
+                console.warn('MediaPipe processing failed, falling back to simulation:', error);
+                gaitCycleFrames = simulateGaitCycle(gaitType);
+            }
+        } else {
+            // Fall back to simulation if no video or MediaPipe not available
+            console.log('Using simulated gait cycle data...');
+            gaitCycleFrames = simulateGaitCycle(gaitType);
+        }
         
         // Calculate joint angles for each frame
         const leftAngles = { ankle: [], knee: [], hip: [], spine: [] };
