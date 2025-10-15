@@ -195,14 +195,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Gait type:', gaitType, 'Camera angle:', cameraAngle);
         
         // Generate biomechanically accurate results with real MediaPipe processing
-        console.log('About to call performBiomechanicalAnalysis with video file');
-        const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile);
-        console.log('performBiomechanicalAnalysis completed');
-        
-        // Update UI with calculated results
-        document.getElementById('cadence-score').textContent = `${analysisResults.cadence} spm`;
-        document.getElementById('overall-grade').textContent = analysisResults.grade;
-        document.getElementById('asymmetry-score').textContent = `${analysisResults.asymmetry}°`;
+        console.log('🚀 About to call performBiomechanicalAnalysis with video file:', selectedFile?.name);
+        try {
+            const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile);
+            console.log('✅ performBiomechanicalAnalysis completed successfully');
+            console.log('📊 Analysis results:', analysisResults);
+            
+            if (!analysisResults) {
+                throw new Error('Analysis returned null results');
+            }
+            
+            // Update UI with calculated results
+            document.getElementById('cadence-score').textContent = `${analysisResults.cadence} spm`;
+            document.getElementById('overall-grade').textContent = analysisResults.grade;
+            document.getElementById('asymmetry-score').textContent = `${analysisResults.asymmetry}°`;
         
         // Generate comprehensive analysis charts
         console.log('Analysis results:', analysisResults);
@@ -231,8 +237,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error generating ROM table:', error);
         }
         
-        // Add download button
-        addDownloadButton();
+            // Add download button
+            addDownloadButton();
+            
+        } catch (error) {
+            console.error('❌ Error in generateMockResults:', error);
+            // Show error message to user
+            document.getElementById('cadence-score').textContent = 'Error';
+            document.getElementById('overall-grade').textContent = 'Failed';
+            document.getElementById('asymmetry-score').textContent = 'Error';
+        }
     }
 
     // MediaPipe Pose keypoints (matching Python implementation)
