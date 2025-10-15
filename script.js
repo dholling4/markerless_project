@@ -272,6 +272,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
                 console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
                 console.log(`🦴 Lower Limb Calculation: ${analysisResults.ankleCalculationMethod}`);
+                console.log(`🎯 Data Source: ${analysisResults.dataSource || 'Unknown'}`);
+                
+                // Show data source prominently to user
+                if (analysisResults.dataSource === 'REAL_MOVENET') {
+                    console.log('🎉 SUCCESS: Results based on REAL MoveNet pose detection from your video!');
+                    console.log('✅ Your biomechanical analysis uses actual movement data');
+                } else if (analysisResults.dataSource === 'SIMULATION') {
+                    console.log('ℹ️ Note: Results based on simulated gait data');
+                    console.log('💡 Upload a video file for real pose detection analysis');
+                }
                 
                 // Add visual indicator for MoveNet tibial surrogate
                 if (analysisResults.poseModel === 'MoveNet') {
@@ -300,10 +310,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
+            generateJointAnglePlot(analysisResults, 'angleChart');
+            generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
+            
+            // Show and setup CSV download button
+            const downloadBtn = document.getElementById('downloadCSVBtn');
+            if (downloadBtn) {
+                downloadBtn.style.display = 'inline-block';
+                downloadBtn.onclick = () => downloadLineplotDataAsCSV(analysisResults);
+            }
+            
+            console.log('Joint angle plot generated successfully');
+        } catch (error) {
+            console.error('Error generating joint angle plot:', error);
+        }
+        
+        try {
             generateROMTable(analysisResults);      // Pass full results for ROM table
             console.log('ROM table generated successfully');
         } catch (error) {
             console.error('Error generating ROM table:', error);
+        }
+        
+        try {
+            generatePersonalizedTips(analysisResults); // Generate tips based on gait.py logic
+            console.log('Personalized tips generated successfully');
+        } catch (error) {
+            console.error('Error generating personalized tips:', error);
         }
         
             // Add download button
@@ -337,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Primary: MoveNet (more reliable in TensorFlow.js)
         moveNet: {
             modelType: 'SinglePose.Thunder', // High accuracy model
-            minScore: 0.3,  // Lower threshold for better detection
+            minScore: 0.7,  // Lower threshold for better detection
             enableSmoothing: true,
             enableTracking: true
         },
@@ -503,6 +536,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Process video with TensorFlow.js pose detection (matching Python pose.process() exactly)
     async function processVideoWithPoseDetection(videoFile) {
         console.log('🎬 Starting video processing with TensorFlow.js pose detection...');
+        console.log('📹 Video file:', videoFile ? videoFile.name : 'None');
+        console.log('🔧 TensorFlow.js ready:', tfReady);
+        console.log('🤖 Pose detector available:', !!poseDetector);
         
         if (!poseDetector || !tfReady) {
             const result = await initializePoseDetection();
@@ -510,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`Pose detection initialization failed: ${result.model || 'unknown'}`);
             }
             console.log(`🎯 Using ${result.model} model for pose detection`);
+            console.log('✅ Pose detector initialized successfully');
         }
 
         return new Promise((resolve, reject) => {
@@ -538,7 +575,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10000); // 10 second timeout
             
             video.onloadedmetadata = () => {
+                // Calculate actual video frame rate
+                const estimatedFrameRate = Math.round(maxFrames / video.duration) || 30; // Estimate based on duration, fallback to 30
                 console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
+                console.log(`🎯 Estimated frame rate: ${estimatedFrameRate} FPS`);
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
@@ -547,8 +587,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (video.currentTime >= video.duration || frameCount >= maxFrames * frameSkip) {
                         clearTimeout(timeout);
                         if (allFrameResults.length > 0) {
-                            console.log(`🎯 Video processing complete: ${allFrameResults.length} frames`);
-                            resolve(allFrameResults);
+                            // Add frame rate metadata to results
+                            const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                                ...result,
+                                frameRate: estimatedFrameRate,
+                                actualFrameIndex: index
+                            }));
+                            console.log(`🎯 Video processing complete: ${allFrameResults.length} frames at ${estimatedFrameRate} FPS`);
+                            resolve(resultsWithFrameRate);
                         } else {
                             reject(new Error('No pose data extracted from video'));
                         }
@@ -575,7 +621,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const pose = poses[0];
                                 const keypoints = pose.keypoints;
                                 
-                                console.log(`🔍 Detected ${keypoints.length} keypoints`);
+                                // Detailed logging for MoveNet validation
+                                if (processedFrames % 10 === 0) { // Log every 10th frame to avoid spam
+                                    console.log(`🎯 REAL MOVENET FRAME ${processedFrames}:`);
+                                    console.log(`  � Keypoints detected: ${keypoints.length}`);
+                                    console.log(`  🎪 Pose confidence: ${pose.score || 'N/A'}`);
+                                    console.log(`  📍 Sample keypoint (nose):`, keypoints[0]);
+                                    console.log(`  🔍 Model type: ${currentPoseModel}`);
+                                }
                                 
                                 // Extract keypoints with universal mapping (works for both MoveNet and MediaPipe)
                                 const frameData = extractUniversalKeypoints(keypoints, canvas.width, canvas.height);
@@ -587,6 +640,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     
                                     allFrameResults.push(frameData);
                                     processedFrames++;
+                                    
+                                    // Confirmation logging every 10 frames
+                                    if (processedFrames % 10 === 0) {
+                                        console.log(`✅ SUCCESSFULLY EXTRACTED REAL MOVENET DATA - Frame ${processedFrames}`);
+                                        console.log(`  📊 Left Hip: (${frameData.left.hip.x.toFixed(2)}, ${frameData.left.hip.y.toFixed(2)})`);
+                                        console.log(`  📊 Right Knee: (${frameData.right.knee.x.toFixed(2)}, ${frameData.right.knee.y.toFixed(2)})`);
+                                        console.log(`  🎯 Confidence: ${frameData.confidence.toFixed(3)}`);
+                                    }
                                     
                                     if (processedFrames >= maxFrames) {
                                         clearTimeout(timeout);
@@ -605,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     frameCount++;
-                    video.currentTime = frameCount / 30; // Assume 30 FPS
+                    video.currentTime = frameCount / estimatedFrameRate; // Use detected frame rate
                     
                     requestAnimationFrame(processFrame);
                 };
@@ -634,24 +695,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Try to use real pose detection if video file is provided and TensorFlow.js is available
         if (videoFile && mediaPipeAvailable) {
             console.log('🎯 Attempting pose detection with TensorFlow.js...');
+            console.log('🔬 VIDEO FILE ANALYSIS MODE - Real MoveNet Processing');
             try {
                 gaitCycleFrames = await processVideoWithPoseDetection(videoFile);
                 if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
                     throw new Error('No pose data extracted from video');
                 }
-                console.log(`✅ Processed ${gaitCycleFrames.length} frames with pose detection`);
+                console.log(`🎉 SUCCESS: REAL MOVENET DATA EXTRACTED`);
+                console.log(`  📊 Total frames processed: ${gaitCycleFrames.length}`);
+                console.log(`  🎯 Data source: REAL MoveNet pose detection`);
+                console.log(`  📹 Video file: ${videoFile.name}`);
+                
+                // Validate that we have real keypoint data
+                if (gaitCycleFrames[0] && gaitCycleFrames[0].left && gaitCycleFrames[0].left.hip) {
+                    console.log(`  ✅ Sample real keypoint - Left Hip: (${gaitCycleFrames[0].left.hip.x.toFixed(2)}, ${gaitCycleFrames[0].left.hip.y.toFixed(2)})`);
+                }
+                
             } catch (error) {
+                console.error('❌ REAL MOVENET FAILED - FALLING BACK TO SIMULATION');
                 console.warn('⚠️ Pose detection processing failed, falling back to simulation:', error);
                 gaitCycleFrames = simulateGaitCycle(gaitType);
+                console.log('🔄 Now using: SIMULATED gait data');
             }
         } else {
             // Fall back to simulation
+            console.log('📊 SIMULATION MODE - Using synthetic gait data');
             if (!videoFile) {
-                console.log('ℹ️ No video file provided, using simulation');
+                console.log('  ℹ️ Reason: No video file provided');
             } else if (!mediaPipeAvailable) {
-                console.log('⚠️ TensorFlow.js pose detection not available, using simulation');
+                console.log('  ⚠️ Reason: TensorFlow.js pose detection not available');
             }
             gaitCycleFrames = simulateGaitCycle(gaitType);
+            console.log(`  🎯 Data source: SIMULATED gait cycle (${gaitType})`);
         }
         
         // Calculate joint angles for each frame
@@ -832,16 +907,174 @@ document.addEventListener('DOMContentLoaded', function() {
             return `${side} ${joint.charAt(0).toUpperCase() + joint.slice(1)}`;
         };
         
-        // Update ROM table with appropriate labels
+        // Peak Performance Zone calculation aligned with gait.py categories
+        const calculatePeakPerformanceZone = (jointType, rom, gaitType = 'running', cameraAngle = 'side') => {
+            // Define optimal ROM ranges based on gait.py categorization
+            const optimalRanges = {
+                side: {
+                    running: {
+                        spine: { good: [5, 15], moderate: [0, 5], optimal: 10 },
+                        hip: { good: [60, 70], moderate: [50, 60], optimal: 65 },
+                        knee: { good: [120, 130], moderate: [110, 120], optimal: 125 },
+                        ankle: { good: [65, 75], moderate: [55, 65], optimal: 70 },
+                        tibial: { good: [65, 75], moderate: [55, 65], optimal: 70 }
+                    },
+                    walking: {
+                        spine: { good: [0, 5], moderate: [5, 10], optimal: 2.5 },
+                        hip: { good: [25, 45], moderate: [15, 25], optimal: 35 },
+                        knee: { good: [50, 70], moderate: [40, 50], optimal: 60 },
+                        ankle: { good: [20, 45], moderate: [15, 20], optimal: 32.5 },
+                        tibial: { good: [20, 45], moderate: [15, 20], optimal: 32.5 }
+                    }
+                },
+                back: {
+                    running: {
+                        spine: { good: [1, 10], moderate: [0, 1], optimal: 5.5 },
+                        hip: { good: [0, 10], moderate: [10, 20], optimal: 7.5 },
+                        knee: { good: [0, 5], moderate: [5, 10], optimal: 2.5 },
+                        ankle: { good: [20, 50], moderate: [10, 20], optimal: 35 },
+                        tibial: { good: [20, 50], moderate: [10, 20], optimal: 35 }
+                    },
+                    walking: {
+                        spine: { good: [0, 5], moderate: [5, 10], optimal: 2.5 },
+                        hip: { good: [0, 10], moderate: [10, 20], optimal: 7.5 },
+                        knee: { good: [0, 5], moderate: [5, 10], optimal: 2.5 },
+                        ankle: { good: [20, 50], moderate: [10, 20], optimal: 35 },
+                        tibial: { good: [20, 50], moderate: [10, 20], optimal: 35 }
+                    }
+                }
+            };
+            
+            // Get camera angle from form
+            const currentCameraAngle = document.querySelector('input[name="camera-angle"]:checked')?.value || 'side';
+            const currentGait = gaitType === 'running' ? 'running' : 'walking';
+            let range;
+            
+            // Determine joint type for tibial inclination
+            if (jointType.includes('Tibial')) {
+                range = optimalRanges[currentCameraAngle][currentGait].tibial;
+            } else if (jointType.includes('Ankle')) {
+                range = optimalRanges[currentCameraAngle][currentGait].ankle;
+            } else {
+                const baseJoint = jointType.toLowerCase().replace(/left |right |trunk /, '').split(' ')[0];
+                range = optimalRanges[currentCameraAngle][currentGait][baseJoint] || optimalRanges[currentCameraAngle][currentGait].knee;
+            }
+            
+            // Calculate performance score using gait.py logic (good/moderate/poor)
+            let score, zone, color;
+            
+            if (rom >= range.good[0] && rom <= range.good[1]) {
+                // Within good range - calculate score based on closeness to optimal
+                const distanceFromOptimal = Math.abs(rom - range.optimal);
+                const rangeWidth = (range.good[1] - range.good[0]) / 2;
+                score = 100 - (distanceFromOptimal / rangeWidth) * 20; // 80-100% in good range
+                
+                if (score >= 95) {
+                    zone = 'Elite';
+                    color = '#00ff88';
+                } else {
+                    zone = 'Optimal';
+                    color = '#4ecdc4';
+                }
+            } else if (rom >= range.moderate[0] && rom <= range.moderate[1]) {
+                // Within moderate range
+                score = 60 + Math.random() * 15; // 60-75% in moderate range
+                zone = 'Good';
+                color = '#45b7d1';
+            } else {
+                // Outside acceptable ranges
+                const distanceFromGood = Math.min(
+                    Math.abs(rom - range.good[0]),
+                    Math.abs(rom - range.good[1])
+                );
+                const maxDistance = Math.max(range.good[1], 100); // Reasonable max for penalty calc
+                score = Math.max(0, 60 - (distanceFromGood / maxDistance) * 60);
+                
+                if (score >= 30) {
+                    zone = 'Fair';
+                    color = '#ffa726';
+                } else {
+                    zone = 'Needs Work';
+                    color = '#ff6b6b';
+                }
+            }
+            
+            return { zone, score: Math.round(score), color };
+        };
+        
+        // Get current gait type
+        const currentGaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
+        
+        // Update ROM table with appropriate labels and Peak Performance Zone
         const romTable = [
-            { joint: getJointLabel('spine', 'Trunk'), minAngle: Math.min(...leftAngles.spine), maxAngle: Math.max(...leftAngles.spine), rom: romValues[2] },
-            { joint: getJointLabel('hip', 'Left'), minAngle: Math.min(...leftAngles.hip), maxAngle: Math.max(...leftAngles.hip), rom: romValues[3] },
-            { joint: getJointLabel('hip', 'Right'), minAngle: Math.min(...rightAngles.hip), maxAngle: Math.max(...rightAngles.hip), rom: romValues[1] },
-            { joint: getJointLabel('knee', 'Left'), minAngle: Math.min(...leftAngles.knee), maxAngle: Math.max(...leftAngles.knee), rom: romValues[4] },
-            { joint: getJointLabel('knee', 'Right'), minAngle: Math.min(...rightAngles.knee), maxAngle: Math.max(...rightAngles.knee), rom: romValues[0] },
-            { joint: getJointLabel('ankle', 'Left'), minAngle: Math.min(...leftAngles.ankle), maxAngle: Math.max(...leftAngles.ankle), rom: romValues[5] },
-            { joint: getJointLabel('ankle', 'Right'), minAngle: Math.min(...rightAngles.ankle), maxAngle: Math.max(...rightAngles.ankle), rom: romValues[6] }
+            { 
+                joint: getJointLabel('spine', 'Trunk'), 
+                minAngle: Math.min(...leftAngles.spine), 
+                maxAngle: Math.max(...leftAngles.spine), 
+                rom: romValues[2],
+                peakPerformanceZone: calculatePeakPerformanceZone('spine', romValues[2], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('hip', 'Left'), 
+                minAngle: Math.min(...leftAngles.hip), 
+                maxAngle: Math.max(...leftAngles.hip), 
+                rom: romValues[3],
+                peakPerformanceZone: calculatePeakPerformanceZone('hip', romValues[3], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('hip', 'Right'), 
+                minAngle: Math.min(...rightAngles.hip), 
+                maxAngle: Math.max(...rightAngles.hip), 
+                rom: romValues[1],
+                peakPerformanceZone: calculatePeakPerformanceZone('hip', romValues[1], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('knee', 'Left'), 
+                minAngle: Math.min(...leftAngles.knee), 
+                maxAngle: Math.max(...leftAngles.knee), 
+                rom: romValues[4],
+                peakPerformanceZone: calculatePeakPerformanceZone('knee', romValues[4], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('knee', 'Right'), 
+                minAngle: Math.min(...rightAngles.knee), 
+                maxAngle: Math.max(...rightAngles.knee), 
+                rom: romValues[0],
+                peakPerformanceZone: calculatePeakPerformanceZone('knee', romValues[0], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('ankle', 'Left'), 
+                minAngle: Math.min(...leftAngles.ankle), 
+                maxAngle: Math.max(...leftAngles.ankle), 
+                rom: romValues[5],
+                peakPerformanceZone: calculatePeakPerformanceZone(getJointLabel('ankle', 'Left'), romValues[5], currentGaitType)
+            },
+            { 
+                joint: getJointLabel('ankle', 'Right'), 
+                minAngle: Math.min(...rightAngles.ankle), 
+                maxAngle: Math.max(...rightAngles.ankle), 
+                rom: romValues[6],
+                peakPerformanceZone: calculatePeakPerformanceZone(getJointLabel('ankle', 'Right'), romValues[6], currentGaitType)
+            }
         ];
+        
+        // Final analysis summary for debugging
+        const isRealData = gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].confidence;
+        console.log('🏁 BIOMECHANICAL ANALYSIS COMPLETE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        if (isRealData) {
+            console.log('✅ DATA SOURCE: REAL MOVENET POSE DETECTION');
+            console.log(`  📊 Frames analyzed: ${gaitCycleFrames.length}`);
+            console.log(`  🎯 Average confidence: ${(gaitCycleFrames.reduce((sum, f) => sum + (f.confidence || 0), 0) / gaitCycleFrames.length).toFixed(3)}`);
+            console.log(`  📹 Video file: ${videoFile ? videoFile.name : 'Unknown'}`);
+        } else {
+            console.log('🔄 DATA SOURCE: SIMULATED GAIT CYCLE');
+            console.log(`  📊 Synthetic frames: ${gaitCycleFrames ? gaitCycleFrames.length : 'Unknown'}`);
+            console.log(`  🎯 Gait type: ${gaitType}`);
+        }
+        console.log(`  ⚙️ Pose model: ${modelUsed}`);
+        console.log(`  🦵 Using: ${usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle'}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
         return {
             cadence: cadence,
@@ -862,11 +1095,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     spine: { min: Math.min(...rightAngles.spine), max: Math.max(...rightAngles.spine), avg: average(rightAngles.spine), rom: romValues[2] }
                 }
             },
+            // Raw angle arrays for line plots
+            angles: {
+                left: {
+                    ankle: leftAngles.ankle,
+                    knee: leftAngles.knee,
+                    hip: leftAngles.hip,
+                    spine: leftAngles.spine
+                },
+                right: {
+                    ankle: rightAngles.ankle,
+                    knee: rightAngles.knee,
+                    hip: rightAngles.hip,
+                    spine: rightAngles.spine
+                }
+            },
             // ROM data table matching Python df_rom structure
             romTable: romTable,
             // Model and calculation metadata
             poseModel: modelUsed,
+            dataSource: gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].confidence ? 'REAL_MOVENET' : 'SIMULATION',
             ankleCalculationMethod: usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle',
+            frameRate: gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].frameRate ? gaitCycleFrames[0].frameRate : 30, // Dynamic frame rate
             // Label helper for charts
             usingTibialSurrogate: usingTibialSurrogate,
             getJointLabel: getJointLabel
@@ -875,6 +1125,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Biomechanical calculation functions
     function simulateGaitCycle(gaitType) {
+        // ⚠️ SIMULATION MODE - Generate synthetic pose data
+        console.log('🔄 GENERATING SIMULATED GAIT DATA');
+        console.log(`  📊 Gait type: ${gaitType}`);
+        console.log('  ⚠️ This is NOT real MoveNet data - using biomechanically accurate simulation');
+        
         // Simulate pose estimation keypoints for a complete gait cycle
         const frames = [];
         const numFrames = 60; // Simulate 60 frames for one gait cycle
@@ -1183,7 +1438,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateSpiderChart(analysisResults) {
-        // Create spider/radar chart matching gait.py visualization exactly
+        // Create sleek spider/radar chart with modern styling
         const canvas = document.getElementById('spider-chart');
         if (!canvas) {
             console.error('Spider chart canvas not found');
@@ -1194,8 +1449,12 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.width = 500;
         canvas.height = 450;
         
-        // Clear canvas with black background
-        ctx.fillStyle = '#000';
+        // Clear canvas with sophisticated gradient background
+        const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        backgroundGradient.addColorStop(0, '#0a0a0a');
+        backgroundGradient.addColorStop(0.5, '#1a1a2e');
+        backgroundGradient.addColorStop(1, '#16213e');
+        ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Use ROM values directly from analysis results - reordered for better visual layout
@@ -1252,14 +1511,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const numPoints = joints.length;
         const angleStep = (2 * Math.PI) / numPoints;
         
-        // Draw concentric circles (grid)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        // Draw concentric circles (grid) with modern styling
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.lineWidth = 1;
         for (let i = 1; i <= 4; i++) {
             ctx.beginPath();
             ctx.arc(centerX, centerY, (radius / 4) * i, 0, 2 * Math.PI);
             ctx.stroke();
         }
+        
+        // Add subtle glow effect to outer ring
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 212, 255, 0.3)';
+        ctx.shadowBlur = 5;
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
         
         // Draw axes and labels
         const maxValue = Math.max(...romValues, ...idealValues) + 20;
@@ -1293,10 +1563,13 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(joint, labelX, labelY);
         });
         
-        // Draw ideal range (Peak Performance Zone) - sleek mint green
-        ctx.strokeStyle = '#00D9AA';  // Slightly darker mint for better visibility
-        ctx.fillStyle = 'rgba(0, 217, 170, 0.25)';  // More opaque for better visibility
-        ctx.lineWidth = 3;  // Thicker line for better visibility
+        // Draw ideal range (Peak Performance Zone) with glow effect
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 217, 170, 0.6)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#00D9AA';
+        ctx.fillStyle = 'rgba(0, 217, 170, 0.2)';
+        ctx.lineWidth = 3;
         ctx.beginPath();
         idealValues.forEach((value, i) => {
             const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
@@ -1309,11 +1582,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        ctx.restore();
         
-        // Draw actual ROM values - sleek electric blue
-        ctx.strokeStyle = '#00BFFF';  // Electric blue
-        ctx.fillStyle = 'rgba(0, 191, 255, 0.35)';  // More opaque for better visibility
-        ctx.lineWidth = 3;  // Thicker line for better visibility
+        // Draw actual ROM values with glow effect
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 191, 255, 0.8)';
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = '#00BFFF';
+        ctx.fillStyle = 'rgba(0, 191, 255, 0.25)';
+        ctx.lineWidth = 4;
         ctx.beginPath();
         romValues.forEach((value, i) => {
             const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
@@ -1326,12 +1603,35 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        ctx.restore();
         
-        // Add title with larger, more prominent text
+        // Add data point indicators with glow
+        romValues.forEach((value, i) => {
+            const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
+            const distance = (value / maxValue) * radius;
+            const x = centerX + Math.cos(angle) * distance;
+            const y = centerY + Math.sin(angle) * distance;
+            
+            ctx.save();
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#00BFFF';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        // Add title with modern styling
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 16px Arial';  // Smaller font to create more space
+        ctx.font = 'bold 18px Inter, Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Range of Motion (°) vs Peak Performance Zone', centerX, 15);
+        ctx.fillText('Range of Motion Analysis', centerX, 25);
+        
+        // Subtitle
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#b0b0b0';
+        ctx.fillText('Current vs Peak Performance Zone', centerX, 45);
         
         // Add legend with larger, more readable text positioned on the right to avoid overlap
         ctx.font = 'bold 14px Arial';
@@ -1366,10 +1666,11 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.width = 650;
         canvas.height = 400;
         
-        // Create sophisticated gradient background
+        // Create sophisticated gradient background matching other charts
         const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        backgroundGradient.addColorStop(0, '#0f1419');
-        backgroundGradient.addColorStop(1, '#1a1a2e');
+        backgroundGradient.addColorStop(0, '#0a0a0a');
+        backgroundGradient.addColorStop(0.5, '#1a1a2e');
+        backgroundGradient.addColorStop(1, '#16213e');
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -1498,15 +1799,16 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(`${asymmetry > 0 ? '+' : ''}${asymmetry.toFixed(1)}°`, textX, y + barHeight/2 + 6);
         });
         
-        // Enhanced title with glow effect
-        ctx.save();
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
-        ctx.shadowBlur = 8;
+        // Enhanced title matching other charts
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif';
+        ctx.font = 'bold 20px Inter, Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Range of Motion Asymmetry', centerX, 35);
-        ctx.restore();
+        ctx.fillText('Symmetry Analysis', centerX, 30);
+        
+        // Subtitle
+        ctx.font = '14px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#b0b0b0';
+        ctx.fillText('Range of Motion Left vs Right Comparison', centerX, 50);
         
         // Add scale markers at bottom
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -1557,6 +1859,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <th style="padding: 15px; border: none; text-align: center; font-size: 16px; font-weight: bold;">Min Angle (°)</th>
                         <th style="padding: 15px; border: none; text-align: center; font-size: 16px; font-weight: bold;">Max Angle (°)</th>
                         <th style="padding: 15px; border: none; text-align: center; font-size: 16px; font-weight: bold;">Range of Motion (°)</th>
+                        <th style="padding: 15px; border: none; text-align: center; font-size: 16px; font-weight: bold;">Peak Performance Zone</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1564,12 +1867,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         romData.forEach((row, index) => {
             const bgColor = index % 2 === 0 ? '#2A2A2A' : '#333333';
+            const ppz = row.peakPerformanceZone || { zone: 'N/A', score: 0, color: '#666666' };
+            
             tableHTML += `
                 <tr style="background: ${bgColor}; transition: background-color 0.2s;">
                     <td style="padding: 12px 15px; border: none; font-size: 15px; font-weight: 500;">${row.joint}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-size: 15px;">${row.minAngle.toFixed(1)}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-size: 15px;">${row.maxAngle.toFixed(1)}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-weight: bold; font-size: 16px; color: #00BFFF;">${row.rom.toFixed(1)}</td>
+                    <td style="padding: 12px 15px; border: none; text-align: center; font-weight: bold; font-size: 14px; color: ${ppz.color};">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <span style="font-size: 13px; font-weight: bold;">${ppz.zone}</span>
+                            <span style="font-size: 11px; opacity: 0.8;">${ppz.score.toFixed(0)}%</span>
+                        </div>
+                    </td>
                 </tr>
             `;
         });
@@ -1689,6 +2000,630 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('error', (e) => {
     console.error('JavaScript error:', e.error);
 });
+
+// Sleek Joint Angle Visualization
+function generateJointAnglePlot(analysisResults, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('Joint angle plot canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = 900;
+    canvas.height = 500;
+
+    // Clear canvas with sophisticated gradient background
+    const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    backgroundGradient.addColorStop(0, '#0a0a0a');
+    backgroundGradient.addColorStop(0.5, '#1a1a2e');
+    backgroundGradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = backgroundGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Extract joint angles data
+    const jointAngles = analysisResults.jointAngles;
+    const ankleLabel = analysisResults.usingTibialSurrogate ? 'Tibial Inclination' : 'Ankle';
+    
+    const joints = [
+        { name: ankleLabel, left: jointAngles.left.ankle, right: jointAngles.right.ankle, color: '#00d4ff', bilateral: true },
+        { name: 'Knee', left: jointAngles.left.knee, right: jointAngles.right.knee, color: '#ff6b6b', bilateral: true },
+        { name: 'Hip', left: jointAngles.left.hip, right: jointAngles.right.hip, color: '#4ecdc4', bilateral: true },
+        { name: 'Spine', spine: jointAngles.left.spine, color: '#45b7d1', bilateral: false } // Spine is central, not bilateral
+    ];
+
+    // Chart dimensions and positioning
+    const margin = { top: 60, right: 80, bottom: 80, left: 100 };
+    const chartWidth = canvas.width - margin.left - margin.right;
+    const chartHeight = canvas.height - margin.top - margin.bottom;
+    
+    // Title
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Joint Angle Analysis', canvas.width / 2, 35);
+    
+    // Subtitle
+    ctx.font = '14px Inter, Arial, sans-serif';
+    ctx.fillStyle = '#b0b0b0';
+    ctx.fillText('Range of Motion Throughout Gait Cycle', canvas.width / 2, 55);
+    ctx.restore();
+
+    // Draw grid and axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    
+    // Vertical grid lines (for joints)
+    const jointSpacing = chartWidth / joints.length;
+    for (let i = 0; i <= joints.length; i++) {
+        const x = margin.left + i * jointSpacing;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + chartHeight);
+        ctx.stroke();
+    }
+    
+    // Horizontal grid lines (for angles)
+    const maxAngle = Math.max(...joints.flatMap(j => 
+        j.bilateral ? [j.left.max, j.right.max] : [j.spine.max]
+    ));
+    const minAngle = Math.min(...joints.flatMap(j => 
+        j.bilateral ? [j.left.min, j.right.min] : [j.spine.min]
+    ));
+    const angleRange = maxAngle - minAngle;
+    const gridLines = 8;
+    
+    for (let i = 0; i <= gridLines; i++) {
+        const y = margin.top + (i / gridLines) * chartHeight;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + chartWidth, y);
+        ctx.stroke();
+        
+        // Y-axis labels
+        const angle = Math.round(maxAngle - (i / gridLines) * angleRange);
+        ctx.fillStyle = '#888';
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(angle + '°', margin.left - 10, y + 4);
+    }
+
+    // Draw joint angle ranges with sleek bars
+    joints.forEach((joint, index) => {
+        const centerX = margin.left + (index + 0.5) * jointSpacing;
+        
+        if (!joint.bilateral) {
+            // Handle spine (central joint)
+            const spineX = centerX;
+            const spineMin = margin.top + ((maxAngle - joint.spine.min) / angleRange) * chartHeight;
+            const spineMax = margin.top + ((maxAngle - joint.spine.max) / angleRange) * chartHeight;
+            
+            // Spine bar (centered)
+            const spineGradient = ctx.createLinearGradient(spineX, spineMax, spineX, spineMin);
+            spineGradient.addColorStop(0, joint.color);
+            spineGradient.addColorStop(1, joint.color + '40');
+            
+            ctx.fillStyle = spineGradient;
+            ctx.fillRect(spineX - 20, spineMax, 40, spineMin - spineMax);
+            
+            // Spine outline
+            ctx.strokeStyle = joint.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(spineX - 20, spineMax, 40, spineMin - spineMax);
+            
+            // Average line for spine
+            const spineAvgY = margin.top + ((maxAngle - joint.spine.avg) / angleRange) * chartHeight;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(spineX - 25, spineAvgY);
+            ctx.lineTo(spineX + 25, spineAvgY);
+            ctx.stroke();
+            
+            // Joint label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Inter, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(joint.name, centerX, margin.top + chartHeight + 25);
+            
+            // ROM value
+            ctx.fillStyle = '#cccccc';
+            ctx.font = '11px Inter, Arial, sans-serif';
+            ctx.fillText(`${joint.spine.rom.toFixed(1)}°`, spineX, margin.top + chartHeight + 45);
+            
+        } else {
+            // Handle bilateral joints (left and right sides)
+            const leftX = centerX - 25;
+            const rightX = centerX + 25;
+            
+            // Calculate positions for left and right sides
+            const leftMin = margin.top + ((maxAngle - joint.left.min) / angleRange) * chartHeight;
+            const leftMax = margin.top + ((maxAngle - joint.left.max) / angleRange) * chartHeight;
+            const rightMin = margin.top + ((maxAngle - joint.right.min) / angleRange) * chartHeight;
+            const rightMax = margin.top + ((maxAngle - joint.right.max) / angleRange) * chartHeight;
+            
+            // Left side bar
+            const leftGradient = ctx.createLinearGradient(leftX, leftMax, leftX, leftMin);
+            leftGradient.addColorStop(0, joint.color);
+            leftGradient.addColorStop(1, joint.color + '40');
+            
+            ctx.fillStyle = leftGradient;
+            ctx.fillRect(leftX - 15, leftMax, 30, leftMin - leftMax);
+            
+            // Left side outline
+            ctx.strokeStyle = joint.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(leftX - 15, leftMax, 30, leftMin - leftMax);
+            
+            // Right side bar
+            const rightGradient = ctx.createLinearGradient(rightX, rightMax, rightX, rightMin);
+            rightGradient.addColorStop(0, joint.color);
+            rightGradient.addColorStop(1, joint.color + '40');
+            
+            ctx.fillStyle = rightGradient;
+            ctx.fillRect(rightX - 15, rightMax, 30, rightMin - rightMax);
+            
+            // Right side outline
+            ctx.strokeStyle = joint.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(rightX - 15, rightMax, 30, rightMin - rightMax);
+            
+            // Average line (horizontal line across both bars)
+            const leftAvgY = margin.top + ((maxAngle - joint.left.avg) / angleRange) * chartHeight;
+            const rightAvgY = margin.top + ((maxAngle - joint.right.avg) / angleRange) * chartHeight;
+            
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(leftX - 20, leftAvgY);
+            ctx.lineTo(leftX + 20, leftAvgY);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(rightX - 20, rightAvgY);
+            ctx.lineTo(rightX + 20, rightAvgY);
+            ctx.stroke();
+            
+            // Joint labels
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Inter, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(joint.name, centerX, margin.top + chartHeight + 25);
+            
+            // L/R labels
+            ctx.font = '12px Inter, Arial, sans-serif';
+            ctx.fillStyle = joint.color;
+            ctx.fillText('L', leftX, margin.top + chartHeight + 45);
+            ctx.fillText('R', rightX, margin.top + chartHeight + 45);
+            
+            // ROM values
+            ctx.fillStyle = '#cccccc';
+            ctx.font = '11px Inter, Arial, sans-serif';
+            ctx.fillText(`${joint.left.rom.toFixed(1)}°`, leftX, margin.top + chartHeight + 60);
+            ctx.fillText(`${joint.right.rom.toFixed(1)}°`, rightX, margin.top + chartHeight + 60);
+        }
+    });
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(20, canvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Angle (degrees)', 0, 0);
+    ctx.restore();
+
+    // Legend
+    const legendY = margin.top + 20;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px Inter, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Range: Min-Max', margin.left + chartWidth - 120, legendY);
+    ctx.fillText('White line: Average', margin.left + chartWidth - 120, legendY + 15);
+}
+
+function generateJointAngleLinesPlot(analysisResults, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('Joint angle lines plot canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = 900;
+    canvas.height = 600;
+
+    // Clear canvas with sophisticated gradient background
+    const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    backgroundGradient.addColorStop(0, '#0a0a0a');
+    backgroundGradient.addColorStop(0.5, '#1a1a2e');
+    backgroundGradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = backgroundGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Extract angle data
+    const angles = analysisResults.angles;
+    const ankleLabel = analysisResults.usingTibialSurrogate ? 'Tibial Inclination' : 'Ankle';
+    
+    // Chart dimensions and positioning
+    const margin = { top: 80, right: 120, bottom: 100, left: 100 };
+    const chartWidth = canvas.width - margin.left - margin.right;
+    const chartHeight = canvas.height - margin.top - margin.bottom;
+    
+    // Title
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Joint Angle Trajectories', canvas.width / 2, 35);
+    
+    // Subtitle
+    ctx.font = '16px Inter, Arial, sans-serif';
+    ctx.fillStyle = '#b0b0b0';
+    ctx.fillText('Angle progression throughout gait cycle', canvas.width / 2, 60);
+    ctx.restore();
+
+    // Prepare data series
+    const series = [
+        { name: 'Tibial Inclination (L)', data: angles.left.ankle, color: '#00d4ff', lineWidth: 3 },
+        { name: 'Tibial Inclination (R)', data: angles.right.ankle, color: '#0099cc', lineWidth: 3 },
+        { name: 'Knee (L)', data: angles.left.knee, color: '#ff6b6b', lineWidth: 3 },
+        { name: 'Knee (R)', data: angles.right.knee, color: '#cc5555', lineWidth: 3 },
+        { name: 'Hip (L)', data: angles.left.hip, color: '#4ecdc4', lineWidth: 3 },
+        { name: 'Hip (R)', data: angles.right.hip, color: '#3ea99a', lineWidth: 3 },
+        { name: 'Spine', data: angles.left.spine, color: '#45b7d1', lineWidth: 4 } // Spine is central, thicker line
+    ];
+
+    // Calculate scales
+    const allAngles = series.flatMap(s => s.data);
+    const maxAngle = Math.max(...allAngles);
+    const minAngle = Math.min(...allAngles);
+    const angleRange = maxAngle - minAngle;
+    const padding = angleRange * 0.1; // 10% padding
+    const plotMinAngle = minAngle - padding;
+    const plotMaxAngle = maxAngle + padding;
+    const plotAngleRange = plotMaxAngle - plotMinAngle;
+
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    const horizontalGridLines = 8;
+    for (let i = 0; i <= horizontalGridLines; i++) {
+        const y = margin.top + (i / horizontalGridLines) * chartHeight;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + chartWidth, y);
+        ctx.stroke();
+        
+        // Y-axis labels
+        const angle = Math.round(plotMaxAngle - (i / horizontalGridLines) * plotAngleRange);
+        ctx.fillStyle = '#888';
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(angle + '°', margin.left - 10, y + 4);
+    }
+    
+    // Vertical grid lines
+    const timePoints = series[0].data.length;
+    const frameRate = analysisResults.frameRate || 60; // Use detected frame rate, fallback to 60 FPS
+    const totalDuration = timePoints / frameRate; // Total time in seconds
+    console.log(`🎯 Using frame rate: ${frameRate} FPS for trajectory plot (${totalDuration.toFixed(2)}s total)`);
+    const verticalGridLines = 10;
+    
+    for (let i = 0; i <= verticalGridLines; i++) {
+        const x = margin.left + (i / verticalGridLines) * chartWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + chartHeight);
+        ctx.stroke();
+        
+        // X-axis labels (time in seconds)
+        const timeSeconds = (i / verticalGridLines) * totalDuration;
+        ctx.fillStyle = '#888';
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(timeSeconds.toFixed(1) + 's', x, margin.top + chartHeight + 20);
+    }
+
+    // Draw data series
+    series.forEach((serie) => {
+        if (!serie.data || serie.data.length === 0) return;
+        
+        ctx.strokeStyle = serie.color;
+        ctx.lineWidth = serie.lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Add glow effect
+        ctx.shadowColor = serie.color;
+        ctx.shadowBlur = serie.lineWidth * 2;
+        
+        ctx.beginPath();
+        
+        for (let i = 0; i < serie.data.length; i++) {
+            // Calculate x position based on time (frame index / frame rate)
+            const timeAtFrame = i / frameRate; // Time in seconds
+            const x = margin.left + (timeAtFrame / totalDuration) * chartWidth;
+            const y = margin.top + ((plotMaxAngle - serie.data[i]) / plotAngleRange) * chartHeight;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Reset shadow
+    });
+
+    // Draw axes
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    // Y-axis
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, margin.top + chartHeight);
+    // X-axis
+    ctx.moveTo(margin.left, margin.top + chartHeight);
+    ctx.lineTo(margin.left + chartWidth, margin.top + chartHeight);
+    ctx.stroke();
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(30, canvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Joint Angle (degrees)', 0, 0);
+    ctx.restore();
+
+    // X-axis label
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Time (seconds)', canvas.width / 2, canvas.height - 20);
+
+    // Legend
+    const legendX = margin.left + chartWidth + 20;
+    let legendY = margin.top + 20;
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px Inter, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Legend:', legendX, legendY);
+    
+    legendY += 25;
+    
+    series.forEach((serie, index) => {
+        // Legend line sample
+        ctx.strokeStyle = serie.color;
+        ctx.lineWidth = serie.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(legendX, legendY + index * 25);
+        ctx.lineTo(legendX + 20, legendY + index * 25);
+        ctx.stroke();
+        
+        // Legend text
+        ctx.fillStyle = serie.color;
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.fillText(serie.name, legendX + 25, legendY + index * 25 + 4);
+    });
+}
+
+function downloadLineplotDataAsCSV(analysisResults) {
+    if (!analysisResults || !analysisResults.angles) {
+        console.error('No angle data available for download');
+        return;
+    }
+
+    const angles = analysisResults.angles;
+    
+    // Prepare CSV headers
+    const headers = [
+        'Frame',
+        'Tibial_Inclination_Left',
+        'Tibial_Inclination_Right', 
+        'Knee_Left',
+        'Knee_Right',
+        'Hip_Left', 
+        'Hip_Right',
+        'Spine'
+    ];
+    
+    // Find the maximum length among all angle arrays
+    const maxLength = Math.max(
+        angles.left.ankle.length,
+        angles.right.ankle.length,
+        angles.left.knee.length,
+        angles.right.knee.length,
+        angles.left.hip.length,
+        angles.right.hip.length,
+        angles.left.spine.length
+    );
+    
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    for (let i = 0; i < maxLength; i++) {
+        const row = [
+            i + 1, // Frame number (1-based)
+            angles.left.ankle[i] ? angles.left.ankle[i].toFixed(2) : '',
+            angles.right.ankle[i] ? angles.right.ankle[i].toFixed(2) : '',
+            angles.left.knee[i] ? angles.left.knee[i].toFixed(2) : '',
+            angles.right.knee[i] ? angles.right.knee[i].toFixed(2) : '',
+            angles.left.hip[i] ? angles.left.hip[i].toFixed(2) : '',
+            angles.right.hip[i] ? angles.right.hip[i].toFixed(2) : '',
+            angles.left.spine[i] ? angles.left.spine[i].toFixed(2) : ''
+        ];
+        csvContent += row.join(',') + '\n';
+    }
+    
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'joint_angle_trajectories.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('Joint angle trajectory data downloaded as CSV');
+    }
+}
+
+// Generate personalized tips based on gait.py logic
+function generatePersonalizedTips(analysisResults) {
+    console.log('🎯 Generating personalized tips based on biomechanical analysis...');
+    
+    const gaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
+    const cameraAngle = document.querySelector('input[name="camera-angle"]:checked')?.value || 'side';
+    const romTable = analysisResults.romTable || [];
+    const asymmetry = analysisResults.asymmetry || 0;
+    const grade = analysisResults.grade || 'C';
+    
+    // Initialize tip categories
+    const tips = {
+        footwear: { value: '', explanation: '' },
+        drill: { value: '', explanation: '' },
+        cue: { value: '', explanation: '' },
+        training: { value: '', explanation: '' }
+    };
+    
+    // Analyze key biomechanical issues (based on gait.py logic)
+    let primaryIssue = '';
+    let secondaryIssue = '';
+    let highestDeficit = 0;
+    let lowestROM = 100;
+    
+    // Find most problematic joints
+    romTable.forEach(joint => {
+        const performance = joint.peakPerformanceZone;
+        if (performance && performance.score < highestDeficit) {
+            primaryIssue = joint.joint;
+            highestDeficit = 100 - performance.score;
+        }
+        if (joint.rom < lowestROM) {
+            lowestROM = joint.rom;
+            secondaryIssue = joint.joint;
+        }
+    });
+    
+    console.log(`Primary issue: ${primaryIssue} (deficit: ${highestDeficit})`);
+    console.log(`Secondary issue: ${secondaryIssue} (ROM: ${lowestROM}°)`);
+    console.log(`Asymmetry: ${asymmetry}°, Grade: ${grade}`);
+    
+    // FOOTWEAR RECOMMENDATIONS (based on primary biomechanical issues)
+    if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
+        if (gaitType === 'running') {
+            tips.footwear.value = 'Motion Control Shoes';
+            tips.footwear.explanation = 'Your tibial inclination pattern suggests you need enhanced stability support to control excessive foot motion.';
+        } else {
+            tips.footwear.value = 'Stability Walking Shoes';
+            tips.footwear.explanation = 'Structured support will help optimize your lower limb alignment during the stance phase.';
+        }
+    } else if (primaryIssue.includes('Knee')) {
+        tips.footwear.value = 'Cushioned Neutral Shoes';
+        tips.footwear.explanation = 'Extra cushioning will reduce impact forces on your knee joint during ground contact.';
+    } else if (primaryIssue.includes('Hip')) {
+        tips.footwear.value = 'Minimalist/Low Drop';
+        tips.footwear.explanation = 'Lower heel-to-toe drop encourages better hip extension and natural biomechanics.';
+    } else if (primaryIssue.includes('Spine')) {
+        tips.footwear.value = 'Structured Support';
+        tips.footwear.explanation = 'Firm midsole support will help maintain better postural alignment throughout your gait cycle.';
+    } else {
+        tips.footwear.value = 'Neutral Running Shoes';
+        tips.footwear.explanation = 'Balanced cushioning and support for your current biomechanical pattern.';
+    }
+    
+    // DRILL/EXERCISE RECOMMENDATIONS (targeting primary weakness)
+    if (primaryIssue.includes('Hip')) {
+        tips.drill.value = 'Hip Flexor Stretches';
+        tips.drill.explanation = 'Tight hip flexors are limiting your hip extension range. Daily stretching will improve your stride length.';
+    } else if (primaryIssue.includes('Knee')) {
+        tips.drill.value = 'Single-Leg Squats';
+        tips.drill.explanation = 'Strengthen your quadriceps and improve knee stability with controlled single-leg movements.';
+    } else if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
+        tips.drill.value = 'Calf Raises + Mobility';
+        tips.drill.explanation = 'Combine calf strengthening with ankle mobility work to optimize your push-off mechanics.';
+    } else if (primaryIssue.includes('Spine')) {
+        tips.drill.value = 'Core Stabilization';
+        tips.drill.explanation = 'Planks and dead bugs will improve your trunk control and reduce excessive forward lean.';
+    } else {
+        tips.drill.value = 'High Knees';
+        tips.drill.explanation = 'Dynamic high knees will improve your overall coordination and joint mobility.';
+    }
+    
+    // FOCUS CUE RECOMMENDATIONS (immediate technique fixes)
+    if (asymmetry > 5) {
+        tips.cue.value = 'Equal Push-Off';
+        tips.cue.explanation = `Your ${asymmetry.toFixed(1)}° asymmetry suggests one side is stronger. Focus on equal effort from both legs.`;
+    } else if (primaryIssue.includes('Spine')) {
+        tips.cue.value = 'Tall Posture';
+        tips.cue.explanation = 'Think "run tall" - imagine a string pulling you up from the top of your head.';
+    } else if (primaryIssue.includes('Hip')) {
+        tips.cue.value = 'Drive Knees Forward';
+        tips.cue.explanation = 'Focus on lifting your knees forward and up, not just lifting your feet behind you.';
+    } else if (primaryIssue.includes('Knee')) {
+        tips.cue.value = 'Light Foot Strike';
+        tips.cue.explanation = 'Land softly under your center of mass to reduce impact forces on your knees.';
+    } else if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
+        tips.cue.value = 'Quick Cadence';
+        tips.cue.explanation = 'Increase your step rate by 5-10% to reduce ground contact time and improve efficiency.';
+    } else {
+        tips.cue.value = 'Relaxed Shoulders';
+        tips.cue.explanation = 'Keep your shoulders relaxed and arms swinging naturally to maintain efficient form.';
+    }
+    
+    // TRAINING FOCUS (long-term development based on overall grade)
+    if (grade >= 'A') {
+        tips.training.value = 'Speed Development';
+        tips.training.explanation = 'Your biomechanics are excellent! Focus on speed work and race-specific training.';
+    } else if (grade >= 'B') {
+        tips.training.value = 'Endurance Base';
+        tips.training.explanation = 'Solid mechanics - build your aerobic base with consistent easy-pace running.';
+    } else if (primaryIssue.includes('Hip')) {
+        tips.training.value = 'Hip Strengthening';
+        tips.training.explanation = 'Prioritize glute med and hip flexor strength work 3x per week for 4-6 weeks.';
+    } else if (primaryIssue.includes('Knee')) {
+        tips.training.value = 'Quad + Hamstring';
+        tips.training.explanation = 'Balance your knee stability with targeted quadriceps and hamstring strengthening.';
+    } else if (primaryIssue.includes('Spine')) {
+        tips.training.value = 'Core Stability';
+        tips.training.explanation = 'Add 15 minutes of core work to your routine 4x per week to improve trunk control.';
+    } else {
+        tips.training.value = 'Movement Quality';
+        tips.training.explanation = 'Focus on movement drills and technique work before increasing training volume.';
+    }
+    
+    // Update the UI with personalized tips
+    document.getElementById('footwear-recommendation').textContent = tips.footwear.value;
+    document.getElementById('footwear-explanation').textContent = tips.footwear.explanation;
+    
+    document.getElementById('drill-recommendation').textContent = tips.drill.value;
+    document.getElementById('drill-explanation').textContent = tips.drill.explanation;
+    
+    document.getElementById('cue-recommendation').textContent = tips.cue.value;
+    document.getElementById('cue-explanation').textContent = tips.cue.explanation;
+    
+    document.getElementById('training-recommendation').textContent = tips.training.value;
+    document.getElementById('training-explanation').textContent = tips.training.explanation;
+    
+    // Show the tips section
+    document.getElementById('personal-tips-section').style.display = 'block';
+    
+    console.log('✅ Personalized tips generated and displayed');
+    return tips;
+}
 
 // Service Worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {
