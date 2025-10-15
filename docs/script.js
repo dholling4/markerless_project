@@ -230,6 +230,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('overall-grade').textContent = analysisResults.grade;
         document.getElementById('asymmetry-score').textContent = `${analysisResults.asymmetry}°`;
         
+        // Display pose model and ankle calculation method information
+        if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
+            console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
+            console.log(`🦴 Ankle Calculation: ${analysisResults.ankleCalculationMethod}`);
+            
+            // Add visual indicator for MoveNet tibial surrogate
+            if (analysisResults.poseModel === 'MoveNet') {
+                console.log('ℹ️ Note: Ankle angles calculated using tibial inclination (shank-to-vertical angle) due to MoveNet model limitations');
+            }
+        }
+        
         // Generate comprehensive analysis charts
         console.log('Analysis results:', analysisResults);
         console.log('ROM values:', analysisResults.romValues);
@@ -462,25 +473,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 x: rightKnee.x - rightAnkle.x,
                 y: rightKnee.y - rightAnkle.y
             };
-            const leftFootVector = {
-                x: leftAnkle.x - leftFoot.x,
-                y: leftAnkle.y - leftFoot.y
-            };
-            const rightFootVector = {
-                x: rightAnkle.x - rightFoot.x,
-                y: rightAnkle.y - rightFoot.y
-            };
+            // Check if we have valid foot segments (MediaPipe) or need surrogate calculation (MoveNet)
+            const hasFootSegments = frame.modelType === 'MediaPipe' && 
+                                  leftFoot && rightFoot && 
+                                  (leftFoot.x !== leftAnkle.x || leftFoot.y !== leftAnkle.y);
+
+            let leftAnkleAngle, rightAnkleAngle;
+            
+            if (hasFootSegments) {
+                // Traditional ankle angle: shank-to-foot vector angle (MediaPipe)
+                const leftFootVector = {
+                    x: leftAnkle.x - leftFoot.x,
+                    y: leftAnkle.y - leftFoot.y
+                };
+                const rightFootVector = {
+                    x: rightAnkle.x - rightFoot.x,
+                    y: rightAnkle.y - rightFoot.y
+                };
+                leftAnkleAngle = calculateAngleBetweenVectors(leftShankVector, leftFootVector);
+                rightAnkleAngle = calculateAngleBetweenVectors(rightShankVector, rightFootVector);
+            } else {
+                // MoveNet surrogate: Tibial inclination angle (shank relative to vertical)
+                // This is clinically meaningful - measures how much the tibia deviates from vertical
+                leftAnkleAngle = calculateAngleBetweenVectors(leftShankVector, verticalVector);
+                rightAnkleAngle = calculateAngleBetweenVectors(rightShankVector, verticalVector);
+                
+                // Log the surrogate method for user awareness
+                if (frame === gaitCycleFrames[0]) {  // Only log once per analysis
+                    console.log('🦴 Using tibial inclination angle as ankle surrogate for MoveNet (no foot keypoints available)');
+                }
+            }
 
             // Angle calculations exactly matching Python
             leftAngles.spine.push(calculateAngleBetweenVectors(trunkVector, verticalVector));
             leftAngles.hip.push(calculateAngleBetweenVectors(leftTrunkVector, leftThighVector));
             leftAngles.knee.push(calculateAngleBetweenVectors(leftThighVector, leftShankVector));
-            leftAngles.ankle.push(calculateAngleBetweenVectors(leftShankVector, leftFootVector));
+            leftAngles.ankle.push(leftAnkleAngle);
 
             rightAngles.spine.push(calculateAngleBetweenVectors(trunkVector, verticalVector));
             rightAngles.hip.push(calculateAngleBetweenVectors(rightTrunkVector, rightThighVector));
             rightAngles.knee.push(calculateAngleBetweenVectors(rightThighVector, rightShankVector));
-            rightAngles.ankle.push(calculateAngleBetweenVectors(rightShankVector, rightFootVector));
+            rightAngles.ankle.push(rightAnkleAngle);
         });
 
         // Apply pose estimation noise simulation (matching real MediaPipe uncertainty)
@@ -558,6 +591,10 @@ document.addEventListener('DOMContentLoaded', function() {
             { joint: 'Right Ankle', minAngle: Math.min(...rightAngles.ankle), maxAngle: Math.max(...rightAngles.ankle), rom: romValues[6] }
         ];
         
+        // Determine what model was used and ankle calculation method
+        const modelUsed = gaitCycleFrames.length > 0 ? gaitCycleFrames[0].modelType : 'Simulation';
+        const usingTibialSurrogate = modelUsed === 'MoveNet';
+        
         return {
             cadence: cadence,
             grade: grade,
@@ -578,7 +615,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             // ROM data table matching Python df_rom structure
-            romTable: romTable
+            romTable: romTable,
+            // Model and calculation metadata
+            poseModel: modelUsed,
+            ankleCalculationMethod: usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle'
         };
     }
 
