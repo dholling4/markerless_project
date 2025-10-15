@@ -394,9 +394,15 @@ document.addEventListener('DOMContentLoaded', function() {
     async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
         let gaitCycleFrames;
         
-        // For now, always use simulation since MediaPipe setup is complex
-        // TODO: Implement full MediaPipe integration in production
-        console.log('📊 Using simulated gait cycle data for demo...');
+        // Check if TensorFlow.js MediaPipe is available in docs version
+        const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
+        console.log('TensorFlow.js MediaPipe available (docs):', mediaPipeAvailable);
+        
+        if (videoFile && mediaPipeAvailable) {
+            console.log('📊 Docs version: Using simulation for stable demo (TensorFlow.js available but disabled)');
+        } else {
+            console.log('📊 Docs version: Using simulated gait cycle data...');
+        }
         gaitCycleFrames = simulateGaitCycle(gaitType);
         
         // Calculate joint angles for each frame

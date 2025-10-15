@@ -3,6 +3,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const navToggle = document.getElementById('nav-toggle');
     const navMenu = document.getElementById('nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    // Initialize TensorFlow.js MediaPipe on page load
+    setTimeout(async () => {
+        console.log('🚀 Initializing TensorFlow.js MediaPipe on page load...');
+        const success = await initializeMediaPipe();
+        if (success) {
+            console.log('✅ MediaPipe ready for video processing');
+        } else {
+            console.log('⚠️ MediaPipe initialization failed, will use simulation fallback');
+        }
+    }, 1000); // Wait 1 second for libraries to load
 
     navToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
@@ -263,56 +274,75 @@ document.addEventListener('DOMContentLoaded', function() {
         32: "Right Foot"
     };
 
-    // MediaPipe Pose configuration (matching Python settings)
+    // MediaPipe Pose configuration (matching Python settings exactly)
     const POSE_CONFIG = {
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+        runtime: 'mediapipe', // Use MediaPipe backend like Python
+        modelType: 'full',    // Equivalent to model_complexity = 1 in Python
         minDetectionConfidence: 0.5,  // Matching Python min_detection_confidence
         minTrackingConfidence: 0.5,   // Matching Python min_tracking_confidence
-        modelComplexity: 1            // Default complexity level
+        enableSmoothing: true,
+        enableSegmentation: false
     };
 
-    // Global variables for MediaPipe processing
-    let mediaPipePose = null;
+    // Global variables for TensorFlow.js MediaPipe processing
+    let poseDetector = null;
+    let tfReady = false;
     let isProcessingVideo = false;
-    let videoElement = null;
-    let canvasElement = null;
 
-    // Initialize MediaPipe Pose (matching Python implementation)
+    // Initialize TensorFlow.js MediaPipe Pose (matching Python mp_pose setup)
     async function initializeMediaPipe() {
         try {
-            if (typeof Pose === 'undefined') {
-                console.warn('MediaPipe Pose class not available');
-                return false;
+            console.log('🤖 Checking TensorFlow.js availability...');
+            
+            // Check if TensorFlow.js and PoseDetection are loaded
+            if (typeof tf === 'undefined') {
+                throw new Error('TensorFlow.js not loaded');
+            }
+            
+            if (typeof poseDetection === 'undefined') {
+                throw new Error('PoseDetection library not loaded');
             }
 
-            console.log('Initializing MediaPipe Pose...');
-            mediaPipePose = new Pose(POSE_CONFIG);
+            console.log('🚀 Initializing MediaPipe Pose with TensorFlow.js...');
+            console.log('TF version:', tf.version.tfjs);
             
-            mediaPipePose.setOptions({
-                modelComplexity: POSE_CONFIG.modelComplexity,
-                smoothLandmarks: true,
-                enableSegmentation: false,
-                smoothSegmentation: false,
-                minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
-                minTrackingConfidence: POSE_CONFIG.minTrackingConfidence
-            });
+            // Wait for TensorFlow.js to be ready
+            await tf.ready();
+            tfReady = true;
+            console.log('✅ TensorFlow.js ready');
 
-            console.log('✅ MediaPipe Pose initialized successfully');
+            // Create MediaPipe pose detector (equivalent to mp_pose.Pose() in Python)
+            poseDetector = await poseDetection.createDetector(
+                poseDetection.SupportedModels.MediaPipePose,
+                {
+                    runtime: POSE_CONFIG.runtime,
+                    modelType: POSE_CONFIG.modelType,
+                    minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
+                    minTrackingConfidence: POSE_CONFIG.minTrackingConfidence,
+                    enableSmoothing: POSE_CONFIG.enableSmoothing,
+                    enableSegmentation: POSE_CONFIG.enableSegmentation
+                }
+            );
+
+            console.log('✅ MediaPipe Pose detector initialized successfully');
+            console.log('🎯 Configuration:', POSE_CONFIG);
             return true;
+            
         } catch (error) {
-            console.error('❌ Failed to initialize MediaPipe:', error);
+            console.error('❌ Failed to initialize MediaPipe with TensorFlow.js:', error);
+            tfReady = false;
             return false;
         }
     }
 
-    // Process video with real MediaPipe pose estimation (matching Python)
+    // Process video with TensorFlow.js MediaPipe (matching Python pose.process() exactly)
     async function processVideoWithMediaPipe(videoFile) {
-        console.log('🎬 Starting video processing with MediaPipe...');
+        console.log('🎬 Starting video processing with TensorFlow.js MediaPipe...');
         
-        if (!mediaPipePose) {
+        if (!poseDetector || !tfReady) {
             const initialized = await initializeMediaPipe();
             if (!initialized) {
-                throw new Error('MediaPipe initialization failed');
+                throw new Error('TensorFlow.js MediaPipe initialization failed');
             }
         }
 
@@ -346,49 +376,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
-                // Set up MediaPipe pose results handler
-                mediaPipePose.onResults((results) => {
-                    if (results.poseLandmarks && results.poseLandmarks.length >= 33) {
-                        const landmarks = results.poseLandmarks;
-                        
-                        // Validate required landmarks exist
-                        if (landmarks[11] && landmarks[12] && landmarks[23] && landmarks[24] && 
-                            landmarks[25] && landmarks[26] && landmarks[27] && landmarks[28] && 
-                            landmarks[31] && landmarks[32]) {
-                            
-                            const frameData = {
-                                left: {
-                                    shoulder: { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
-                                    hip: { x: landmarks[23].x * canvas.width, y: landmarks[23].y * canvas.height },
-                                    knee: { x: landmarks[25].x * canvas.width, y: landmarks[25].y * canvas.height },
-                                    ankle: { x: landmarks[27].x * canvas.width, y: landmarks[27].y * canvas.height },
-                                    foot: { x: landmarks[31].x * canvas.width, y: landmarks[31].y * canvas.height }
-                                },
-                                right: {
-                                    shoulder: { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
-                                    hip: { x: landmarks[24].x * canvas.width, y: landmarks[24].y * canvas.height },
-                                    knee: { x: landmarks[26].x * canvas.width, y: landmarks[26].y * canvas.height },
-                                    ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
-                                    foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
-                                },
-                                frameIndex: processedFrames
-                            };
-                            
-                            allFrameResults.push(frameData);
-                            processedFrames++;
-                            
-                            if (processedFrames >= maxFrames) {
-                                clearTimeout(timeout);
-                                console.log(`✅ Processed ${allFrameResults.length} frames successfully`);
-                                resolve(allFrameResults);
-                                return;
-                            }
-                        }
-                    }
-                });
-                
-                // Process video frame by frame
-                const processFrame = () => {
+                // Process video frame by frame (matching Python approach)
+                const processFrame = async () => {
                     if (video.currentTime >= video.duration || frameCount >= maxFrames * frameSkip) {
                         clearTimeout(timeout);
                         if (allFrameResults.length > 0) {
@@ -400,13 +389,66 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Frame skipping optimization (matching Python)
+                    // Frame skipping optimization (matching Python frame_skip = 2)
                     if (frameCount % frameSkip === 0) {
-                        ctx.drawImage(video, 0, 0);
                         try {
-                            mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
+                            // Draw current video frame to canvas
+                            ctx.drawImage(video, 0, 0);
+                            
+                            // Create tensor from canvas (equivalent to cv2.cvtColor + pose.process in Python)
+                            const imageTensor = tf.browser.fromPixels(canvas);
+                            
+                            // Detect poses (equivalent to results = pose.process(frame_rgb) in Python)
+                            const poses = await poseDetector.estimatePoses(imageTensor);
+                            
+                            // Clean up tensor to prevent memory leaks
+                            imageTensor.dispose();
+                            
+                            // Process pose results (matching Python results.pose_landmarks handling)
+                            if (poses.length > 0 && poses[0].keypoints.length >= 33) {
+                                const keypoints = poses[0].keypoints;
+                                
+                                // Extract keypoints matching Python landmarks indices exactly
+                                // Validate required landmarks exist with confidence > threshold
+                                const requiredPoints = [11, 12, 23, 24, 25, 26, 27, 28, 31, 32];
+                                const validPoints = requiredPoints.every(idx => 
+                                    keypoints[idx] && keypoints[idx].score > POSE_CONFIG.minDetectionConfidence
+                                );
+                                
+                                if (validPoints) {
+                                    const frameData = {
+                                        left: {
+                                            shoulder: { x: keypoints[11].x, y: keypoints[11].y },
+                                            hip: { x: keypoints[23].x, y: keypoints[23].y },
+                                            knee: { x: keypoints[25].x, y: keypoints[25].y },
+                                            ankle: { x: keypoints[27].x, y: keypoints[27].y },
+                                            foot: { x: keypoints[31].x, y: keypoints[31].y }
+                                        },
+                                        right: {
+                                            shoulder: { x: keypoints[12].x, y: keypoints[12].y },
+                                            hip: { x: keypoints[24].x, y: keypoints[24].y },
+                                            knee: { x: keypoints[26].x, y: keypoints[26].y },
+                                            ankle: { x: keypoints[28].x, y: keypoints[28].y },
+                                            foot: { x: keypoints[32].x, y: keypoints[32].y }
+                                        },
+                                        frameIndex: processedFrames,
+                                        confidence: poses[0].score || 0.5
+                                    };
+                                    
+                                    allFrameResults.push(frameData);
+                                    processedFrames++;
+                                    
+                                    if (processedFrames >= maxFrames) {
+                                        clearTimeout(timeout);
+                                        console.log(`✅ Processed ${allFrameResults.length} frames successfully`);
+                                        resolve(allFrameResults);
+                                        return;
+                                    }
+                                }
+                            }
+                            
                         } catch (error) {
-                            console.error('Error sending frame to MediaPipe:', error);
+                            console.error('Error processing frame:', error);
                         }
                     }
                     
@@ -416,6 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     requestAnimationFrame(processFrame);
                 };
                 
+                // Start processing from the beginning
                 video.currentTime = 0;
                 processFrame();
             };
@@ -432,11 +475,11 @@ document.addEventListener('DOMContentLoaded', function() {
     async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
         let gaitCycleFrames;
         
-        // Check if MediaPipe is available
-        const mediaPipeAvailable = typeof Pose !== 'undefined' && typeof mediapipe !== 'undefined';
-        console.log('MediaPipe available:', mediaPipeAvailable);
+        // Check if TensorFlow.js MediaPipe is available
+        const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
+        console.log('TensorFlow.js MediaPipe available:', mediaPipeAvailable);
         
-        // Try to use real MediaPipe if video file is provided and MediaPipe is available
+        // Try to use real MediaPipe if video file is provided and TensorFlow.js is available
         if (videoFile && mediaPipeAvailable) {
             console.log('Attempting MediaPipe pose estimation...');
             try {
@@ -454,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!videoFile) {
                 console.log('ℹ️ No video file provided, using simulation');
             } else if (!mediaPipeAvailable) {
-                console.log('⚠️ MediaPipe not available, using simulation');
+                console.log('⚠️ TensorFlow.js MediaPipe not available, using simulation');
             }
             gaitCycleFrames = simulateGaitCycle(gaitType);
         }
