@@ -367,6 +367,25 @@ document.addEventListener('DOMContentLoaded', function() {
             video.muted = true;
             
             video.onloadedmetadata = () => {
+                console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
+                
+                // Calculate video segment to analyze (middle 12 seconds if video > 12 seconds)
+                let startTime, endTime, analysisSegment;
+                if (video.duration > 12) {
+                    // Use middle 12 seconds
+                    const midPoint = video.duration / 2;
+                    startTime = Math.max(0, midPoint - 6); // 6 seconds before midpoint
+                    endTime = Math.min(video.duration, midPoint + 6); // 6 seconds after midpoint
+                    analysisSegment = endTime - startTime;
+                    console.log(`🎯 Using middle ${analysisSegment.toFixed(1)}s segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s`);
+                } else {
+                    // Use entire video if <= 12 seconds
+                    startTime = 0;
+                    endTime = video.duration;
+                    analysisSegment = video.duration;
+                    console.log(`🎯 Using entire video: ${analysisSegment.toFixed(1)}s duration`);
+                }
+                
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
@@ -391,7 +410,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
                                 foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
                             },
-                            frameIndex: frameCount
+                            frameIndex: frameCount,
+                            segmentStartTime: startTime,
+                            segmentEndTime: endTime,
+                            segmentDuration: analysisSegment
                         };
                         
                         allFrameResults.push(frameData);
@@ -400,7 +422,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Process video frame by frame
                 const processFrame = () => {
-                    if (video.currentTime >= video.duration) {
+                    if (video.currentTime >= endTime) {
+                        console.log(`🎯 Video segment processing complete: ${allFrameResults.length} frames`);
+                        console.log(`📊 Analyzed segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s (${analysisSegment.toFixed(1)}s total)`);
                         resolve(allFrameResults);
                         return;
                     }
@@ -412,12 +436,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     frameCount++;
-                    video.currentTime = frameCount / 30; // Assume 30 FPS
+                    video.currentTime = startTime + (frameCount / 30); // Start from calculated start time, assume 30 FPS
                     
                     requestAnimationFrame(processFrame);
                 };
                 
-                video.currentTime = 0;
+                // Start processing from the calculated start time
+                video.currentTime = startTime;
+                console.log(`🎬 Starting analysis at ${startTime.toFixed(1)}s`);
                 processFrame();
             };
             
@@ -434,6 +460,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (videoFile && mediaPipeAvailable) {
             console.log('📊 Docs version: Using simulation for stable demo (TensorFlow.js available but disabled)');
+            // Still show video duration info for user awareness
+            const tempVideo = document.createElement('video');
+            tempVideo.src = URL.createObjectURL(videoFile);
+            await new Promise((resolve) => {
+                tempVideo.onloadedmetadata = () => {
+                    if (tempVideo.duration > 12) {
+                        console.log(`📹 Uploaded video is ${tempVideo.duration.toFixed(1)}s long - middle 12s would be analyzed in production`);
+                    } else {
+                        console.log(`📹 Uploaded video is ${tempVideo.duration.toFixed(1)}s long - entire video would be analyzed`);
+                    }
+                    resolve();
+                };
+            });
         } else {
             console.log('📊 Docs version: Using simulated gait cycle data...');
         }

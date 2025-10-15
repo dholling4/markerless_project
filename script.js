@@ -579,24 +579,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 const estimatedFrameRate = Math.round(maxFrames / video.duration) || 30; // Estimate based on duration, fallback to 30
                 console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
                 console.log(`🎯 Estimated frame rate: ${estimatedFrameRate} FPS`);
+                
+                // Calculate video segment to analyze (middle 12 seconds if video > 12 seconds)
+                let startTime, endTime, analysisSegment;
+                if (video.duration > 12) {
+                    // Use middle 12 seconds
+                    const midPoint = video.duration / 2;
+                    startTime = Math.max(0, midPoint - 6); // 6 seconds before midpoint
+                    endTime = Math.min(video.duration, midPoint + 6); // 6 seconds after midpoint
+                    analysisSegment = endTime - startTime;
+                    console.log(`🎯 Using middle ${analysisSegment.toFixed(1)}s segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s`);
+                } else {
+                    // Use entire video if <= 12 seconds
+                    startTime = 0;
+                    endTime = video.duration;
+                    analysisSegment = video.duration;
+                    console.log(`🎯 Using entire video: ${analysisSegment.toFixed(1)}s duration`);
+                }
+                
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
                 // Process video frame by frame (matching Python approach)
                 const processFrame = async () => {
-                    if (video.currentTime >= video.duration || frameCount >= maxFrames * frameSkip) {
+                    if (video.currentTime >= endTime || frameCount >= maxFrames * frameSkip) {
                         clearTimeout(timeout);
                         if (allFrameResults.length > 0) {
                             // Add frame rate metadata to results
                             const resultsWithFrameRate = allFrameResults.map((result, index) => ({
                                 ...result,
                                 frameRate: estimatedFrameRate,
-                                actualFrameIndex: index
+                                actualFrameIndex: index,
+                                segmentStartTime: startTime,
+                                segmentEndTime: endTime,
+                                segmentDuration: analysisSegment
                             }));
-                            console.log(`🎯 Video processing complete: ${allFrameResults.length} frames at ${estimatedFrameRate} FPS`);
+                            console.log(`🎯 Video segment processing complete: ${allFrameResults.length} frames at ${estimatedFrameRate} FPS`);
+                            console.log(`📊 Analyzed segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s (${analysisSegment.toFixed(1)}s total)`);
                             resolve(resultsWithFrameRate);
                         } else {
-                            reject(new Error('No pose data extracted from video'));
+                            reject(new Error('No pose data extracted from video segment'));
                         }
                         return;
                     }
@@ -666,13 +688,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     frameCount++;
-                    video.currentTime = frameCount / estimatedFrameRate; // Use detected frame rate
+                    video.currentTime = startTime + (frameCount / estimatedFrameRate); // Start from calculated start time
                     
                     requestAnimationFrame(processFrame);
                 };
                 
-                // Start processing from the beginning
-                video.currentTime = 0;
+                // Start processing from the calculated start time
+                video.currentTime = startTime;
+                console.log(`🎬 Starting analysis at ${startTime.toFixed(1)}s`);
                 processFrame();
             };
             
@@ -696,6 +719,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (videoFile && mediaPipeAvailable) {
             console.log('🎯 Attempting pose detection with TensorFlow.js...');
             console.log('🔬 VIDEO FILE ANALYSIS MODE - Real MoveNet Processing');
+            
+            // Create a temporary video element to get duration info
+            const tempVideo = document.createElement('video');
+            tempVideo.src = URL.createObjectURL(videoFile);
+            await new Promise((resolve) => {
+                tempVideo.onloadedmetadata = () => {
+                    if (tempVideo.duration > 12) {
+                        console.log(`📹 Video is ${tempVideo.duration.toFixed(1)}s long - using middle 12s segment for analysis`);
+                        console.log('💡 This ensures optimal gait cycle analysis from the most stable portion of your movement');
+                    } else {
+                        console.log(`📹 Video is ${tempVideo.duration.toFixed(1)}s long - analyzing entire video`);
+                    }
+                    resolve();
+                };
+            });
+            
             try {
                 gaitCycleFrames = await processVideoWithPoseDetection(videoFile);
                 if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
