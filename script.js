@@ -26,10 +26,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('✅ TensorFlow.js ready');
                     console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
                     
-                    if (poseDetection.SupportedModels.MediaPipePose) {
-                        console.log('✅ MediaPipe Pose model available via TensorFlow.js');
+                    if (poseDetection.SupportedModels.MoveNet) {
+                        console.log('✅ MoveNet model available via TensorFlow.js');
                     } else {
-                        console.warn('⚠️ MediaPipe Pose model not found in TensorFlow models');
+                        console.warn('⚠️ MoveNet model not found');
+                    }
+                    
+                    if (poseDetection.SupportedModels.MediaPipePose) {
+                        console.log('✅ MediaPipe Pose model available as backup');
+                    } else {
+                        console.warn('⚠️ MediaPipe Pose model not found');
                     }
                     
                 } catch (error) {
@@ -319,9 +325,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const POSE_CONFIG = {
         // Primary: MoveNet (more reliable in TensorFlow.js)
         moveNet: {
-            modelType: poseDetection?.movenet?.modelType?.SINGLEPOSE_THUNDER || 'SinglePose.Thunder',
-            minScore: 0.5,  // Matching Python confidence thresholds
-            multiPoseMaxDimension: 256,
+            modelType: 'SinglePose.Thunder', // High accuracy model
+            minScore: 0.3,  // Lower threshold for better detection
             enableSmoothing: true,
             enableTracking: true
         },
