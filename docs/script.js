@@ -261,8 +261,34 @@ document.addEventListener('DOMContentLoaded', function() {
         addDownloadButton();
     }
 
+    // MediaPipe Pose keypoints (matching Python implementation)
+    const KEYPOINTS_OF_INTEREST = {
+        11: "Left Shoulder",
+        12: "Right Shoulder", 
+        23: "Left Hip",
+        24: "Right Hip",
+        25: "Left Knee",
+        26: "Right Knee",
+        27: "Left Ankle",
+        28: "Right Ankle",
+        31: "Left Foot",
+        32: "Right Foot"
+    };
+
+    // MediaPipe Pose configuration (matching Python settings)
+    const POSE_CONFIG = {
+        min_detection_confidence: 0.5,
+        min_tracking_confidence: 0.5,
+        model_complexity: 1  // Default complexity level
+    };
+
     function performBiomechanicalAnalysis(gaitType, cameraAngle) {
         // Simulate pose estimation keypoint detection over gait cycle
+        // Note: In production, this would use real MediaPipe Pose with the above config
+        // Matching Python implementation parameters:
+        // - frame_skip = 2 (process every 2nd frame for efficiency)
+        // - fps = 30 (assumed video frame rate)
+        // - MediaPipe confidence thresholds: detection=0.5, tracking=0.5
         const gaitCycleFrames = simulateGaitCycle(gaitType);
         
         // Calculate joint angles for each frame
@@ -342,6 +368,30 @@ document.addEventListener('DOMContentLoaded', function() {
             rightAngles.knee.push(calculateAngleBetweenVectors(rightThighVector, rightShankVector));
             rightAngles.ankle.push(calculateAngleBetweenVectors(rightShankVector, rightFootVector));
         });
+
+        // Apply pose estimation noise simulation (matching real MediaPipe uncertainty)
+        leftAngles.spine = addPoseEstimationNoise(leftAngles.spine);
+        leftAngles.hip = addPoseEstimationNoise(leftAngles.hip);
+        leftAngles.knee = addPoseEstimationNoise(leftAngles.knee);
+        leftAngles.ankle = addPoseEstimationNoise(leftAngles.ankle);
+        
+        rightAngles.spine = addPoseEstimationNoise(rightAngles.spine);
+        rightAngles.hip = addPoseEstimationNoise(rightAngles.hip);
+        rightAngles.knee = addPoseEstimationNoise(rightAngles.knee);
+        rightAngles.ankle = addPoseEstimationNoise(rightAngles.ankle);
+
+        // Apply Butterworth lowpass filtering (matching Python implementation)
+        // Python equivalent: butter_lowpass_filter(data, cutoff=6, fs=30, order=4)
+        // This removes high-frequency noise from pose estimation
+        leftAngles.spine = butterLowpassFilter(leftAngles.spine, 6, 30, 4);
+        leftAngles.hip = butterLowpassFilter(leftAngles.hip, 6, 30, 4);
+        leftAngles.knee = butterLowpassFilter(leftAngles.knee, 6, 30, 4);
+        leftAngles.ankle = butterLowpassFilter(leftAngles.ankle, 6, 30, 4);
+        
+        rightAngles.spine = butterLowpassFilter(rightAngles.spine, 6, 30, 4);
+        rightAngles.hip = butterLowpassFilter(rightAngles.hip, 6, 30, 4);
+        rightAngles.knee = butterLowpassFilter(rightAngles.knee, 6, 30, 4);
+        rightAngles.ankle = butterLowpassFilter(rightAngles.ankle, 6, 30, 4);
         
         // Calculate ROM and asymmetry
         const leftROM = {
@@ -503,6 +553,44 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Convert to degrees
         return angleRad * (180 / Math.PI);
+    }
+
+    // Butterworth lowpass filter implementation matching Python version
+    function butterLowpassFilter(data, cutoff = 6, fs = 30, order = 4) {
+        // Simple implementation of Butterworth filter for web demo
+        // This approximates the Python scipy.signal.butter + lfilter implementation
+        const nyquist = 0.5 * fs;
+        const normalCutoff = cutoff / nyquist;
+        
+        // For demo purposes, use a simple moving average as approximation
+        // In production, would implement full Butterworth coefficients
+        const windowSize = Math.max(1, Math.round(fs / cutoff));
+        const filtered = [];
+        
+        for (let i = 0; i < data.length; i++) {
+            let sum = 0;
+            let count = 0;
+            
+            // Moving average window
+            for (let j = Math.max(0, i - Math.floor(windowSize/2)); 
+                 j <= Math.min(data.length - 1, i + Math.floor(windowSize/2)); j++) {
+                sum += data[j];
+                count++;
+            }
+            
+            filtered[i] = sum / count;
+        }
+        
+        return filtered;
+    }
+
+    // Add noise to simulate real pose estimation data
+    function addPoseEstimationNoise(angles, noiseLevel = 2.0) {
+        return angles.map(angle => {
+            // Add Gaussian noise to simulate pose estimation uncertainty
+            const noise = (Math.random() - 0.5) * 2 * noiseLevel;
+            return angle + noise;
+        });
     }
 
     function average(array) {

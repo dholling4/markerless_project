@@ -11,8 +11,7 @@ numpy
 pandas
 scipy
 scikit-learn>=1.0,<1.4
-matplotlib==3.8.2
-plotly
+matplotlib
 
 # PDF and file handling
 fpdf2
