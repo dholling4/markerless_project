@@ -12,7 +12,7 @@ pandas
 scipy
 scikit-learn>=1.0,<1.4
 matplotlib
-
+plotly
 # PDF and file handling
 fpdf2
 Pillow

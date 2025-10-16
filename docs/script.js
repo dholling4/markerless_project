@@ -112,12 +112,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function handleFileUpload(file) {
-        // Validate file type
-        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov'];
-        if (!allowedTypes.includes(file.type)) {
+        // Validate file type - include all common video MIME types
+        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime', 'video/x-msvideo'];
+        const allowedExtensions = ['.mp4', '.avi', '.mov'];
+        
+        const fileName = file.name.toLowerCase();
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!allowedTypes.includes(file.type) && !hasValidExtension) {
             alert('Please upload a valid video file (MP4, AVI, or MOV)');
+            console.log('Rejected file:', file.name, 'Type:', file.type);
             return;
         }
+        
+        console.log('✅ Accepted video file:', file.name, 'Type:', file.type);
 
         // Validate file size (100MB limit)
         const maxSize = 100 * 1024 * 1024; // 100MB in bytes
@@ -158,47 +166,51 @@ document.addEventListener('DOMContentLoaded', function() {
         analyzeBtn.style.display = 'none';
         progressContainer.style.display = 'block';
 
-        // Simulate analysis progress
-        let progress = 0;
-        const progressSteps = [
-            { progress: 20, text: 'Processing video...' },
-            { progress: 40, text: 'Detecting pose landmarks...' },
-            { progress: 60, text: 'Analyzing joint angles...' },
-            { progress: 80, text: 'Calculating metrics...' },
-            { progress: 90, text: 'Generating insights...' },
-            { progress: 100, text: 'Analysis complete!' }
-        ];
+        // Start real analysis instead of simulation
+        showResults();
+    }
 
-        let stepIndex = 0;
-        const interval = setInterval(() => {
-            if (stepIndex < progressSteps.length) {
-                const step = progressSteps[stepIndex];
-                progress = step.progress;
-                progressFill.style.width = progress + '%';
-                progressText.textContent = step.text;
-                stepIndex++;
-            } else {
-                clearInterval(interval);
-                showResults();
-            }
-        }, 1000);
+    // Progress update function for real-time tracking
+    function updateProgress(percentage, message) {
+        progressFill.style.width = percentage + '%';
+        progressText.textContent = message;
+        console.log(`Progress: ${percentage}% - ${message}`);
     }
 
     async function showResults() {
         console.log('showResults() called');
-        // Hide progress and show results
-        setTimeout(async () => {
-            console.log('Hiding progress, showing results');
-            progressContainer.style.display = 'none';
-            resultsPreview.style.display = 'block';
-            
+        
+        // Start with initial progress
+        updateProgress(5, 'Initializing video processing...');
+        
+        try {
             // Generate results with real MediaPipe processing
-            console.log('About to call generateMockResults');
+            console.log('About to call generateMockResults with real analysis');
             await generateMockResults();
             
-            // Scroll to results
-            resultsPreview.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+            // Complete progress
+            updateProgress(100, 'Analysis complete!');
+            
+            // Hide progress and show results after a brief pause
+            setTimeout(() => {
+                console.log('Hiding progress, showing results');
+                progressContainer.style.display = 'none';
+                resultsPreview.style.display = 'block';
+                
+                // Scroll to results
+                resultsPreview.scrollIntoView({ behavior: 'smooth' });
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            updateProgress(0, 'Analysis failed. Please try again.');
+            
+            // Reset UI on error
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                analyzeBtn.style.display = 'block';
+            }, 2000);
+        }
     }
 
     async function generateMockResults() {
@@ -361,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const allFrameResults = [];
             let frameCount = 0;
-            const frameSkip = 2; // Match Python frame_skip = 2
+            const frameSkip = 1; // Process every frame for complete data
             
             video.src = URL.createObjectURL(videoFile);
             video.muted = true;
@@ -429,14 +441,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Frame skipping optimization (matching Python)
-                    if (frameCount % frameSkip === 0) {
-                        ctx.drawImage(video, 0, 0);
-                        mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
-                    }
+                    // Process every frame
+                    ctx.drawImage(video, 0, 0);
+                    mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
                     
                     frameCount++;
-                    video.currentTime = startTime + (frameCount / 30); // Start from calculated start time, assume 30 FPS
+                    // Advance video time for every frame
+                    video.currentTime = startTime + (frameCount / estimatedFrameRate);
                     
                     requestAnimationFrame(processFrame);
                 };
@@ -1969,8 +1980,22 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
     const timePoints = series[0].data.length;
     const verticalGridLines = 10;
     const frameRate = analysisResults.frameRate || 30; // Use detected frame rate, fallback to 30 FPS
-    const totalDuration = timePoints / frameRate; // Total time in seconds
-    console.log(`🎯 Using frame rate: ${frameRate} FPS for trajectory plot (${totalDuration.toFixed(2)}s total)`);
+    let totalDuration = timePoints / frameRate; // Simple calculation: every frame processed
+    
+    console.log(`🎯 Trajectory Plot Debug (docs):`);
+    console.log(`  📊 Data points: ${timePoints}`);
+    console.log(`  🎬 Frame rate: ${frameRate} FPS`);
+    console.log(`  ✅ Processing: Every frame (no skipping)`);
+    console.log(`  ⏰ Calculated duration: ${totalDuration.toFixed(2)}s`);
+    
+    // If the duration seems wrong, let's use the actual segment duration from analysis results
+    const actualSegmentDuration = analysisResults.segmentDuration;
+    if (actualSegmentDuration && Math.abs(totalDuration - actualSegmentDuration) > 0.5) {
+        console.log(`⚠️  Duration mismatch detected! Using actual segment duration: ${actualSegmentDuration.toFixed(2)}s`);
+        totalDuration = actualSegmentDuration;
+    }
+    
+    console.log(`✅ Final duration for x-axis: ${totalDuration.toFixed(2)}s`);
     
     for (let i = 0; i <= verticalGridLines; i++) {
         const x = margin.left + (i / verticalGridLines) * chartWidth;

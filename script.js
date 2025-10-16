@@ -144,12 +144,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function handleFileUpload(file) {
-        // Validate file type
-        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov'];
-        if (!allowedTypes.includes(file.type)) {
+        // Validate file type - include all common video MIME types
+        const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime', 'video/x-msvideo'];
+        const allowedExtensions = ['.mp4', '.avi', '.mov'];
+        
+        const fileName = file.name.toLowerCase();
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!allowedTypes.includes(file.type) && !hasValidExtension) {
             alert('Please upload a valid video file (MP4, AVI, or MOV)');
+            console.log('Rejected file:', file.name, 'Type:', file.type);
             return;
         }
+        
+        console.log('✅ Accepted video file:', file.name, 'Type:', file.type);
 
         // Validate file size (100MB limit)
         const maxSize = 100 * 1024 * 1024; // 100MB in bytes
@@ -190,47 +198,51 @@ document.addEventListener('DOMContentLoaded', function() {
         analyzeBtn.style.display = 'none';
         progressContainer.style.display = 'block';
 
-        // Simulate analysis progress
-        let progress = 0;
-        const progressSteps = [
-            { progress: 20, text: 'Processing video...' },
-            { progress: 40, text: 'Detecting pose landmarks...' },
-            { progress: 60, text: 'Analyzing joint angles...' },
-            { progress: 80, text: 'Calculating metrics...' },
-            { progress: 90, text: 'Generating insights...' },
-            { progress: 100, text: 'Analysis complete!' }
-        ];
+        // Start real analysis instead of simulation
+        showResults();
+    }
 
-        let stepIndex = 0;
-        const interval = setInterval(() => {
-            if (stepIndex < progressSteps.length) {
-                const step = progressSteps[stepIndex];
-                progress = step.progress;
-                progressFill.style.width = progress + '%';
-                progressText.textContent = step.text;
-                stepIndex++;
-            } else {
-                clearInterval(interval);
-                showResults();
-            }
-        }, 1000);
+    // Progress update function for real-time tracking
+    function updateProgress(percentage, message) {
+        progressFill.style.width = percentage + '%';
+        progressText.textContent = message;
+        console.log(`Progress: ${percentage}% - ${message}`);
     }
 
     async function showResults() {
         console.log('showResults() called');
-        // Hide progress and show results
-        setTimeout(async () => {
-            console.log('Hiding progress, showing results');
-            progressContainer.style.display = 'none';
-            resultsPreview.style.display = 'block';
-            
+        
+        // Start with initial progress
+        updateProgress(5, 'Initializing video processing...');
+        
+        try {
             // Generate results with real MediaPipe processing
-            console.log('About to call generateMockResults');
+            console.log('About to call generateMockResults with real analysis');
             await generateMockResults();
             
-            // Scroll to results
-            resultsPreview.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+            // Complete progress
+            updateProgress(100, 'Analysis complete!');
+            
+            // Hide progress and show results after a brief pause
+            setTimeout(() => {
+                console.log('Hiding progress, showing results');
+                progressContainer.style.display = 'none';
+                resultsPreview.style.display = 'block';
+                
+                // Scroll to results
+                resultsPreview.scrollIntoView({ behavior: 'smooth' });
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            updateProgress(0, 'Analysis failed. Please try again.');
+            
+            // Reset UI on error
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                analyzeBtn.style.display = 'block';
+            }, 2000);
+        }
     }
 
     async function generateMockResults() {
@@ -255,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Generate biomechanically accurate results with real MediaPipe processing
         console.log('🚀 About to call performBiomechanicalAnalysis with video file:', selectedFile?.name);
         try {
-            const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile);
+            const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile, updateProgress);
             console.log('✅ performBiomechanicalAnalysis completed successfully');
             console.log('📊 Analysis results:', analysisResults);
             
@@ -533,12 +545,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Detect video frame rate by analyzing frame intervals
+    async function detectVideoFrameRate(video) {
+        return new Promise((resolve) => {
+            let frameCount = 0;
+            let lastTime = 0;
+            let intervals = [];
+            const maxSamples = 10; // Sample 10 frame intervals
+            
+            const checkFrame = () => {
+                const currentTime = video.currentTime;
+                if (lastTime > 0) {
+                    const interval = currentTime - lastTime;
+                    if (interval > 0) {
+                        intervals.push(interval);
+                    }
+                }
+                lastTime = currentTime;
+                frameCount++;
+                
+                if (intervals.length >= maxSamples || video.currentTime >= Math.min(1.0, video.duration)) {
+                    // Calculate average frame interval and derive FPS
+                    if (intervals.length > 0) {
+                        const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+                        let detectedFPS = Math.round(1 / avgInterval);
+                        
+                        // Common video frame rates - snap to nearest standard rate
+                        const commonRates = [24, 25, 30, 50, 60];
+                        const closest = commonRates.reduce((prev, curr) => 
+                            Math.abs(curr - detectedFPS) < Math.abs(prev - detectedFPS) ? curr : prev
+                        );
+                        
+                        console.log(`🎯 Raw detected FPS: ${detectedFPS}, snapped to: ${closest}`);
+                        resolve(closest);
+                    } else {
+                        console.log('⚠️ Could not detect frame rate, using 30 FPS default');
+                        resolve(30);
+                    }
+                    return;
+                }
+                
+                // Advance video by small increment for next frame
+                video.currentTime += 0.033; // ~30fps increment for sampling
+                requestAnimationFrame(checkFrame);
+            };
+            
+            video.currentTime = 0.1; // Start slightly into video
+            requestAnimationFrame(checkFrame);
+        });
+    }
+
     // Process video with TensorFlow.js pose detection (matching Python pose.process() exactly)
-    async function processVideoWithPoseDetection(videoFile) {
+    async function processVideoWithPoseDetection(videoFile, progressCallback = null) {
         console.log('🎬 Starting video processing with TensorFlow.js pose detection...');
         console.log('📹 Video file:', videoFile ? videoFile.name : 'None');
         console.log('🔧 TensorFlow.js ready:', tfReady);
         console.log('🤖 Pose detector available:', !!poseDetector);
+        
+        if (progressCallback) progressCallback(35, 'Initializing pose detection models...');
         
         if (!poseDetector || !tfReady) {
             const result = await initializePoseDetection();
@@ -549,6 +613,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ Pose detector initialized successfully');
         }
 
+        if (progressCallback) progressCallback(40, 'Setting up video processing...');
+
         return new Promise((resolve, reject) => {
             const video = document.createElement('video');
             const canvas = document.createElement('canvas');
@@ -557,28 +623,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const allFrameResults = [];
             let frameCount = 0;
             let processedFrames = 0;
-            const frameSkip = 2; // Match Python frame_skip = 2
-            const maxFrames = 60; // Limit processing for demo
+            const frameSkip = 1; // Process every frame for complete data
             
             video.src = URL.createObjectURL(videoFile);
             video.muted = true;
             video.crossOrigin = 'anonymous';
             
-            // Timeout to prevent hanging
+            // Timeout to prevent hanging - increased for longer processing
             const timeout = setTimeout(() => {
                 if (allFrameResults.length === 0) {
                     reject(new Error('MediaPipe processing timeout - no results'));
                 } else {
                     console.log(`⏰ MediaPipe timeout, but got ${allFrameResults.length} frames`);
-                    resolve(allFrameResults);
+                    // Add frame rate metadata to results even on timeout
+                    const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                        ...result,
+                        frameRate: estimatedFrameRate || 30,
+                        actualFrameIndex: index
+                    }));
+                    resolve(resultsWithFrameRate);
                 }
-            }, 10000); // 10 second timeout
+            }, 30000); // 30 second timeout for longer videos
             
-            video.onloadedmetadata = () => {
-                // Calculate actual video frame rate
-                const estimatedFrameRate = Math.round(maxFrames / video.duration) || 30; // Estimate based on duration, fallback to 30
+            video.onloadedmetadata = async () => {
                 console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
-                console.log(`🎯 Estimated frame rate: ${estimatedFrameRate} FPS`);
+                
+                // Detect actual video frame rate by measuring frame intervals
+                const estimatedFrameRate = await detectVideoFrameRate(video);
+                console.log(`🎯 Detected frame rate: ${estimatedFrameRate} FPS`);
                 
                 // Calculate video segment to analyze (middle 12 seconds if video > 12 seconds)
                 let startTime, endTime, analysisSegment;
@@ -597,12 +669,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(`🎯 Using entire video: ${analysisSegment.toFixed(1)}s duration`);
                 }
                 
+                // Calculate target frames for the analysis segment
+                const targetFramesForSegment = Math.ceil(analysisSegment * estimatedFrameRate);
+                console.log(`🎯 Target frames for ${analysisSegment.toFixed(1)}s segment: ${targetFramesForSegment} frames`);
+                console.log(`📊 Analysis details: ${analysisSegment}s × ${estimatedFrameRate}fps = ${targetFramesForSegment} frames`);
+                
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
                 // Process video frame by frame (matching Python approach)
                 const processFrame = async () => {
-                    if (video.currentTime >= endTime || frameCount >= maxFrames * frameSkip) {
+                    if (video.currentTime >= endTime || processedFrames >= targetFramesForSegment) {
                         clearTimeout(timeout);
                         if (allFrameResults.length > 0) {
                             // Add frame rate metadata to results
@@ -616,6 +693,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             }));
                             console.log(`🎯 Video segment processing complete: ${allFrameResults.length} frames at ${estimatedFrameRate} FPS`);
                             console.log(`📊 Analyzed segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s (${analysisSegment.toFixed(1)}s total)`);
+                            
+                            // Update progress to pose processing stage
+                            if (progressCallback) progressCallback(80, 'Analyzing pose data and joint angles...');
+                            
                             resolve(resultsWithFrameRate);
                         } else {
                             reject(new Error('No pose data extracted from video segment'));
@@ -623,13 +704,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // Frame skipping optimization (matching Python frame_skip = 2)
-                    if (frameCount % frameSkip === 0) {
-                        try {
-                            // Draw current video frame to canvas
-                            ctx.drawImage(video, 0, 0);
-                            
-                            // Create tensor from canvas (equivalent to cv2.cvtColor + pose.process in Python)
+                    // Update progress based on frame processing
+                    if (progressCallback && targetFramesForSegment > 0) {
+                        const frameProgress = (processedFrames / targetFramesForSegment) * 30; // 30% of total progress for frame processing
+                        const currentProgress = 50 + frameProgress; // Start from 50%, add frame progress
+                        const message = `Processing frame ${processedFrames + 1} of ${targetFramesForSegment}...`;
+                        progressCallback(Math.min(currentProgress, 79), message);
+                    }
+                    
+                    // Process every frame
+                    try {
+                        // Draw current video frame to canvas
+                        ctx.drawImage(video, 0, 0);
+                        
+                        // Create tensor from canvas (equivalent to cv2.cvtColor + pose.process in Python)
                             const imageTensor = tf.browser.fromPixels(canvas);
                             
                             // Detect poses (equivalent to results = pose.process(frame_rgb) in Python)
@@ -671,10 +759,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                         console.log(`  🎯 Confidence: ${frameData.confidence.toFixed(3)}`);
                                     }
                                     
-                                    if (processedFrames >= maxFrames) {
+                                    if (processedFrames >= targetFramesForSegment) {
                                         clearTimeout(timeout);
-                                        console.log(`✅ Processed ${allFrameResults.length} frames successfully`);
-                                        resolve(allFrameResults);
+                                        // Add frame rate metadata to results
+                                        const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                                            ...result,
+                                            frameRate: estimatedFrameRate,
+                                            actualFrameIndex: index,
+                                            segmentStartTime: startTime,
+                                            segmentEndTime: endTime,
+                                            segmentDuration: analysisSegment
+                                        }));
+                                        console.log(`✅ Processed ${allFrameResults.length} frames successfully for ${analysisSegment.toFixed(1)}s segment`);
+                                        resolve(resultsWithFrameRate);
                                         return;
                                     }
                                 } else {
@@ -682,13 +779,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             }
                             
-                        } catch (error) {
-                            console.error('Error processing frame:', error);
-                        }
+                    } catch (error) {
+                        console.error('Error processing frame:', error);
                     }
                     
                     frameCount++;
-                    video.currentTime = startTime + (frameCount / estimatedFrameRate); // Start from calculated start time
+                    // Advance video time for every frame
+                    video.currentTime = startTime + (frameCount / estimatedFrameRate);
                     
                     requestAnimationFrame(processFrame);
                 };
@@ -708,8 +805,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
+    async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null, progressCallback = null) {
         let gaitCycleFrames;
+        
+        // Initial progress update
+        if (progressCallback) progressCallback(10, 'Starting video analysis...');
         
         // Check if TensorFlow.js MediaPipe is available
         const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
@@ -719,6 +819,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (videoFile && mediaPipeAvailable) {
             console.log('🎯 Attempting pose detection with TensorFlow.js...');
             console.log('🔬 VIDEO FILE ANALYSIS MODE - Real MoveNet Processing');
+            
+            if (progressCallback) progressCallback(20, 'Loading video file...');
             
             // Create a temporary video element to get duration info
             const tempVideo = document.createElement('video');
@@ -736,7 +838,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             try {
-                gaitCycleFrames = await processVideoWithPoseDetection(videoFile);
+                if (progressCallback) progressCallback(30, 'Processing video with pose detection...');
+                gaitCycleFrames = await processVideoWithPoseDetection(videoFile, progressCallback);
                 if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
                     throw new Error('No pose data extracted from video');
                 }
@@ -744,6 +847,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`  📊 Total frames processed: ${gaitCycleFrames.length}`);
                 console.log(`  🎯 Data source: REAL MoveNet pose detection`);
                 console.log(`  📹 Video file: ${videoFile.name}`);
+                
+                if (progressCallback) progressCallback(85, 'Calculating biomechanical metrics...');
                 
                 // Validate that we have real keypoint data
                 if (gaitCycleFrames[0] && gaitCycleFrames[0].left && gaitCycleFrames[0].left.hip) {
@@ -1160,6 +1265,11 @@ document.addEventListener('DOMContentLoaded', function() {
             usingTibialSurrogate: usingTibialSurrogate,
             getJointLabel: getJointLabel
         };
+        
+        // Final progress update
+        if (progressCallback) progressCallback(95, 'Finalizing analysis results...');
+        
+        return analysisResults;
     }
 
     // Biomechanical calculation functions
@@ -2348,9 +2458,24 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
     
     // Vertical grid lines
     const timePoints = series[0].data.length;
-    const frameRate = analysisResults.frameRate || 60; // Use detected frame rate, fallback to 60 FPS
-    const totalDuration = timePoints / frameRate; // Total time in seconds
-    console.log(`🎯 Using frame rate: ${frameRate} FPS for trajectory plot (${totalDuration.toFixed(2)}s total)`);
+    const frameRate = analysisResults.frameRate || 30; // Use detected frame rate, fallback to 30 FPS
+    let totalDuration = timePoints / frameRate; // Simple calculation: every frame processed
+    
+    console.log(`🎯 Trajectory Plot Debug:`);
+    console.log(`  📊 Data points: ${timePoints}`);
+    console.log(`  🎬 Frame rate: ${frameRate} FPS`);
+    console.log(`  ✅ Processing: Every frame (no skipping)`);
+    console.log(`  ⏰ Calculated duration: ${totalDuration.toFixed(2)}s`);
+    console.log(`  📐 Raw calculation: ${timePoints} ÷ ${frameRate} = ${totalDuration.toFixed(2)}`);
+    
+    // If the duration seems wrong, let's use the actual segment duration from analysis results
+    const actualSegmentDuration = analysisResults.segmentDuration;
+    if (actualSegmentDuration && Math.abs(totalDuration - actualSegmentDuration) > 0.5) {
+        console.log(`⚠️  Duration mismatch detected! Using actual segment duration: ${actualSegmentDuration.toFixed(2)}s instead of calculated: ${totalDuration.toFixed(2)}s`);
+        totalDuration = actualSegmentDuration;
+    }
+    
+    console.log(`✅ Final duration for x-axis: ${totalDuration.toFixed(2)}s`);
     const verticalGridLines = 10;
     
     for (let i = 0; i <= verticalGridLines; i++) {
@@ -2384,8 +2509,8 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
         ctx.beginPath();
         
         for (let i = 0; i < serie.data.length; i++) {
-            // Calculate x position based on time (frame index / frame rate)
-            const timeAtFrame = i / frameRate; // Time in seconds
+            // Calculate x position based on time - processing every frame now
+            const timeAtFrame = i / frameRate; // Time in seconds for this frame
             const x = margin.left + (timeAtFrame / totalDuration) * chartWidth;
             const y = margin.top + ((plotMaxAngle - serie.data[i]) / plotAngleRange) * chartHeight;
             
