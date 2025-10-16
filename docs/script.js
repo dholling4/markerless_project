@@ -240,7 +240,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update UI with calculated results
         document.getElementById('cadence-score').textContent = `${analysisResults.cadence} spm`;
         document.getElementById('overall-grade').textContent = analysisResults.grade;
-        document.getElementById('asymmetry-score').textContent = `${analysisResults.asymmetry}°`;
+        
+        // Display cumulative asymmetry with direction and intuitive explanation
+        const asymmetryValue = analysisResults.asymmetry;
+        const asymmetryMagnitude = Math.abs(asymmetryValue);
+        const asymmetryDirection = asymmetryValue > 0 ? 'RIGHT' : 'LEFT';
+        const asymmetryElement = document.getElementById('asymmetry-score');
+        
+        if (asymmetryMagnitude < 3) {
+            asymmetryElement.innerHTML = `<span style="color: #00E676;">${asymmetryMagnitude.toFixed(1)}° Balanced</span>`;
+        } else {
+            asymmetryElement.innerHTML = `<span style="color: ${asymmetryMagnitude > 10 ? '#FF5252' : '#FFC107'};">${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection}</span>`;
+        }
+        
+        // Add tooltip explanation
+        asymmetryElement.title = `Cumulative asymmetry: ${asymmetryValue.toFixed(1)}° (${asymmetryDirection} dominant)\nCombines hip, knee, and ${analysisResults.usingTibialSurrogate ? 'tibial' : 'ankle'} asymmetries with direction`;
+        
+        console.log(`📊 Asymmetry Display: ${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection} dominant`);
         
         // Display pose model and ankle calculation method information
         if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
@@ -640,10 +656,29 @@ document.addEventListener('DOMContentLoaded', function() {
             Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right ankle ROM
         ];
         
-        // Calculate asymmetry as difference in ROM between sides
-        const asymmetry = Math.abs(leftROM.knee - rightROM.knee) + 
-                         Math.abs(leftROM.hip - rightROM.hip) + 
-                         Math.abs(leftROM.ankle - rightROM.ankle);
+        // Calculate directional cumulative asymmetry (positive = right bias, negative = left bias)
+        const hipAsymmetry = rightROM.hip - leftROM.hip;        // Right hip - Left hip
+        const kneeAsymmetry = rightROM.knee - leftROM.knee;     // Right knee - Left knee  
+        const ankleAsymmetry = rightROM.ankle - leftROM.ankle;  // Right ankle - Left ankle
+        
+        // Cumulative asymmetry: sum all directional asymmetries
+        const cumulativeAsymmetry = hipAsymmetry + kneeAsymmetry + ankleAsymmetry;
+        
+        // For backward compatibility, also calculate absolute asymmetry
+        const totalAbsoluteAsymmetry = Math.abs(hipAsymmetry) + Math.abs(kneeAsymmetry) + Math.abs(ankleAsymmetry);
+        
+        // Determine what model was used and ankle calculation method (needed for logging)
+        const modelUsed = gaitCycleFrames.length > 0 ? gaitCycleFrames[0].modelType : 'Simulation';
+        const usingTibialSurrogate = modelUsed === 'MoveNet';
+        
+        console.log('📊 ASYMMETRY BREAKDOWN:');
+        console.log(`  Hip: ${hipAsymmetry.toFixed(1)}° (${hipAsymmetry > 0 ? 'Right' : 'Left'} bias)`);
+        console.log(`  Knee: ${kneeAsymmetry.toFixed(1)}° (${kneeAsymmetry > 0 ? 'Right' : 'Left'} bias)`);
+        console.log(`  ${usingTibialSurrogate ? 'Tibial' : 'Ankle'}: ${ankleAsymmetry.toFixed(1)}° (${ankleAsymmetry > 0 ? 'Right' : 'Left'} bias)`);
+        console.log(`  🎯 CUMULATIVE: ${cumulativeAsymmetry.toFixed(1)}° (${cumulativeAsymmetry > 0 ? 'RIGHT' : 'LEFT'} dominant)`);
+        
+        // Use cumulative asymmetry as the main asymmetry score
+        const asymmetry = cumulativeAsymmetry;
         
         // Calculate cadence based on gait cycle detection
         const cadence = gaitType === 'running' ? 
@@ -652,10 +687,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Generate grade based on ROM values and asymmetry
         const grade = calculateGaitGrade(leftROM, rightROM, asymmetry);
-        
-        // Determine what model was used and ankle calculation method
-        const modelUsed = gaitCycleFrames.length > 0 ? gaitCycleFrames[0].modelType : 'Simulation';
-        const usingTibialSurrogate = modelUsed === 'MoveNet';
         
         // Dynamic joint labels based on calculation method
         const getJointLabel = (joint, side) => {
@@ -766,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // ROM data table with dynamic labels and Peak Performance Zone
         const romTable = [
             { 
-                joint: getJointLabel('spine', 'Trunk'), 
+                joint: 'Spine Segment', 
                 minAngle: Math.min(...leftAngles.spine), 
                 maxAngle: Math.max(...leftAngles.spine), 
                 rom: romValues[2],
@@ -819,7 +850,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             cadence: cadence,
             grade: grade,
-            asymmetry: Math.round(asymmetry * 10) / 10,
+            asymmetry: Math.round(asymmetry * 10) / 10,  // Cumulative directional asymmetry
+            asymmetryComponents: {  // Individual joint asymmetries for detailed analysis
+                hip: Math.round(hipAsymmetry * 10) / 10,
+                knee: Math.round(kneeAsymmetry * 10) / 10,
+                ankle: Math.round(ankleAsymmetry * 10) / 10,
+                total: Math.round(cumulativeAsymmetry * 10) / 10,
+                totalAbsolute: Math.round(totalAbsoluteAsymmetry * 10) / 10
+            },
             romValues: romValues,  // ROM values in Python order: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
             jointAngles: {
                 left: {
@@ -1522,9 +1560,59 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.textAlign = 'left';
         ctx.fillText('← Left Dominant', 30, canvas.height - 15);
         
-        ctx.fillStyle = '#00E676';
+        ctx.fillStyle = '#FF6B6B';
         ctx.textAlign = 'right';
         ctx.fillText('Right Dominant →', canvas.width - 30, canvas.height - 15);
+        
+        // Add cumulative asymmetry summary box
+        const cumulativeAsymmetry = asymmetries.reduce((sum, asym) => sum + asym, 0);
+        const cumMagnitude = Math.abs(cumulativeAsymmetry);
+        const cumDirection = cumulativeAsymmetry > 0 ? 'RIGHT' : 'LEFT';
+        
+        // Draw summary box
+        const boxX = canvas.width - 200;
+        const boxY = 80;
+        const boxWidth = 180;
+        const boxHeight = 80;
+        
+        // Box background with gradient
+        const boxGradient = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxHeight);
+        boxGradient.addColorStop(0, 'rgba(0, 217, 170, 0.2)');
+        boxGradient.addColorStop(1, 'rgba(0, 191, 255, 0.2)');
+        ctx.fillStyle = boxGradient;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Box border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Summary text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 14px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CUMULATIVE ASYMMETRY', boxX + boxWidth/2, boxY + 20);
+        
+        // Cumulative value with color coding
+        if (cumMagnitude < 3) {
+            ctx.fillStyle = '#00E676'; // Green for balanced
+        } else if (cumMagnitude < 10) {
+            ctx.fillStyle = '#FFC107'; // Yellow for moderate
+        } else {
+            ctx.fillStyle = '#FF5252'; // Red for high
+        }
+        
+        ctx.font = 'bold 18px Inter, Arial, sans-serif';
+        if (cumMagnitude < 3) {
+            ctx.fillText(`${cumMagnitude.toFixed(1)}° BALANCED`, boxX + boxWidth/2, boxY + 45);
+        } else {
+            ctx.fillText(`${cumMagnitude.toFixed(1)}° ${cumDirection}`, boxX + boxWidth/2, boxY + 45);
+        }
+        
+        // Explanation
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '10px Inter, Arial, sans-serif';
+        ctx.fillText('Sum of all joint asymmetries', boxX + boxWidth/2, boxY + 65);
     }
 
     function generateROMTable(analysisResults) {
@@ -2185,7 +2273,9 @@ function generatePersonalizedTips(analysisResults) {
     
     const gaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
     const cameraAngle = document.querySelector('input[name="camera-angle"]:checked')?.value || 'side';
+    console.log('Settings - Gait Type:', gaitType, 'Camera Angle:', cameraAngle);
     const romTable = analysisResults.romTable || [];
+    console.log('ROM Table received:', romTable);
     const asymmetry = analysisResults.asymmetry || 0;
     const grade = analysisResults.grade || 'C';
     
@@ -2220,29 +2310,216 @@ function generatePersonalizedTips(analysisResults) {
     console.log(`Secondary issue: ${secondaryIssue} (ROM: ${lowestROM}°)`);
     console.log(`Asymmetry: ${asymmetry}°, Grade: ${grade}`);
     
-    // FOOTWEAR RECOMMENDATIONS (based on primary biomechanical issues)
-    if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
-        if (gaitType === 'running') {
-            tips.footwear.value = 'Motion Control Shoes';
-            tips.footwear.explanation = 'Your tibial inclination pattern suggests you need enhanced stability support to control excessive foot motion.';
+    // Smart footwear recommendation based on biomechanics (matching Python gait.py logic)
+    function recommendFootwear(romValues, cameraAngle, gaitType) {
+        // Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right)
+        const kneeRightRom = romValues[0];
+        const hipRightRom = romValues[1]; 
+        const spineRom = romValues[2];
+        const hipLeftRom = romValues[3];
+        const kneeLeftRom = romValues[4];
+        const tibialLeftRom = romValues[5];  // Tibial inclination instead of ankle
+        const tibialRightRom = romValues[6]; // Tibial inclination instead of ankle
+        
+        // Average bilateral values (adapted for tibial inclination)
+        const avgTibialRom = (tibialLeftRom + tibialRightRom) / 2;
+        const avgKneeRom = (kneeLeftRom + kneeRightRom) / 2;
+        const avgHipRom = (hipLeftRom + hipRightRom) / 2;
+        
+        // Primary: Posterior/Frontal Plane Assessment (adapted for tibial inclination)
+        if (cameraAngle === "back") {
+            // Overpronation indicators - tibial inclination thresholds adapted from ankle
+            // Tibial inclination: higher ROM indicates more instability/overpronation
+            if (avgTibialRom > 12 || avgKneeRom > 10 || avgHipRom > 15) {
+                if (avgTibialRom > 18 || avgKneeRom > 15) {
+                    return ["Motion Control", "Excessive tibial movement and knee valgus detected. Shoes with extra support on the inside of the foot help guide your stride and reduce excessive inward rolling."];
+                } else {
+                    return ["Stability", "Moderate tibial movement detected. Dual-density midsole and guided motion control recommended."];
+                }
+            } else {
+                var primaryRec = "Neutral";
+            }
         } else {
-            tips.footwear.value = 'Stability Walking Shoes';
-            tips.footwear.explanation = 'Structured support will help optimize your lower limb alignment during the stance phase.';
+            // Sagittal plane assessment for neutral/cushioned decision
+            var primaryRec = "Neutral";
         }
-    } else if (primaryIssue.includes('Knee')) {
-        tips.footwear.value = 'Cushioned Neutral Shoes';
-        tips.footwear.explanation = 'Extra cushioning will reduce impact forces on your knee joint during ground contact.';
-    } else if (primaryIssue.includes('Hip')) {
-        tips.footwear.value = 'Minimalist/Low Drop';
-        tips.footwear.explanation = 'Lower heel-to-toe drop encourages better hip extension and natural biomechanics.';
-    } else if (primaryIssue.includes('Spine')) {
-        tips.footwear.value = 'Structured Support';
-        tips.footwear.explanation = 'Firm midsole support will help maintain better postural alignment throughout your gait cycle.';
-    } else {
-        tips.footwear.value = 'Neutral Running Shoes';
-        tips.footwear.explanation = 'Balanced cushioning and support for your current biomechanical pattern.';
+        
+        // Supporting: Sagittal Plane Refinement (adapted for tibial inclination)
+        if (cameraAngle === "side") {
+            // Limited tibial mobility + heel striking = cushioned shoes (adapted thresholds)
+            if (gaitType === "walking" || gaitType === "running") {
+                if (avgTibialRom < 8 && spineRom > 10) {  // Limited tibial mobility + heel-strike posture
+                    return ["Maximum Cushioning", "Limited tibial mobility and heel-strike pattern detected. Enhanced shock absorption needed."];
+                } else if (avgTibialRom > 20 && avgKneeRom > 100) {  // Good mobility + forefoot striking
+                    return ["Minimalist/Neutral", "Excellent tibial mobility and efficient movement pattern. Minimal interference recommended."];
+                }
+            }
+        }
+        
+        // Default recommendation
+        if (primaryRec === "Neutral") {
+            return ["Neutral", "Balanced biomechanics detected. Standard neutral support recommended."];
+        } else {
+            return [primaryRec, "Biomechanics analysis suggests standard neutral support."];
+        }
     }
     
+    // Smart training recommendations based on biomechanics (matching Python gait.py logic)
+    function recommendTraining(romValues, cameraAngle, gaitType) {
+        // Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Tibial Left, Tibial Right)
+        const kneeRightRom = romValues[0];
+        const hipRightRom = romValues[1]; 
+        const spineRom = romValues[2];
+        const hipLeftRom = romValues[3];
+        const kneeLeftRom = romValues[4];
+        const tibialLeftRom = romValues[5];  // Tibial inclination instead of ankle
+        const tibialRightRom = romValues[6]; // Tibial inclination instead of ankle
+        
+        // Average bilateral values (adapted for tibial inclination)
+        const avgTibialRom = (tibialLeftRom + tibialRightRom) / 2;
+        const avgKneeRom = (kneeLeftRom + kneeRightRom) / 2;
+        const avgHipRom = (hipLeftRom + hipRightRom) / 2;
+        
+        const exercises = [];
+        
+        // Analyze deficits and recommend exercises (adapted for tibial inclination)
+        if (cameraAngle === "back") {
+            // Frontal plane issues - focus on stability and control
+            if (avgTibialRom > 12 || avgKneeRom > 10) {  // Tibial instability/valgus
+                exercises.push({
+                    name: "Single-Leg Glute Bridge",
+                    description: "3x12 each leg. Strengthens hip abductors to control knee valgus and pelvic stability.",
+                    target: "Hip abductor strength, pelvic control"
+                });
+                exercises.push({
+                    name: "Calf Raises with Control", 
+                    description: "3x15 with 3-sec hold. Strengthens posterior muscles to control excessive tibial movement.",
+                    target: "Lower leg stability, tibial control"
+                });
+            } else {  // Good frontal plane control
+                exercises.push({
+                    name: "Lateral Band Walks",
+                    description: "3x15 each direction. Maintains hip abductor strength and lateral stability.",
+                    target: "Hip stability maintenance"
+                });
+            }
+        } else {  // Sagittal plane (side view) - adapted for tibial inclination
+            // Analyze specific joint limitations
+            if (avgTibialRom < 8 && (gaitType === "walking" || gaitType === "running")) {  // Limited tibial mobility
+                exercises.push({
+                    name: "Wall Ankle Dorsiflexion Stretch",
+                    description: "3x30 seconds each foot. Improves ankle and tibial mobility for better movement patterns.",
+                    target: "Ankle dorsiflexion, tibial mobility"
+                });
+            }
+            
+            if (avgHipRom < 35 && (gaitType === "walking" || gaitType === "running")) {  // Limited hip ROM
+                exercises.push({
+                    name: "90/90 Hip Stretch + Hip Flexor Activation",
+                    description: "3x30 sec stretch + 10 leg lifts. Improves hip flexion ROM and activation.",
+                    target: "Hip mobility and flexor strength"
+                });
+            }
+            
+            if (avgKneeRom < 60 && (gaitType === "walking" || gaitType === "running")) {  // Limited knee flexion
+                exercises.push({
+                    name: "Wall Sits with Calf Raises",
+                    description: "3x45 seconds. Builds knee flexion endurance and calf strength simultaneously.",
+                    target: "Knee flexion endurance, shock absorption"
+                });
+            }
+            
+            if (spineRom > 15 || spineRom < 3) {  // Poor trunk control
+                exercises.push({
+                    name: "Dead Bug with Opposite Arm/Leg",
+                    description: "3x10 each side. Improves core stability and trunk control during movement.",
+                    target: "Core stability, trunk alignment"
+                });
+            }
+        }
+        
+        // If no specific deficits, provide general recommendations
+        if (exercises.length === 0) {
+            exercises.push({
+                name: "Single-Leg Romanian Deadlift",
+                description: "3x8 each leg. Maintains posterior chain strength and balance.",
+                target: "Overall stability and strength"
+            });
+            exercises.push({
+                name: "Calf Raise to Heel Walk",
+                description: "3x10 transitions. Enhances ankle control through full range of motion.",
+                target: "Ankle strength and control"
+            });
+        }
+
+        return exercises.slice(0, 1);  // Return top 1 recommendations
+    }
+    
+    // Extract ROM values from romTable in correct order: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right]
+    const romValues = [];
+    
+    // Helper function to find ROM by joint name
+    const findROMByJoint = (jointName) => {
+        const joint = romTable.find(j => j.joint.toLowerCase().includes(jointName.toLowerCase()));
+        return joint ? joint.rom : 0;
+    };
+    
+    // Build ROM array in the order expected by gait.py logic
+    romValues[0] = findROMByJoint('knee right') || findROMByJoint('right knee') || 0;
+    romValues[1] = findROMByJoint('hip right') || findROMByJoint('right hip') || 0;
+    romValues[2] = findROMByJoint('spine') || 0;
+    romValues[3] = findROMByJoint('hip left') || findROMByJoint('left hip') || 0;
+    romValues[4] = findROMByJoint('knee left') || findROMByJoint('left knee') || 0;
+    romValues[5] = findROMByJoint('ankle left') || findROMByJoint('left ankle') || findROMByJoint('left tibial') || 0;
+    romValues[6] = findROMByJoint('ankle right') || findROMByJoint('right ankle') || findROMByJoint('right tibial') || 0;
+    
+    // Simple extraction - get ROM values directly from romTable in order they appear
+    if (romValues.every(val => val === 0) && romTable.length >= 6) {
+        // Fallback: use the romTable order directly 
+        // Based on romTable creation: Spine, Hip Left, Hip Right, Knee Left, Knee Right, Ankle Left, Ankle Right
+        const spineROM = romTable.find(j => j.joint.includes('Spine'))?.rom || 0;
+        const hipLeftROM = romTable.find(j => j.joint.includes('Hip') && j.joint.includes('Left'))?.rom || 0;
+        const hipRightROM = romTable.find(j => j.joint.includes('Hip') && j.joint.includes('Right'))?.rom || 0;
+        const kneeLeftROM = romTable.find(j => j.joint.includes('Knee') && j.joint.includes('Left'))?.rom || 0;
+        const kneeRightROM = romTable.find(j => j.joint.includes('Knee') && j.joint.includes('Right'))?.rom || 0;
+        const ankleTibialLeftROM = romTable.find(j => (j.joint.includes('Ankle') || j.joint.includes('Tibial')) && j.joint.includes('Left'))?.rom || 0;
+        const ankleTibialRightROM = romTable.find(j => (j.joint.includes('Ankle') || j.joint.includes('Tibial')) && j.joint.includes('Right'))?.rom || 0;
+        
+        // Reorder to match gait.py: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right]
+        romValues[0] = kneeRightROM;
+        romValues[1] = hipRightROM; 
+        romValues[2] = spineROM;
+        romValues[3] = hipLeftROM;
+        romValues[4] = kneeLeftROM;
+        romValues[5] = ankleTibialLeftROM;
+        romValues[6] = ankleTibialRightROM;
+    }
+    
+    console.log('Extracted ROM values:', romValues);
+    console.log('ROM order: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Tibial Left, Tibial Right]');
+    
+    const [footwearType, footwearReason] = recommendFootwear(romValues, cameraAngle, gaitType);
+    const trainingExercises = recommendTraining(romValues, cameraAngle, gaitType);
+    
+    console.log('Generated recommendations:');
+    console.log('Footwear:', footwearType, '-', footwearReason);
+    console.log('Training:', trainingExercises);
+    
+    // Set footwear recommendation
+    tips.footwear.value = footwearType;
+    tips.footwear.explanation = footwearReason;
+    
+    // Set training recommendation
+    if (trainingExercises.length > 0) {
+        const exercise = trainingExercises[0];
+        tips.training.value = exercise.name;
+        tips.training.explanation = exercise.description;
+    } else {
+        tips.training.value = 'Endurance Base';
+        tips.training.explanation = 'Solid mechanics - build your aerobic base with consistent easy-pace running.';
+    }
+    
+    // Keep existing drill and cue logic for now
     // DRILL/EXERCISE RECOMMENDATIONS (targeting primary weakness)
     if (primaryIssue.includes('Hip')) {
         tips.drill.value = 'Hip Flexor Stretches';
@@ -2280,27 +2557,6 @@ function generatePersonalizedTips(analysisResults) {
     } else {
         tips.cue.value = 'Relaxed Shoulders';
         tips.cue.explanation = 'Keep your shoulders relaxed and arms swinging naturally to maintain efficient form.';
-    }
-    
-    // TRAINING FOCUS (long-term development based on overall grade)
-    if (grade >= 'A') {
-        tips.training.value = 'Speed Development';
-        tips.training.explanation = 'Your biomechanics are excellent! Focus on speed work and race-specific training.';
-    } else if (grade >= 'B') {
-        tips.training.value = 'Endurance Base';
-        tips.training.explanation = 'Solid mechanics - build your aerobic base with consistent easy-pace running.';
-    } else if (primaryIssue.includes('Hip')) {
-        tips.training.value = 'Hip Strengthening';
-        tips.training.explanation = 'Prioritize glute med and hip flexor strength work 3x per week for 4-6 weeks.';
-    } else if (primaryIssue.includes('Knee')) {
-        tips.training.value = 'Quad + Hamstring';
-        tips.training.explanation = 'Balance your knee stability with targeted quadriceps and hamstring strengthening.';
-    } else if (primaryIssue.includes('Spine')) {
-        tips.training.value = 'Core Stability';
-        tips.training.explanation = 'Add 15 minutes of core work to your routine 4x per week to improve trunk control.';
-    } else {
-        tips.training.value = 'Movement Quality';
-        tips.training.explanation = 'Focus on movement drills and technique work before increasing training volume.';
     }
     
     // Update the UI with personalized tips
