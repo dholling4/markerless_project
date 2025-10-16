@@ -34,7 +34,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from mediapipe import solutions
 from PIL import Image, ImageOps
 from scipy.signal import butter, find_peaks, lfilter
-from sklearn.decomposition import PCA
+# from sklearn.decomposition import PCA
 
 # project_ID = "stride-sync-469315"
 # BUCKET = "stride-sync-data-5678"
@@ -1244,162 +1244,162 @@ def plot_joint_angles(time, angles, label, frame_time):
     st.plotly_chart(fig)
 
 
-def perform_pca(df, video_index):
-    st.write("### Principal Component Analysis (PCA)")
+# def perform_pca(df, video_index):
+#     st.write("### Principal Component Analysis (PCA)")
 
-    # Extract numerical joint angle data
-    X = df.iloc[:, 1:].values
+#     # Extract numerical joint angle data
+#     X = df.iloc[:, 1:].values
     
-    # User selects number of principal components
-    pcs = st.slider('Select the number of Principal Components:', 1, min(30, X.shape[1]), 3)
-    st.write(f"Number of Principal Components Selected: {pcs}")
+#     # User selects number of principal components
+#     pcs = st.slider('Select the number of Principal Components:', 1, min(30, X.shape[1]), 3)
+#     st.write(f"Number of Principal Components Selected: {pcs}")
     
-    # Perform PCA
-    pca = PCA(n_components=pcs)
-    principal_components = pca.fit_transform(X)
+#     # Perform PCA
+#     pca = PCA(n_components=pcs)
+#     principal_components = pca.fit_transform(X)
 
-    # Explained variance
-    explained_variance = pca.explained_variance_ratio_ 
-    cumulative_variance = np.cumsum(explained_variance) 
+#     # Explained variance
+#     explained_variance = pca.explained_variance_ratio_ 
+#     cumulative_variance = np.cumsum(explained_variance) 
 
-    # dataframe for explained variance
-    pca_df = pd.DataFrame({
-        "Principal Component": [f"PC{i+1}" for i in range(len(explained_variance))],
-        "Explained Variance (%)": explained_variance * 100,
-        "Cumulative Variance (%)": cumulative_variance * 100
-    })
+#     # dataframe for explained variance
+#     pca_df = pd.DataFrame({
+#         "Principal Component": [f"PC{i+1}" for i in range(len(explained_variance))],
+#         "Explained Variance (%)": explained_variance * 100,
+#         "Cumulative Variance (%)": cumulative_variance * 100
+#     })
 
-    # Get absolute loadings (importance of each feature in each PC)
-    loadings = np.abs(pca.components_)
+#     # Get absolute loadings (importance of each feature in each PC)
+#     loadings = np.abs(pca.components_)
 
-    # Get top contributing features for each PC
-    feature_labels = ["Left Hip", "Right Hip", "Left Knee", "Right Knee", "Left Ankle", "Right Ankle", "Spine Angle"]
+#     # Get top contributing features for each PC
+#     feature_labels = ["Left Hip", "Right Hip", "Left Knee", "Right Knee", "Left Ankle", "Right Ankle", "Spine Angle"]
 
-    top_features_per_pc = []
-    for i in range(pcs):
-        top_feature_idx = np.argsort(-loadings[i])  # Sort in descending order
-        top_features_per_pc.append([feature_labels[j] for j in top_feature_idx])
+#     top_features_per_pc = []
+#     for i in range(pcs):
+#         top_feature_idx = np.argsort(-loadings[i])  # Sort in descending order
+#         top_features_per_pc.append([feature_labels[j] for j in top_feature_idx])
 
-    # Create DataFrame
-    pca_feature_df = pd.DataFrame(top_features_per_pc, index=[f"PC{i+1}" for i in range(pcs)])
-    pca_feature_df.columns = [f"Rank {i+1}" for i in range(len(feature_labels))]  # Rank features
+#     # Create DataFrame
+#     pca_feature_df = pd.DataFrame(top_features_per_pc, index=[f"PC{i+1}" for i in range(pcs)])
+#     pca_feature_df.columns = [f"Rank {i+1}" for i in range(len(feature_labels))]  # Rank features
 
         
-    top_features_per_pc = []
-    for i in range(pcs):
-        top_feature_idx = np.argsort(-loadings[i])  # Sort in descending order
-        top_features_per_pc.append([feature_labels[j] for j in top_feature_idx])
+#     top_features_per_pc = []
+#     for i in range(pcs):
+#         top_feature_idx = np.argsort(-loadings[i])  # Sort in descending order
+#         top_features_per_pc.append([feature_labels[j] for j in top_feature_idx])
 
-    # Create DataFrame
-    pca_feature_df = pd.DataFrame(top_features_per_pc, 
-                                index=[f"PC{i+1}" for i in range(pcs)])
-    pca_feature_df.columns = [f"Rank {i+1}" for i in range(len(feature_labels))]  # Rank features
-    top_features = pca_feature_df
+#     # Create DataFrame
+#     pca_feature_df = pd.DataFrame(top_features_per_pc, 
+#                                 index=[f"PC{i+1}" for i in range(pcs)])
+#     pca_feature_df.columns = [f"Rank {i+1}" for i in range(len(feature_labels))]  # Rank features
+#     top_features = pca_feature_df
 
-    fig = go.Figure()
-    for i, feature in enumerate(top_features.iloc[:, 0]):  # Use only the top contributing feature
-        fig.add_trace(go.Bar(
-            x=[f"PC{i+1} ({feature})"],  # Label PC with the top feature
-            y=[explained_variance[i] * 100],
-            name=f"PC{i+1} ({feature})"
-        ))
+#     fig = go.Figure()
+#     for i, feature in enumerate(top_features.iloc[:, 0]):  # Use only the top contributing feature
+#         fig.add_trace(go.Bar(
+#             x=[f"PC{i+1} ({feature})"],  # Label PC with the top feature
+#             y=[explained_variance[i] * 100],
+#             name=f"PC{i+1} ({feature})"
+#         ))
 
-    explained_variance = pca.explained_variance_ratio_ 
-    cumulative_variance = np.cumsum(explained_variance) 
-    feature_labels = ["Left Hip", "Right Hip", "Left Knee", "Right Knee", "Left Ankle", "Right Ankle", "Spine Angle"]
-    loadings = np.abs(pca.components_)
-    top_features_ = [feature_labels[np.argmax(loadings[i])] for i in range(pcs)]
+#     explained_variance = pca.explained_variance_ratio_ 
+#     cumulative_variance = np.cumsum(explained_variance) 
+#     feature_labels = ["Left Hip", "Right Hip", "Left Knee", "Right Knee", "Left Ankle", "Right Ankle", "Spine Angle"]
+#     loadings = np.abs(pca.components_)
+#     top_features_ = [feature_labels[np.argmax(loadings[i])] for i in range(pcs)]
 
-    pca_df = pd.DataFrame({
-        "Principal Component": [f"PC{i+1} ({top_features_[i]})" for i in range(len(explained_variance))],
-        "Explained Variance (%)": explained_variance * 100,
-        "Cumulative Variance (%)": cumulative_variance * 100,
-    })
+#     pca_df = pd.DataFrame({
+#         "Principal Component": [f"PC{i+1} ({top_features_[i]})" for i in range(len(explained_variance))],
+#         "Explained Variance (%)": explained_variance * 100,
+#         "Cumulative Variance (%)": cumulative_variance * 100,
+#     })
 
    
-    fig.add_trace(go.Scatter(
-        x=[f"PC{i+1} ({feature})" for i, feature in enumerate(top_features.iloc[:, 0])],
-        y=cumulative_variance * 100,
-        mode="lines+markers",
-        name="Cumulative Variance (%)",
-        line=dict(color='red', dash="dash")
-    ))
+#     fig.add_trace(go.Scatter(
+#         x=[f"PC{i+1} ({feature})" for i, feature in enumerate(top_features.iloc[:, 0])],
+#         y=cumulative_variance * 100,
+#         mode="lines+markers",
+#         name="Cumulative Variance (%)",
+#         line=dict(color='red', dash="dash")
+#     ))
 
-    fig.update_layout(
-        title="Explained Variance with Top Contributing Feature",
-        xaxis_title="Principal Components",
-        yaxis_title="Explained Variance (%)",
-        legend_title="Legend"
-    )
-    st.plotly_chart(fig)
-    # download plot data 
-    pca_plot_csv = pca_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Download PCA Plot Data",
-        data=pca_plot_csv,
-        file_name="pca_plot_data.csv",
-        mime="text/csv",
-        key=f"pca_{video_index}"
-    )
+#     fig.update_layout(
+#         title="Explained Variance with Top Contributing Feature",
+#         xaxis_title="Principal Components",
+#         yaxis_title="Explained Variance (%)",
+#         legend_title="Legend"
+#     )
+#     st.plotly_chart(fig)
+#     # download plot data 
+#     pca_plot_csv = pca_df.to_csv(index=False).encode('utf-8')
+#     st.download_button(
+#         label="Download PCA Plot Data",
+#         data=pca_plot_csv,
+#         file_name="pca_plot_data.csv",
+#         mime="text/csv",
+#         key=f"pca_{video_index}"
+#     )
 
-    # st.dataframe(top_features)
+#     # st.dataframe(top_features)
 
-    st.dataframe(pca_df)
+#     st.dataframe(pca_df)
 
-    # combine the two dataframes and download
-    pca_data = pd.concat([pca_df, top_features], axis=1)
-    pca_feature_csv = pca_data.to_csv(index=False).encode('utf-8')
+#     # combine the two dataframes and download
+#     pca_data = pd.concat([pca_df, top_features], axis=1)
+#     pca_feature_csv = pca_data.to_csv(index=False).encode('utf-8')
 
   
-    # 2D PCA Scatter Plot (Only if at least 2 PCs are selected)
-    if pcs >= 2:
-        fig_2d = go.Figure()
-        fig_2d.add_trace(go.Scatter(
-            x=principal_components[:, 0],
-            y=principal_components[:, 1],
-            mode='markers',
-            marker=dict(size=6, color=df["Time"], colorscale='Blues', showscale=True, colorbar=dict(title="Time", tickmode="array", tickvals=[df["Time"].min(), df["Time"].max()], ticktext=["Start", "End"])),
-            text=df["Time"]
-        ))
+#     # 2D PCA Scatter Plot (Only if at least 2 PCs are selected)
+#     if pcs >= 2:
+#         fig_2d = go.Figure()
+#         fig_2d.add_trace(go.Scatter(
+#             x=principal_components[:, 0],
+#             y=principal_components[:, 1],
+#             mode='markers',
+#             marker=dict(size=6, color=df["Time"], colorscale='Blues', showscale=True, colorbar=dict(title="Time", tickmode="array", tickvals=[df["Time"].min(), df["Time"].max()], ticktext=["Start", "End"])),
+#             text=df["Time"]
+#         ))
 
-        fig_2d.update_layout(title="PCA Projection (2D)", xaxis_title="PC1", yaxis_title="PC2")
-        st.plotly_chart(fig_2d)
+#         fig_2d.update_layout(title="PCA Projection (2D)", xaxis_title="PC1", yaxis_title="PC2")
+#         st.plotly_chart(fig_2d)
 
-        # download plot button
-        pca_2d_csv = pd.DataFrame(principal_components[:, :2], columns=[f"PC{i+1}" for i in range(2)]).to_csv(index=False).encode('utf-8')
+#         # download plot button
+#         pca_2d_csv = pd.DataFrame(principal_components[:, :2], columns=[f"PC{i+1}" for i in range(2)]).to_csv(index=False).encode('utf-8')
         
-        st.download_button(
-            label="Download 2D PCA Data",
-            data=pca_2d_csv,
-            file_name="pca_2d_data.csv",
-            mime="text/csv",
-            key=f"pca_2d_{video_index}"
-        )
+#         st.download_button(
+#             label="Download 2D PCA Data",
+#             data=pca_2d_csv,
+#             file_name="pca_2d_data.csv",
+#             mime="text/csv",
+#             key=f"pca_2d_{video_index}"
+#         )
 
-    # 3D PCA Scatter Plot (Only if at least 3 PCs are selected)
-    if pcs >= 3:
-        fig_3d = go.Figure(data=[go.Scatter3d(
-            x=principal_components[:, 0], 
-            y=principal_components[:, 1], 
-            z=principal_components[:, 2],
-            mode='markers', 
-            marker=dict(size=4, color=df["Time"], colorscale='Blues', showscale=True, colorbar=dict(title="Time", tickmode="array", tickvals=[df["Time"].min(), df["Time"].max()], ticktext=["Start", "End"])),
-            text=df["Time"]
-        )])
-        fig_3d.update_layout(title="PCA Projection (3D)",
-                             scene_xaxis_title="PC1",
-                             scene_yaxis_title="PC2",
-                             scene_zaxis_title="PC3")
-        st.plotly_chart(fig_3d)
-        # download plot button
-        pca_3d_csv = pd.DataFrame(principal_components, columns=[f"PC{i+1}" for i in range(pcs)]).to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download 3D PCA Data",
-            data=pca_3d_csv,
-            file_name="pca_3d_data.csv",
-            mime="text/csv",
-            key=f"pca_3d_{video_index}"
-        )
+#     # 3D PCA Scatter Plot (Only if at least 3 PCs are selected)
+#     if pcs >= 3:
+#         fig_3d = go.Figure(data=[go.Scatter3d(
+#             x=principal_components[:, 0], 
+#             y=principal_components[:, 1], 
+#             z=principal_components[:, 2],
+#             mode='markers', 
+#             marker=dict(size=4, color=df["Time"], colorscale='Blues', showscale=True, colorbar=dict(title="Time", tickmode="array", tickvals=[df["Time"].min(), df["Time"].max()], ticktext=["Start", "End"])),
+#             text=df["Time"]
+#         )])
+#         fig_3d.update_layout(title="PCA Projection (3D)",
+#                              scene_xaxis_title="PC1",
+#                              scene_yaxis_title="PC2",
+#                              scene_zaxis_title="PC3")
+#         st.plotly_chart(fig_3d)
+#         # download plot button
+#         pca_3d_csv = pd.DataFrame(principal_components, columns=[f"PC{i+1}" for i in range(pcs)]).to_csv(index=False).encode('utf-8')
+#         st.download_button(
+#             label="Download 3D PCA Data",
+#             data=pca_3d_csv,
+#             file_name="pca_3d_data.csv",
+#             mime="text/csv",
+#             key=f"pca_3d_{video_index}"
+#         )
 
 def plot_asymmetry_bar_chart(left_hip, right_hip, left_knee, right_knee, left_ankle, right_ankle):
     # Calculate the range of motion differences (right - left)
