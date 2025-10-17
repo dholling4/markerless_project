@@ -1,0 +1,100 @@
+# Python# Google Cloud SDK
+
+__pycache__/gcloud*/
+
+*.py[cod].gcloud/
+
+*$py.classgoogle-cloud-sdk/
+
+*.so
+
+.Python# Python
+
+env/__pycache__/
+
+venv/*.py[cod]
+
+ENV/*$py.class
+
+*.so
+
+# IDE.Python
+
+.vscode/build/
+
+.idea/develop-eggs/
+
+*.swpdist/
+
+*.swodownloads/
+
+eggs/
+
+# OS.eggs/
+
+.DS_Storelib/
+
+Thumbs.dblib64/
+
+parts/
+
+# Logssdist/
+
+*.logvar/
+
+logs/wheels/
+
+*.egg-info/
+
+# Dependencies.installed.cfg
+
+node_modules/*.egg
+
+MANIFEST
+
+# Environment variables
+
+.env# Virtual environments
+
+venv/
+
+# Google Cloud deployment files (prevent accidental deployment)env/
+
+app.yamlENV/
+
+runtime.txt
+
+packages.txt# IDEs
+
+Dockerfile.vscode/
+
+cloudbuild.yaml.idea/
+
+.gcloudignore*.swp
+
+*.swo
+
+# Google Cloud SDK cache (prevent massive commits)
+
+gcloud*/# OS files
+
+google-cloud-sdk/.DS_Store
+
+**/gcloud*/**Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cloud deployment files (to prevent accidental deployments)
+app.yaml
+runtime.txt
+packages.txt
+Dockerfile
+.dockerignore
+cloudbuild.yaml
+deployment.yaml
+service.yaml
