@@ -388,104 +388,204 @@
                 
                 <!-- Results Preview -->
                 <div class="results-preview" id="results-preview" style="display: none;">
-                    <h3>🎯 Your Gait Analysis Results</h3>
+                    <h3>�‍♂️ Customer Gait Analysis Report</h3>
                     
-                    <!-- Key Metrics Summary -->
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <span class="metric-label">Cadence</span>
-                            <span class="metric-value" id="cadence-score">--</span>
+                    <!-- Retail Summary Card -->
+                    <div class="retail-summary-card">
+                        <div class="customer-profile">
+                            <h4>📋 Quick Assessment</h4>
+                            <div class="profile-details">
+                                <span id="customer-footwear-type">Current Footwear: Not specified</span>
+                                <span id="analysis-date">Analysis Date: <span id="current-date"></span></span>
+                            </div>
                         </div>
-                        <div class="metric-card">
-                            <span class="metric-label">Overall Grade</span>
-                            <span class="metric-value" id="overall-grade">--</span>
-                        </div>
-                        <div class="metric-card">
-                            <span class="metric-label">Asymmetry Score</span>
-                            <span class="metric-value" id="asymmetry-score">--</span>
+                        <div class="overall-recommendation">
+                            <div class="recommendation-badge" id="overall-recommendation-badge">
+                                <span class="badge-icon">✓</span>
+                                <span class="badge-text" id="overall-recommendation-text">Normal Gait Pattern</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Analysis Charts -->
-                    <div class="analysis-charts">
-                        <div class="chart-section">
-                            <canvas id="spider-chart" width="400" height="300"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <canvas id="asymmetry-chart" width="400" height="200"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <canvas id="rom-chart" width="400" height="200"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">📊 Joint Angle Analysis</h3>
-                            <canvas id="angleChart" width="900" height="500"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">📈 Joint Angle Trajectories</h3>
-                            <canvas id="angleLinesChart" width="900" height="600"></canvas>
-                            <div style="text-align: center; margin-top: 20px;">
-                                <button id="downloadCSVBtn" class="cta-primary" style="display: none;">
-                                    📊 Download Trajectory Data (CSV)
-                                </button>
+                    <!-- Key Findings for Store Staff -->
+                    <div class="store-staff-findings">
+                        <h4>🔍 Key Findings (Show to Customer)</h4>
+                        <div class="findings-grid">
+                            <div class="finding-card gait-efficiency">
+                                <div class="finding-icon">💪</div>
+                                <div class="finding-content">
+                                    <span class="finding-label">Running Efficiency</span>
+                                    <span class="finding-value" id="efficiency-rating">--</span>
+                                    <p class="finding-explanation" id="efficiency-explanation">Loading...</p>
+                                </div>
+                            </div>
+                            <div class="finding-card injury-risk">
+                                <div class="finding-icon">🛡️</div>
+                                <div class="finding-content">
+                                    <span class="finding-label">Injury Risk</span>
+                                    <span class="finding-value" id="injury-risk-rating">--</span>
+                                    <p class="finding-explanation" id="injury-risk-explanation">Loading...</p>
+                                </div>
+                            </div>
+                            <div class="finding-card balance-symmetry">
+                                <div class="finding-icon">⚖️</div>
+                                <div class="finding-content">
+                                    <span class="finding-label">Left/Right Balance</span>
+                                    <span class="finding-value" id="balance-rating">--</span>
+                                    <p class="finding-explanation" id="balance-explanation">Loading...</p>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="chart-section" id="rom-table-container">
-                            <!-- ROM Table will be generated here -->
+                    </div>
+
+                    <!-- Retail Product Recommendations -->
+                    <div class="retail-recommendations">
+                        <h4>🛒 Product Recommendations</h4>
+                        <div class="recommendation-sections">
+                            <!-- Shoe Recommendations -->
+                            <div class="rec-section shoe-recommendations">
+                                <div class="rec-header">
+                                    <i class="fas fa-shoe-prints"></i>
+                                    <span>Recommended Footwear</span>
+                                </div>
+                                <div class="rec-content">
+                                    <div class="primary-rec" id="primary-shoe-rec">
+                                        <span class="rec-title" id="shoe-rec-title">Neutral Running Shoe</span>
+                                        <span class="rec-reason" id="shoe-rec-reason">Based on normal gait pattern</span>
+                                    </div>
+                                    <div class="secondary-options" id="secondary-shoe-options">
+                                        <span class="options-label">Alternative Options:</span>
+                                        <span class="options-text" id="shoe-alternatives">Stability shoes for extra support</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Accessories & Add-ons -->
+                            <div class="rec-section accessories-recommendations">
+                                <div class="rec-header">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Additional Items</span>
+                                </div>
+                                <div class="rec-content">
+                                    <div class="accessory-list" id="accessory-recommendations">
+                                        <div class="accessory-item">
+                                            <span class="accessory-name">Custom Insoles</span>
+                                            <span class="accessory-benefit">For arch support</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Conversation Starters -->
+                    <div class="conversation-starters">
+                        <h4>� What to Tell Your Customer</h4>
+                        <div class="conversation-cards">
+                            <div class="conversation-card positive-points">
+                                <div class="card-header">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span>Strengths to Highlight</span>
+                                </div>
+                                <ul class="talking-points" id="positive-talking-points">
+                                    <li>Your running form shows good efficiency</li>
+                                    <li>No major imbalances detected</li>
+                                </ul>
+                            </div>
+                            <div class="conversation-card improvement-areas">
+                                <div class="card-header">
+                                    <i class="fas fa-target"></i>
+                                    <span>Areas for Improvement</span>
+                                </div>
+                                <ul class="talking-points" id="improvement-talking-points">
+                                    <li>Focus on maintaining consistent cadence</li>
+                                    <li>Consider strengthening exercises for better form</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simple Visual Summary (Simplified Charts) -->
+                    <div class="visual-summary">
+                        <h4>� Visual Summary (Show Customer)</h4>
+                        <div class="simple-charts">
+                            <div class="chart-card">
+                                <h5>Running Form Score</h5>
+                                <div class="score-gauge" id="form-score-gauge">
+                                    <div class="gauge-fill" id="gauge-fill"></div>
+                                    <span class="gauge-score" id="gauge-score">85%</span>
+                                </div>
+                                <p class="chart-explanation">Overall running efficiency rating</p>
+                            </div>
+                            <div class="chart-card">
+                                <h5>Left vs Right Balance</h5>
+                                <div class="balance-bars" id="balance-visualization">
+                                    <div class="balance-bar">
+                                        <span class="bar-label">Left</span>
+                                        <div class="bar-container">
+                                            <div class="bar-fill left-bar" id="left-balance-bar"></div>
+                                        </div>
+                                    </div>
+                                    <div class="balance-bar">
+                                        <span class="bar-label">Right</span>
+                                        <div class="bar-container">
+                                            <div class="bar-fill right-bar" id="right-balance-bar"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="chart-explanation">Balance between left and right leg</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Personal Tips Section -->
-                    <div class="personal-tips-section" id="personal-tips-section" style="display: none;">
-                        <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">💡 Your Personal Tips</h3>
-                        <div class="tips-container">
-                            <div class="tip-category" id="footwear-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-shoe-prints tip-icon"></i>
-                                    <span class="tip-label">FOOTWEAR</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="footwear-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="footwear-explanation"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="tip-category" id="drill-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-dumbbell tip-icon"></i>
-                                    <span class="tip-label">EXERCISE</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="drill-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="drill-explanation"></p>
+                    <!-- Retail Action Plan -->
+                    <div class="retail-action-plan" id="retail-action-plan" style="display: block;">
+                        <h4>📝 Next Steps & Follow-up</h4>
+                        <div class="action-plan-content">
+                            <div class="immediate-actions">
+                                <h5>Today's Actions</h5>
+                                <div class="action-checklist">
+                                    <div class="action-item">
+                                        <input type="checkbox" id="try-recommended-shoe">
+                                        <label for="try-recommended-shoe">Try on recommended footwear</label>
+                                    </div>
+                                    <div class="action-item">
+                                        <input type="checkbox" id="discuss-accessories">
+                                        <label for="discuss-accessories">Discuss additional accessories</label>
+                                    </div>
+                                    <div class="action-item">
+                                        <input type="checkbox" id="schedule-followup">
+                                        <label for="schedule-followup">Schedule follow-up if needed</label>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="tip-category" id="cue-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-eye tip-icon"></i>
-                                    <span class="tip-label">FOCUS CUE</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="cue-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="cue-explanation"></p>
+                            <div class="customer-takeaways">
+                                <h5>Customer Takeaways</h5>
+                                <div class="takeaway-summary" id="customer-summary">
+                                    <div class="summary-point">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Your running form is efficient overall</span>
+                                    </div>
+                                    <div class="summary-point">
+                                        <i class="fas fa-shoe-prints"></i>
+                                        <span id="shoe-summary">Neutral shoes recommended for your gait pattern</span>
+                                    </div>
+                                    <div class="summary-point">
+                                        <i class="fas fa-target"></i>
+                                        <span id="focus-summary">Continue current training routine</span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="tip-category" id="training-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-running tip-icon"></i>
-                                    <span class="tip-label">TRAINING</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="training-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="training-explanation"></p>
-                                </div>
+                        </div>
+                        
+                        <!-- Store Employee Notes -->
+                        <div class="employee-notes">
+                            <h5>📋 Store Notes (Internal)</h5>
+                            <textarea id="employee-notes-text" placeholder="Add notes about customer preferences, concerns, or follow-up needed..."></textarea>
+                            <div class="notes-actions">
+                                <button class="save-notes-btn" onclick="saveEmployeeNotes()">Save Notes</button>
+                                <button class="print-summary-btn" onclick="printCustomerSummary()">Print Customer Summary</button>
                             </div>
                         </div>
                     </div>

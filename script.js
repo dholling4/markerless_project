@@ -275,26 +275,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Analysis returned null results');
             }
             
-            // Update UI with calculated results
-            document.getElementById('cadence-score').textContent = `${analysisResults.cadence} spm`;
-            document.getElementById('overall-grade').textContent = analysisResults.grade;
+            // Update UI with calculated results using new retail interface
+            console.log('✅ Calling generateRetailAnalysis to populate retail interface');
+            generateRetailAnalysis(analysisResults);
             
-            // Display cumulative asymmetry with direction and intuitive explanation
-            const asymmetryValue = analysisResults.asymmetry;
-            const asymmetryMagnitude = Math.abs(asymmetryValue);
-            const asymmetryDirection = asymmetryValue > 0 ? 'RIGHT' : 'LEFT';
+            // Also populate any remaining old elements for backwards compatibility
+            const cadenceElement = document.getElementById('cadence-score');
+            const gradeElement = document.getElementById('overall-grade');
             const asymmetryElement = document.getElementById('asymmetry-score');
             
-            if (asymmetryMagnitude < 3) {
-                asymmetryElement.innerHTML = `<span style="color: #00E676;">${asymmetryMagnitude.toFixed(1)}° Balanced</span>`;
-            } else {
-                asymmetryElement.innerHTML = `<span style="color: ${asymmetryMagnitude > 10 ? '#FF5252' : '#FFC107'};">${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection}</span>`;
+            if (cadenceElement) {
+                cadenceElement.textContent = `${analysisResults.cadence} spm`;
+            }
+            if (gradeElement) {
+                gradeElement.textContent = analysisResults.grade;
+            }
+            if (asymmetryElement) {
+                const asymmetryValue = analysisResults.asymmetry;
+                const asymmetryMagnitude = Math.abs(asymmetryValue);
+                const asymmetryDirection = asymmetryValue > 0 ? 'RIGHT' : 'LEFT';
+                
+                if (asymmetryMagnitude < 3) {
+                    asymmetryElement.innerHTML = `<span style="color: #00E676;">${asymmetryMagnitude.toFixed(1)}° Balanced</span>`;
+                } else {
+                    asymmetryElement.innerHTML = `<span style="color: ${asymmetryMagnitude > 10 ? '#FF5252' : '#FFC107'};">${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection}</span>`;
+                }
+                asymmetryElement.title = `Cumulative asymmetry: ${asymmetryValue.toFixed(1)}° (${asymmetryDirection} dominant)`;
             }
             
-            // Add tooltip explanation
-            asymmetryElement.title = `Cumulative asymmetry: ${asymmetryValue.toFixed(1)}° (${asymmetryDirection} dominant)\nCombines hip, knee, and ${analysisResults.usingTibialSurrogate ? 'tibial' : 'ankle'} asymmetries with direction`;
-            
-            console.log(`📊 Asymmetry Display: ${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection} dominant`);
+            console.log(`📊 Results populated in retail interface`);
             
             // Display pose model and ankle calculation method information
             if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
@@ -323,59 +332,83 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('ROM Table:', analysisResults.romTable);
         console.log('About to generate charts...');
         
-        try {
-            generateSpiderChart(analysisResults);  // Pass full results for ROM values
-            console.log('Spider chart generated successfully');
-        } catch (error) {
-            console.error('Error generating spider chart:', error);
-        }
-        
-        try {
-            generateAsymmetryChart(analysisResults); // Pass full results for ROM values
-            console.log('Asymmetry chart generated successfully');
-        } catch (error) {
-            console.error('Error generating asymmetry chart:', error);
-        }
-        
-        try {
-            generateJointAnglePlot(analysisResults, 'angleChart');
-            generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
-            
-            // Show and setup CSV download button
-            const downloadBtn = document.getElementById('downloadCSVBtn');
-            if (downloadBtn) {
-                downloadBtn.style.display = 'inline-block';
-                downloadBtn.onclick = () => downloadLineplotDataAsCSV(analysisResults);
+        // Generate charts only if canvas elements exist
+        if (document.getElementById('spider-chart')) {
+            try {
+                generateSpiderChart(analysisResults);
+                console.log('Spider chart generated successfully');
+            } catch (error) {
+                console.error('Error generating spider chart:', error);
             }
-            
-            console.log('Joint angle plot generated successfully');
-        } catch (error) {
-            console.error('Error generating joint angle plot:', error);
+        } else {
+            console.log('Spider chart canvas not found, skipping');
         }
         
-        try {
-            generateROMTable(analysisResults);      // Pass full results for ROM table
-            console.log('ROM table generated successfully');
-        } catch (error) {
-            console.error('Error generating ROM table:', error);
+        if (document.getElementById('asymmetry-chart')) {
+            try {
+                generateAsymmetryChart(analysisResults);
+                console.log('Asymmetry chart generated successfully');
+            } catch (error) {
+                console.error('Error generating asymmetry chart:', error);
+            }
+        } else {
+            console.log('Asymmetry chart canvas not found, skipping');
         }
         
-        try {
-            generatePersonalizedTips(analysisResults); // Generate tips based on gait.py logic
-            console.log('Personalized tips generated successfully');
-        } catch (error) {
-            console.error('Error generating personalized tips:', error);
+        // Generate joint angle plots only if canvas elements exist
+        if (document.getElementById('angleChart') && document.getElementById('angleLinesChart')) {
+            try {
+                generateJointAnglePlot(analysisResults, 'angleChart');
+                generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
+                
+                // Show and setup CSV download button
+                const downloadBtn = document.getElementById('downloadCSVBtn');
+                if (downloadBtn) {
+                    downloadBtn.style.display = 'inline-block';
+                    downloadBtn.onclick = () => downloadLineplotDataAsCSV(analysisResults);
+                }
+                
+                console.log('Joint angle plot generated successfully');
+            } catch (error) {
+                console.error('Error generating joint angle plot:', error);
+            }
+        } else {
+            console.log('Joint angle plot canvases not found, skipping');
         }
         
-            // Add download button
-            addDownloadButton();
+        // Generate ROM table only if container exists
+        if (document.getElementById('rom-table-container')) {
+            try {
+                generateROMTable(analysisResults);
+                console.log('ROM table generated successfully');
+            } catch (error) {
+                console.error('Error generating ROM table:', error);
+            }
+        } else {
+            console.log('ROM table container not found, skipping');
+        }
+        
+            // Add download button if it exists
+            if (document.getElementById('rom-table-container')) {
+                addDownloadButton();
+            }
             
         } catch (error) {
             console.error('❌ Error in generateMockResults:', error);
-            // Show error message to user
-            document.getElementById('cadence-score').textContent = 'Error';
-            document.getElementById('overall-grade').textContent = 'Failed';
-            document.getElementById('asymmetry-score').textContent = 'Error';
+            // Show error message to user (check if elements exist first)
+            const cadenceElement = document.getElementById('cadence-score');
+            const gradeElement = document.getElementById('overall-grade');
+            const asymmetryElement = document.getElementById('asymmetry-score');
+            
+            if (cadenceElement) cadenceElement.textContent = 'Error';
+            if (gradeElement) gradeElement.textContent = 'Failed';
+            if (asymmetryElement) asymmetryElement.textContent = 'Error';
+            
+            // Update retail interface with error state
+            const overallRecommendationText = document.getElementById('overall-recommendation-text');
+            if (overallRecommendationText) {
+                overallRecommendationText.textContent = 'Analysis Error - Please Try Again';
+            }
         }
     }
 
@@ -2733,105 +2766,351 @@ function downloadLineplotDataAsCSV(analysisResults) {
     }
 }
 
-// Generate personalized tips based on gait.py logic
-function generatePersonalizedTips(analysisResults) {
-    console.log('🎯 Generating personalized tips based on biomechanical analysis...');
+// Generate retail-focused analysis for running store employees
+function generateRetailAnalysis(analysisResults) {
+    console.log('� Generating retail analysis for store employees...');
     
     const gaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
-    const cameraAngle = document.querySelector('input[name="camera-angle"]:checked')?.value || 'side';
-    console.log('Settings - Gait Type:', gaitType, 'Camera Angle:', cameraAngle);
+    const customerFootwear = document.getElementById('footwear')?.value || 'Not specified';
     const romTable = analysisResults.romTable || [];
-    console.log('ROM Table received:', romTable);
     const asymmetry = analysisResults.asymmetry || 0;
-    const grade = analysisResults.grade || 'C';
+    const grade = analysisResults.grade || 'B';
     
-    // Initialize tip categories
-    const tips = {
-        footwear: { value: '', explanation: '' },
-        drill: { value: '', explanation: '' },
-        cue: { value: '', explanation: '' },
-        training: { value: '', explanation: '' }
-    };
+    // Set current date (with safety checks)
+    const currentDateElement = document.getElementById('current-date');
+    const customerFootwearElement = document.getElementById('customer-footwear-type');
     
-    // Analyze key biomechanical issues (based on gait.py logic)
-    let primaryIssue = '';
-    let secondaryIssue = '';
-    let highestDeficit = 0;
-    let lowestROM = 100;
+    if (currentDateElement) {
+        currentDateElement.textContent = new Date().toLocaleDateString();
+    }
+    if (customerFootwearElement) {
+        customerFootwearElement.textContent = `Current Footwear: ${customerFootwear}`;
+    }
     
-    // Find most problematic joints
+    // Generate overall recommendation (with safety checks)
+    const overallAssessment = generateOverallAssessment(grade, asymmetry);
+    const overallRecommendationText = document.getElementById('overall-recommendation-text');
+    const overallRecommendationBadge = document.getElementById('overall-recommendation-badge');
+    
+    if (overallRecommendationText) {
+        overallRecommendationText.textContent = overallAssessment.text;
+    }
+    if (overallRecommendationBadge) {
+        overallRecommendationBadge.className = `recommendation-badge ${overallAssessment.type}`;
+    }
+    
+    // Generate key findings
+    generateStoreFindings(romTable, asymmetry, grade);
+    
+    // Generate footwear recommendations
+    generateFootwearRecommendations(romTable, asymmetry, gaitType, customerFootwear);
+    
+    // Generate conversation starters
+    generateConversationStarters(romTable, asymmetry, grade);
+    
+    // Generate customer summary
+    generateCustomerSummary(romTable, asymmetry, grade);
+    
+    // Generate simple visualizations
+    generateSimpleVisualizations(analysisResults);
+    
+    console.log('✅ Retail analysis generated successfully');
+}
+
+function generateOverallAssessment(grade, asymmetry) {
+    const absoluteAsymmetry = Math.abs(asymmetry);
+    
+    if (grade === 'A' && absoluteAsymmetry < 5) {
+        return { text: 'Excellent Gait Pattern', type: 'excellent' };
+    } else if (grade === 'B' && absoluteAsymmetry < 10) {
+        return { text: 'Good Running Form', type: 'good' };
+    } else if (absoluteAsymmetry > 15) {
+        return { text: 'Imbalance Detected', type: 'attention' };
+    } else {
+        return { text: 'Room for Improvement', type: 'improvement' };
+    }
+}
+
+function generateStoreFindings(romTable, asymmetry, grade) {
+    // Running Efficiency
+    let efficiencyRating, efficiencyExplanation;
+    if (grade === 'A') {
+        efficiencyRating = 'Excellent';
+        efficiencyExplanation = 'Customer shows very efficient movement patterns';
+    } else if (grade === 'B') {
+        efficiencyRating = 'Good';
+        efficiencyExplanation = 'Generally efficient with minor improvements possible';
+    } else {
+        efficiencyRating = 'Needs Work';
+        efficiencyExplanation = 'Several areas could benefit from correction';
+    }
+    
+    const efficiencyRatingElement = document.getElementById('efficiency-rating');
+    const efficiencyExplanationElement = document.getElementById('efficiency-explanation');
+    
+    if (efficiencyRatingElement) {
+        efficiencyRatingElement.textContent = efficiencyRating;
+    }
+    if (efficiencyExplanationElement) {
+        efficiencyExplanationElement.textContent = efficiencyExplanation;
+    }
+    
+    // Injury Risk
+    const absoluteAsymmetry = Math.abs(asymmetry);
+    let injuryRisk, injuryExplanation;
+    if (absoluteAsymmetry < 5) {
+        injuryRisk = 'Low Risk';
+        injuryExplanation = 'Well-balanced movement reduces injury potential';
+    } else if (absoluteAsymmetry < 15) {
+        injuryRisk = 'Moderate Risk';
+        injuryExplanation = 'Some imbalance present - proper shoes can help';
+    } else {
+        injuryRisk = 'Higher Risk';
+        injuryExplanation = 'Significant imbalance may lead to overuse injuries';
+    }
+    
+    const injuryRiskRatingElement = document.getElementById('injury-risk-rating');
+    const injuryRiskExplanationElement = document.getElementById('injury-risk-explanation');
+    
+    if (injuryRiskRatingElement) {
+        injuryRiskRatingElement.textContent = injuryRisk;
+    }
+    if (injuryRiskExplanationElement) {
+        injuryRiskExplanationElement.textContent = injuryExplanation;
+    }
+    
+    // Balance Assessment
+    let balanceRating, balanceExplanation;
+    if (absoluteAsymmetry < 3) {
+        balanceRating = 'Excellent';
+        balanceExplanation = 'Left and right sides work together very well';
+    } else if (absoluteAsymmetry < 8) {
+        balanceRating = 'Good';
+        balanceExplanation = 'Minor differences between left and right sides';
+    } else {
+        balanceRating = 'Imbalanced';
+        balanceExplanation = 'Noticeable difference between left and right sides';
+    }
+    
+    const balanceRatingElement = document.getElementById('balance-rating');
+    const balanceExplanationElement = document.getElementById('balance-explanation');
+    
+    if (balanceRatingElement) {
+        balanceRatingElement.textContent = balanceRating;
+    }
+    if (balanceExplanationElement) {
+        balanceExplanationElement.textContent = balanceExplanation;
+    }
+}
+
+function generateFootwearRecommendations(romTable, asymmetry, gaitType, currentFootwear) {
+    const absoluteAsymmetry = Math.abs(asymmetry);
+    let shoeType, reason, alternatives;
+    
+    // Analyze ROM patterns for footwear recommendation
+    let ankleIssues = false;
+    let kneeIssues = false;
+    let hipIssues = false;
+    
     romTable.forEach(joint => {
-        const performance = joint.peakPerformanceZone;
-        if (performance && performance.score < highestDeficit) {
-            primaryIssue = joint.joint;
-            highestDeficit = 100 - performance.score;
+        if (joint.joint.toLowerCase().includes('ankle') && joint.rom < 25) {
+            ankleIssues = true;
         }
-        if (joint.rom < lowestROM) {
-            lowestROM = joint.rom;
-            secondaryIssue = joint.joint;
+        if (joint.joint.toLowerCase().includes('knee') && joint.rom < 55) {
+            kneeIssues = true;
+        }
+        if (joint.joint.toLowerCase().includes('hip') && joint.rom < 35) {
+            hipIssues = true;
         }
     });
     
-    console.log(`Primary issue: ${primaryIssue} (deficit: ${highestDeficit})`);
-    console.log(`Secondary issue: ${secondaryIssue} (ROM: ${lowestROM}°)`);
-    console.log(`Asymmetry: ${asymmetry}°, Grade: ${grade}`);
-    
-    // Smart footwear recommendation based on biomechanics (matching Python gait.py logic)
-    function recommendFootwear(romValues, cameraAngle, gaitType) {
-        // Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right)
-        const kneeRightRom = romValues[0];
-        const hipRightRom = romValues[1]; 
-        const spineRom = romValues[2];
-        const hipLeftRom = romValues[3];
-        const kneeLeftRom = romValues[4];
-        const tibialLeftRom = romValues[5];  // Tibial inclination instead of ankle
-        const tibialRightRom = romValues[6]; // Tibial inclination instead of ankle
-        
-        // Average bilateral values (adapted for tibial inclination)
-        const avgTibialRom = (tibialLeftRom + tibialRightRom) / 2;
-        const avgKneeRom = (kneeLeftRom + kneeRightRom) / 2;
-        const avgHipRom = (hipLeftRom + hipRightRom) / 2;
-        
-        // Primary: Posterior/Frontal Plane Assessment (adapted for tibial inclination)
-        if (cameraAngle === "back") {
-            // Overpronation indicators - tibial inclination thresholds adapted from ankle
-            // Tibial inclination: higher ROM indicates more instability/overpronation
-            if (avgTibialRom > 12 || avgKneeRom > 10 || avgHipRom > 15) {
-                if (avgTibialRom > 18 || avgKneeRom > 15) {
-                    return ["Motion Control", "Excessive tibial movement and knee valgus detected. Shoes with extra support on the inside of the foot help guide your stride and reduce excessive inward rolling."];
-                } else {
-                    return ["Stability", "Moderate tibial movement detected. Dual-density midsole and guided motion control recommended."];
-                }
-            } else {
-                var primaryRec = "Neutral";
-            }
-        } else {
-            // Sagittal plane assessment for neutral/cushioned decision
-            var primaryRec = "Neutral";
-        }
-        
-        // Supporting: Sagittal Plane Refinement (adapted for tibial inclination)
-        if (cameraAngle === "side") {
-            // Limited tibial mobility + heel striking = cushioned shoes (adapted thresholds)
-            if (gaitType === "walking" || gaitType === "running") {
-                if (avgTibialRom < 8 && spineRom > 10) {  // Limited tibial mobility + heel-strike posture
-                    return ["Maximum Cushioning", "Limited tibial mobility and heel-strike pattern detected. Enhanced shock absorption needed."];
-                } else if (avgTibialRom > 20 && avgKneeRom > 100) {  // Good mobility + forefoot striking
-                    return ["Minimalist/Neutral", "Excellent tibial mobility and efficient movement pattern. Minimal interference recommended."];
-                }
-            }
-        }
-        
-        // Default recommendation
-        if (primaryRec === "Neutral") {
-            return ["Neutral", "Balanced biomechanics detected. Standard neutral support recommended."];
-        } else {
-            return [primaryRec, "Biomechanics analysis suggests standard neutral support."];
-        }
+    // Footwear logic for running stores
+    if (absoluteAsymmetry > 15 || kneeIssues) {
+        shoeType = 'Motion Control Shoes';
+        reason = 'Significant imbalance detected - needs maximum stability';
+        alternatives = 'Stability shoes with custom orthotics';
+    } else if (absoluteAsymmetry > 8 || ankleIssues) {
+        shoeType = 'Stability Running Shoes';
+        reason = 'Mild overpronation or imbalance - needs moderate support';
+        alternatives = 'Neutral shoes with arch support insoles';
+    } else if (hipIssues) {
+        shoeType = 'Cushioned Neutral Shoes';
+        reason = 'Good mechanics but could benefit from impact absorption';
+        alternatives = 'Minimalist shoes for experienced runners';
+    } else {
+        shoeType = 'Neutral Running Shoes';
+        reason = 'Efficient gait pattern allows for natural foot motion';
+        alternatives = 'Lightweight trainers or racing flats';
     }
     
-    // Smart training recommendations based on biomechanics (matching Python gait.py logic)
-    function recommendTraining(romValues, cameraAngle, gaitType) {
+    document.getElementById('shoe-rec-title').textContent = shoeType;
+    document.getElementById('shoe-rec-reason').textContent = reason;
+    document.getElementById('shoe-alternatives').textContent = alternatives;
+    
+    // Generate accessory recommendations
+    const accessories = [];
+    if (absoluteAsymmetry > 10) {
+        accessories.push({ name: 'Custom Insoles', benefit: 'Correct imbalances' });
+    }
+    if (ankleIssues) {
+        accessories.push({ name: 'Ankle Support', benefit: 'Improve range of motion' });
+    }
+    if (kneeIssues) {
+        accessories.push({ name: 'Knee Strap', benefit: 'Reduce stress on joints' });
+    }
+    
+    const accessoryContainer = document.getElementById('accessory-recommendations');
+    accessoryContainer.innerHTML = '';
+    
+    if (accessories.length === 0) {
+        accessories.push({ name: 'Running Socks', benefit: 'Moisture-wicking comfort' });
+    }
+    
+    accessories.forEach(accessory => {
+        const div = document.createElement('div');
+        div.className = 'accessory-item';
+        div.innerHTML = `
+            <span class="accessory-name">${accessory.name}</span>
+            <span class="accessory-benefit">${accessory.benefit}</span>
+        `;
+        accessoryContainer.appendChild(div);
+    });
+}
+
+function generateConversationStarters(romTable, asymmetry, grade) {
+    const positivePoints = [];
+    const improvementAreas = [];
+    
+    // Generate positive talking points
+    if (grade === 'A' || grade === 'B') {
+        positivePoints.push('Your running form shows good efficiency');
+    }
+    if (Math.abs(asymmetry) < 8) {
+        positivePoints.push('Good balance between left and right sides');
+    }
+    
+    // Find strong areas
+    romTable.forEach(joint => {
+        if (joint.rom > 50 && joint.joint.toLowerCase().includes('hip')) {
+            positivePoints.push('Excellent hip mobility for power generation');
+        }
+        if (joint.rom > 30 && joint.joint.toLowerCase().includes('ankle')) {
+            positivePoints.push('Good ankle flexibility for shock absorption');
+        }
+    });
+    
+    // Generate improvement areas
+    if (Math.abs(asymmetry) > 10) {
+        improvementAreas.push('Work on balancing left and right leg strength');
+    }
+    if (grade === 'C' || grade === 'D') {
+        improvementAreas.push('Consider gait-specific strengthening exercises');
+    }
+    
+    // Find areas needing work
+    romTable.forEach(joint => {
+        if (joint.rom < 25 && joint.joint.toLowerCase().includes('ankle')) {
+            improvementAreas.push('Ankle stretching could improve stride efficiency');
+        }
+        if (joint.rom < 35 && joint.joint.toLowerCase().includes('hip')) {
+            improvementAreas.push('Hip mobility work could enhance performance');
+        }
+    });
+    
+    // Default messages if none found
+    if (positivePoints.length === 0) {
+        positivePoints.push('You have good running potential to build upon');
+    }
+    if (improvementAreas.length === 0) {
+        improvementAreas.push('Continue current training routine');
+    }
+    
+    // Update UI
+    const positiveList = document.getElementById('positive-talking-points');
+    const improvementList = document.getElementById('improvement-talking-points');
+    
+    positiveList.innerHTML = positivePoints.map(point => `<li>${point}</li>`).join('');
+    improvementList.innerHTML = improvementAreas.map(area => `<li>${area}</li>`).join('');
+}
+
+function generateCustomerSummary(romTable, asymmetry, grade) {
+    // Overall assessment
+    let overallMessage;
+    if (grade === 'A') {
+        overallMessage = 'Your running form is excellent overall';
+    } else if (grade === 'B') {
+        overallMessage = 'Your running form is good with room for minor improvements';
+    } else {
+        overallMessage = 'Your running form has potential for improvement';
+    }
+    
+    // Shoe recommendation summary
+    const shoeRecElement = document.getElementById('shoe-rec-title');
+    const shoeType = shoeRecElement ? shoeRecElement.textContent : 'Neutral shoes';
+    const shoeMessage = `${shoeType.toLowerCase()} recommended for your gait pattern`;
+    
+    // Focus area
+    let focusMessage;
+    if (Math.abs(asymmetry) > 10) {
+        focusMessage = 'Focus on exercises to improve left-right balance';
+    } else {
+        focusMessage = 'Continue current training routine';
+    }
+    
+    // Update summary
+    document.querySelector('.summary-point:nth-child(1) span').textContent = overallMessage;
+    document.getElementById('shoe-summary').textContent = shoeMessage;
+    document.getElementById('focus-summary').textContent = focusMessage;
+}
+
+function generateSimpleVisualizations(analysisResults) {
+    // Generate form score gauge
+    const grade = analysisResults.grade || 'B';
+    let score;
+    switch (grade) {
+        case 'A': score = 90; break;
+        case 'B': score = 75; break;
+        case 'C': score = 60; break;
+        default: score = 45;
+    }
+    
+    document.getElementById('gauge-score').textContent = `${score}%`;
+    
+    // Generate balance visualization
+    const asymmetry = analysisResults.asymmetry || 0;
+    const leftPercentage = Math.max(0, Math.min(100, 50 + asymmetry));
+    const rightPercentage = Math.max(0, Math.min(100, 50 - asymmetry));
+    
+    document.getElementById('left-balance-bar').style.width = `${leftPercentage}%`;
+    document.getElementById('right-balance-bar').style.width = `${rightPercentage}%`;
+}
+
+// Helper functions for retail interface
+function saveEmployeeNotes() {
+    const notes = document.getElementById('employee-notes-text').value;
+    localStorage.setItem('employeeNotes', notes);
+    alert('Notes saved successfully!');
+}
+
+function printCustomerSummary() {
+    const summaryContent = document.querySelector('.customer-takeaways').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head><title>Customer Gait Analysis Summary</title></head>
+            <body>
+                <h2>Gait Analysis Summary</h2>
+                ${summaryContent}
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Smart training recommendations based on biomechanics (matching Python gait.py logic)
+function recommendTraining(romValues, cameraAngle, gaitType) {
         // Extract ROM values (reordered: Knee Right, Hip Right, Spine, Hip Left, Knee Left, Tibial Left, Tibial Right)
         const kneeRightRom = romValues[0];
         const hipRightRom = romValues[1]; 
@@ -2920,130 +3199,8 @@ function generatePersonalizedTips(analysisResults) {
 
         return exercises.slice(0, 1);  // Return top 1 recommendations
     }
-    
-    // Extract ROM values from romTable in correct order: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right]
-    const romValues = [];
-    
-    // Helper function to find ROM by joint name
-    const findROMByJoint = (jointName) => {
-        const joint = romTable.find(j => j.joint.toLowerCase().includes(jointName.toLowerCase()));
-        return joint ? joint.rom : 0;
-    };
-    
-    // Build ROM array in the order expected by gait.py logic
-    romValues[0] = findROMByJoint('knee right') || findROMByJoint('right knee') || 0;
-    romValues[1] = findROMByJoint('hip right') || findROMByJoint('right hip') || 0;
-    romValues[2] = findROMByJoint('spine') || 0;
-    romValues[3] = findROMByJoint('hip left') || findROMByJoint('left hip') || 0;
-    romValues[4] = findROMByJoint('knee left') || findROMByJoint('left knee') || 0;
-    romValues[5] = findROMByJoint('ankle left') || findROMByJoint('left ankle') || findROMByJoint('left tibial') || 0;
-    romValues[6] = findROMByJoint('ankle right') || findROMByJoint('right ankle') || findROMByJoint('right tibial') || 0;
-    
-    // Simple extraction - get ROM values directly from romTable in order they appear
-    if (romValues.every(val => val === 0) && romTable.length >= 6) {
-        // Fallback: use the romTable order directly 
-        // Based on romTable creation: Spine, Hip Left, Hip Right, Knee Left, Knee Right, Ankle Left, Ankle Right
-        const spineROM = romTable.find(j => j.joint.includes('Spine'))?.rom || 0;
-        const hipLeftROM = romTable.find(j => j.joint.includes('Hip') && j.joint.includes('Left'))?.rom || 0;
-        const hipRightROM = romTable.find(j => j.joint.includes('Hip') && j.joint.includes('Right'))?.rom || 0;
-        const kneeLeftROM = romTable.find(j => j.joint.includes('Knee') && j.joint.includes('Left'))?.rom || 0;
-        const kneeRightROM = romTable.find(j => j.joint.includes('Knee') && j.joint.includes('Right'))?.rom || 0;
-        const ankleTibialLeftROM = romTable.find(j => (j.joint.includes('Ankle') || j.joint.includes('Tibial')) && j.joint.includes('Left'))?.rom || 0;
-        const ankleTibialRightROM = romTable.find(j => (j.joint.includes('Ankle') || j.joint.includes('Tibial')) && j.joint.includes('Right'))?.rom || 0;
-        
-        // Reorder to match gait.py: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Ankle Left, Ankle Right]
-        romValues[0] = kneeRightROM;
-        romValues[1] = hipRightROM; 
-        romValues[2] = spineROM;
-        romValues[3] = hipLeftROM;
-        romValues[4] = kneeLeftROM;
-        romValues[5] = ankleTibialLeftROM;
-        romValues[6] = ankleTibialRightROM;
-    }
-    
-    console.log('Extracted ROM values:', romValues);
-    console.log('ROM order: [Knee Right, Hip Right, Spine, Hip Left, Knee Left, Tibial Left, Tibial Right]');
-    
-    const [footwearType, footwearReason] = recommendFootwear(romValues, cameraAngle, gaitType);
-    const trainingExercises = recommendTraining(romValues, cameraAngle, gaitType);
-    
-    console.log('Generated recommendations:');
-    console.log('Footwear:', footwearType, '-', footwearReason);
-    console.log('Training:', trainingExercises);
-    
-    // Set footwear recommendation
-    tips.footwear.value = footwearType;
-    tips.footwear.explanation = footwearReason;
-    
-    // Set training recommendation
-    if (trainingExercises.length > 0) {
-        const exercise = trainingExercises[0];
-        tips.training.value = exercise.name;
-        tips.training.explanation = exercise.description;
-    } else {
-        tips.training.value = 'Endurance Base';
-        tips.training.explanation = 'Solid mechanics - build your aerobic base with consistent easy-pace running.';
-    }
-    
-    // Keep existing drill and cue logic for now
-    // DRILL/EXERCISE RECOMMENDATIONS (targeting primary weakness)
-    if (primaryIssue.includes('Hip')) {
-        tips.drill.value = 'Hip Flexor Stretches';
-        tips.drill.explanation = 'Tight hip flexors are limiting your hip extension range. Daily stretching will improve your stride length.';
-    } else if (primaryIssue.includes('Knee')) {
-        tips.drill.value = 'Single-Leg Squats';
-        tips.drill.explanation = 'Strengthen your quadriceps and improve knee stability with controlled single-leg movements.';
-    } else if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
-        tips.drill.value = 'Calf Raises + Mobility';
-        tips.drill.explanation = 'Combine calf strengthening with ankle mobility work to optimize your push-off mechanics.';
-    } else if (primaryIssue.includes('Spine')) {
-        tips.drill.value = 'Core Stabilization';
-        tips.drill.explanation = 'Planks and dead bugs will improve your trunk control and reduce excessive forward lean.';
-    } else {
-        tips.drill.value = 'High Knees';
-        tips.drill.explanation = 'Dynamic high knees will improve your overall coordination and joint mobility.';
-    }
-    
-    // FOCUS CUE RECOMMENDATIONS (immediate technique fixes)
-    if (asymmetry > 5) {
-        tips.cue.value = 'Equal Push-Off';
-        tips.cue.explanation = `Your ${asymmetry.toFixed(1)}° asymmetry suggests one side is stronger. Focus on equal effort from both legs.`;
-    } else if (primaryIssue.includes('Spine')) {
-        tips.cue.value = 'Tall Posture';
-        tips.cue.explanation = 'Think "run tall" - imagine a string pulling you up from the top of your head.';
-    } else if (primaryIssue.includes('Hip')) {
-        tips.cue.value = 'Drive Knees Forward';
-        tips.cue.explanation = 'Focus on lifting your knees forward and up, not just lifting your feet behind you.';
-    } else if (primaryIssue.includes('Knee')) {
-        tips.cue.value = 'Light Foot Strike';
-        tips.cue.explanation = 'Land softly under your center of mass to reduce impact forces on your knees.';
-    } else if (primaryIssue.includes('Tibial') || primaryIssue.includes('Ankle')) {
-        tips.cue.value = 'Quick Cadence';
-        tips.cue.explanation = 'Increase your step rate by 5-10% to reduce ground contact time and improve efficiency.';
-    } else {
-        tips.cue.value = 'Relaxed Shoulders';
-        tips.cue.explanation = 'Keep your shoulders relaxed and arms swinging naturally to maintain efficient form.';
-    }
-    
-    // Update the UI with personalized tips
-    document.getElementById('footwear-recommendation').textContent = tips.footwear.value;
-    document.getElementById('footwear-explanation').textContent = tips.footwear.explanation;
-    
-    document.getElementById('drill-recommendation').textContent = tips.drill.value;
-    document.getElementById('drill-explanation').textContent = tips.drill.explanation;
-    
-    document.getElementById('cue-recommendation').textContent = tips.cue.value;
-    document.getElementById('cue-explanation').textContent = tips.cue.explanation;
-    
-    document.getElementById('training-recommendation').textContent = tips.training.value;
-    document.getElementById('training-explanation').textContent = tips.training.explanation;
-    
-    // Show the tips section
-    document.getElementById('personal-tips-section').style.display = 'block';
-    
-    console.log('✅ Personalized tips generated and displayed');
-    return tips;
-}
+
+// Service Worker registration (for PWA functionality)
 
 // Service Worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {
