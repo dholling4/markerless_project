@@ -2228,6 +2228,15 @@ body {
     background: rgba(45, 55, 72, 0.5);
     border-radius: 10px;
     border: 1px solid rgba(0, 255, 179, 0.2);
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.technical-charts-container .chart-section canvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 .technical-charts-container h4 {
@@ -2343,6 +2352,14 @@ body {
     max-width: 100%;
 }
 
+.primary-charts-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    max-width: 100%;
+    align-items: center;
+}
+
 .primary-chart {
     background: rgba(45, 55, 72, 0.6);
     border-radius: 12px;
@@ -2370,6 +2387,10 @@ body {
         gap: 20px;
     }
     
+    .primary-charts-vertical {
+        gap: 20px;
+    }
+    
     .primary-analysis-charts {
         padding: 20px;
         margin: 20px 0;
@@ -2378,6 +2399,12 @@ body {
     .charts-header h2 {
         font-size: 20px;
         margin-bottom: 20px;
+    }
+    
+    .primary-chart canvas {
+        max-width: 100%;
+        width: auto !important;
+        height: auto !important;
     }
 }
 
