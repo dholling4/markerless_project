@@ -1,0 +1,44 @@
+# Core Streamlit and web
+streamlit
+streamlit-webrtc==0.32.0
+
+# Computer Vision
+opencv-python-headless
+mediapipe
+
+# Data processing
+numpy
+pandas
+scipy
+scikit-learn>=1.0,<1.4
+matplotlib
+plotly
+# PDF and file handling
+fpdf2
+Pillow
+requests
+qrcode==7.3
+
+# Email functionality
+python-dotenv
+
+# Additional utilities
+kaleido
+xlrd
+
+# Google Cloud (optional)
+google-cloud-storage
+
+# The following packages seem to be unused in the provided Streamlit pages.
+# You might consider removing them if they are not needed for other parts
+# of your application to reduce container image size and improve build times.
+# langchain
+# transformers
+# openai
+# tensorflow==2.15.0
+# tensorflow-io
+# tensorflow-estimator==2.15.0
+# tensorflow-hub==0.15.0
+# tensorflow-io-gcs-filesystem==0.34.0
+# git+https://github.com/tensorflow/docs
+# ipython==8.18.1
