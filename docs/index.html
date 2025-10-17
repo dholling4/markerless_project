@@ -207,7 +207,7 @@
                     </div>
                     <h3 class="feature-title">AI Joint Detection</h3>
                     <p class="feature-description">
-                        Advanced AI pose tracking technology identifies body landmarks with precision, tracking every movement.
+                        Advanced pose tracking technology identifies body landmarks with precision, tracking every movement.
                     </p>
                 </div>
                 <div class="feature-card">
@@ -216,7 +216,7 @@
                     </div>
                     <h3 class="feature-title">Real-Time Metrics</h3>
                     <p class="feature-description">
-                        Get instant feedback on range of motion, joint angles, cadence score, and asymmetry analysis.
+                        Get instant feedback on range of motion, joint angles, and asymmetry analysis.
                     </p>
                 </div>
                 <div class="feature-card">
@@ -392,103 +392,122 @@
                     
                     <!-- Key Metrics Summary -->
                     <div class="metrics-grid">
-                        <div class="metric-card">
-                            <span class="metric-label">Cadence</span>
-                            <span class="metric-value" id="cadence-score">--</span>
-                        </div>
-                        <div class="metric-card">
-                            <span class="metric-label">Overall Grade</span>
-                            <span class="metric-value" id="overall-grade">--</span>
-                        </div>
-                        <div class="metric-card">
-                            <span class="metric-label">Asymmetry Score</span>
-                            <span class="metric-value" id="asymmetry-score">--</span>
-                        </div>
                     </div>
 
-                    <!-- Analysis Charts -->
-                    <div class="analysis-charts">
-                        <div class="chart-section">
-                            <canvas id="spider-chart" width="400" height="300"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <canvas id="asymmetry-chart" width="400" height="200"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <canvas id="rom-chart" width="400" height="200"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">📊 Joint Angle Analysis</h3>
-                            <canvas id="angleChart" width="900" height="500"></canvas>
-                        </div>
-                        
-                        <div class="chart-section">
-                            <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">📈 Joint Angle Trajectories</h3>
-                            <canvas id="angleLinesChart" width="900" height="600"></canvas>
-                            <div style="text-align: center; margin-top: 20px;">
-                                <button id="downloadCSVBtn" class="cta-primary" style="display: none;">
-                                    📊 Download Trajectory Data (CSV)
-                                </button>
+                    <!-- Retail-Optimized Analysis Results -->
+                    <div class="retail-results-container">
+                        <!-- Phase 1: Hero Section with Visual Impact -->
+                        <div class="hero-analysis-section">
+                            <div class="pose-visual-large">
+                                <h2>🎯 Your Running Analysis</h2>
+                                <div id="pose-snapshot-container" class="pose-display-large">
+                                    <!-- Pose Snapshot will be generated here -->
+                                </div>
+                            </div>
+                            <div class="key-metrics-card">
+                                <div class="metric-status">
+                                    <div id="status-indicator" class="status-indicator good"></div>
+                                    <h3>Movement Quality</h3>
+                                    <div id="status-text" class="status-text">Analyzing...</div>
+                                </div>
+                                <div class="asymmetry-display">
+                                    <span id="asymmetry-value" class="asymmetry-value">--</span>
+                                    <span id="asymmetry-direction" class="asymmetry-direction">--</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="chart-section" id="rom-table-container">
-                            <!-- ROM Table will be generated here -->
+
+                        <!-- Phase 2: Primary Footwear Recommendation -->
+                        <div class="footwear-recommendation-primary">
+                            <div class="recommendation-header">
+                                <span class="shoe-icon">👟</span>
+                                <h2>Recommended Footwear Type</h2>
+                            </div>
+                            <div id="primary-footwear-rec" class="footwear-card-large">
+                                <div class="loading-recommendation">
+                                    <span>Analyzing your gait pattern...</span>
+                                </div>
+                            </div>
+                            <div class="try-shoes-cta">
+                                <button class="cta-button" onclick="tryShoes()" id="tryShoesBtn">� Try Recommended Shoes</button>
+                            </div>
                         </div>
+
+                        <!-- Phase 2: Customer-Friendly Explanation -->
+                        <div class="next-steps-section">
+                            <h3>💡 What This Means</h3>
+                            <div id="interpretation-text" class="customer-friendly-explanation">
+                                <div class="loading-explanation">
+                                    <span>Generating personalized recommendations...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Tips Section (moved here after footwear recommendation) -->
+                        <div class="personal-tips-section" id="personal-tips-section" style="display: none;">
+                            <h3 style="color: #00ffb3; text-align: center; margin-bottom: 20px; font-size: 24px;">💡 Your Personal Training Tips</h3>
+                            <div class="tips-container" style="background: rgba(45, 55, 72, 0.6); padding: 30px; border-radius: 15px; border: 1px solid rgba(0, 255, 179, 0.2);">
+                                <!-- Tips will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Phase 3: Staff Actions -->
+                        <div class="staff-actions-section">
+                            <div class="staff-actions">
+                                <button class="action-btn primary" onclick="emailResults()" id="emailResultsBtn">📧 Email Results to Customer</button>
+                                <button class="action-btn secondary" onclick="printResults()" id="printResultsBtn">📄 Print Analysis Report</button>
+                                <button class="action-btn tertiary" onclick="reTest()" id="reTestBtn">🔄 Start New Analysis</button>
+                                <button class="cta-button" onclick="tryShoes()" id="tryShoesBtn">� Try Recommended Shoes</button>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible Technical Section for Staff -->
+                        <details class="technical-analysis-section">
+                            <summary class="tech-section-header">
+                                <span>📊 Detailed Technical Analysis</span>
+                                <span class="expand-text">(For Running Store Staff)</span>
+                            </summary>
+                            <div class="technical-charts-container">
+                                <div class="chart-section">
+                                    <h4>Range of Motion Analysis</h4>
+                                    <div id="rom-table-container">
+                                        <!-- ROM Table will be generated here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <h4>Joint Angle Analysis</h4>
+                                    <canvas id="angleChart" width="900" height="500"></canvas>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <h4>Advanced Joint Angle Trajectories</h4>
+                                    <canvas id="angleLinesChart" width="900" height="600"></canvas>
+                                    <div style="text-align: center; margin-top: 20px;">
+                                        <button id="downloadCSVBtn" class="cta-primary" style="display: none;">
+                                            📊 Download Trajectory Data (CSV)
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <canvas id="spider-chart" width="400" height="300"></canvas>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <canvas id="asymmetry-chart" width="400" height="200"></canvas>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <canvas id="rom-chart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
                     </div>
                     
-                    <!-- Personal Tips Section -->
-                    <div class="personal-tips-section" id="personal-tips-section" style="display: none;">
-                        <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">💡 Your Personal Tips</h3>
-                        <div class="tips-container">
-                            <div class="tip-category" id="footwear-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-shoe-prints tip-icon"></i>
-                                    <span class="tip-label">FOOTWEAR</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="footwear-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="footwear-explanation"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="tip-category" id="drill-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-dumbbell tip-icon"></i>
-                                    <span class="tip-label">EXERCISE</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="drill-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="drill-explanation"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="tip-category" id="cue-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-eye tip-icon"></i>
-                                    <span class="tip-label">FOCUS CUE</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="cue-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="cue-explanation"></p>
-                                </div>
-                            </div>
-                            
-                            <div class="tip-category" id="training-tip">
-                                <div class="tip-header">
-                                    <i class="fas fa-running tip-icon"></i>
-                                    <span class="tip-label">TRAINING</span>
-                                </div>
-                                <div class="tip-content">
-                                    <span class="tip-value" id="training-recommendation">Loading...</span>
-                                    <p class="tip-explanation" id="training-explanation"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>

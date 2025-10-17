@@ -3,33 +3,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const navToggle = document.getElementById('nav-toggle');
     const navMenu = document.getElementById('nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    // Initialize TensorFlow.js MediaPipe when libraries are loaded
+    window.addEventListener('load', () => {
+        setTimeout(async () => {
+            console.log('🚀 Checking TensorFlow.js and MediaPipe libraries...');
+            
+            // Check if libraries are loaded
+            if (typeof tf !== 'undefined') {
+                console.log('✅ TensorFlow.js loaded, version:', tf.version?.tfjs || 'unknown');
+            } else {
+                console.error('❌ TensorFlow.js not loaded');
+                return;
+            }
+            
+            // Check for TensorFlow.js pose detection
+            if (typeof poseDetection !== 'undefined') {
+                console.log('✅ TensorFlow.js PoseDetection library loaded');
+                
+                try {
+                    await tf.ready();
+                    console.log('✅ TensorFlow.js ready');
+                    console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
+                    
+                    if (poseDetection.SupportedModels.MoveNet) {
+                        console.log('✅ MoveNet model available via TensorFlow.js');
+                    } else {
+                        console.warn('⚠️ MoveNet model not found');
+                    }
+                    
+                    if (poseDetection.SupportedModels.MediaPipePose) {
+                        console.log('✅ MediaPipe Pose model available as backup');
+                    } else {
+                        console.warn('⚠️ MediaPipe Pose model not found');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ TensorFlow.js initialization failed:', error);
+                }
+            } else {
+                console.warn('⚠️ TensorFlow.js PoseDetection library not loaded');
+            }
+            
+            // Check for direct MediaPipe libraries
+            if (typeof Pose !== 'undefined') {
+                console.log('✅ Direct MediaPipe Pose library loaded');
+            } else {
+                console.warn('⚠️ Direct MediaPipe Pose library not loaded');
+            }
+            
+            // Show available globals for debugging
+            const mediaRelated = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('pose') || 
+                key.toLowerCase().includes('tf') || 
+                key.toLowerCase().includes('mediapipe')
+            );
+            console.log('🔍 Media-related globals:', mediaRelated);
+        }, 3000); // Wait 3 seconds for all libraries to load
+    });
 
-    // Mo        // Calculate ROM (Range of Motion) exactly matching Python np.ptp() implementation
-        // ROM values order: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
-        const romValues = [
-            Math.max(...rightAngles.knee) - Math.min(...rightAngles.knee),    // Right knee ROM
-            Math.max(...rightAngles.hip) - Math.min(...rightAngles.hip),      // Right hip ROM  
-            Math.max(...leftAngles.spine) - Math.min(...leftAngles.spine),    // Spine ROM (same for both sides)
-            Math.max(...leftAngles.hip) - Math.min(...leftAngles.hip),        // Left hip ROM
-            Math.max(...leftAngles.knee) - Math.min(...leftAngles.knee),      // Left knee ROM
-            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left ankle ROM
-            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right ankle ROM
-        ];
-        
-        // For backward compatibility, also create the old ROM structure
-        const leftROM = {
-            ankle: romValues[5],   // Left ankle ROM
-            knee: romValues[4],    // Left knee ROM
-            hip: romValues[3],     // Left hip ROM
-            spine: romValues[2]    // Spine ROM
-        };
-        
-        const rightROM = {
-            ankle: romValues[6],   // Right ankle ROM
-            knee: romValues[0],    // Right knee ROM
-            hip: romValues[1],     // Right hip ROM
-            spine: romValues[2]    // Spine ROM
-        };le
     navToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
     });
@@ -233,41 +265,36 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Gait type:', gaitType, 'Camera angle:', cameraAngle);
         
         // Generate biomechanically accurate results with real MediaPipe processing
-        console.log('About to call performBiomechanicalAnalysis with video file');
-        const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile);
-        console.log('performBiomechanicalAnalysis completed');
-        
-        // Update UI with calculated results
-        document.getElementById('cadence-score').textContent = `${analysisResults.cadence} spm`;
-        document.getElementById('overall-grade').textContent = analysisResults.grade;
-        
-        // Display cumulative asymmetry with direction and intuitive explanation
-        const asymmetryValue = analysisResults.asymmetry;
-        const asymmetryMagnitude = Math.abs(asymmetryValue);
-        const asymmetryDirection = asymmetryValue > 0 ? 'RIGHT' : 'LEFT';
-        const asymmetryElement = document.getElementById('asymmetry-score');
-        
-        if (asymmetryMagnitude < 3) {
-            asymmetryElement.innerHTML = `<span style="color: #00E676;">${asymmetryMagnitude.toFixed(1)}° Balanced</span>`;
-        } else {
-            asymmetryElement.innerHTML = `<span style="color: ${asymmetryMagnitude > 10 ? '#FF5252' : '#FFC107'};">${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection}</span>`;
-        }
-        
-        // Add tooltip explanation
-        asymmetryElement.title = `Cumulative asymmetry: ${asymmetryValue.toFixed(1)}° (${asymmetryDirection} dominant)\nCombines hip, knee, and ${analysisResults.usingTibialSurrogate ? 'tibial' : 'ankle'} asymmetries with direction`;
-        
-        console.log(`📊 Asymmetry Display: ${asymmetryMagnitude.toFixed(1)}° ${asymmetryDirection} dominant`);
-        
-        // Display pose model and ankle calculation method information
-        if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
-            console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
-            console.log(`🦴 Lower Limb Calculation: ${analysisResults.ankleCalculationMethod}`);
+        console.log('🚀 About to call performBiomechanicalAnalysis with video file:', selectedFile?.name);
+        try {
+            const analysisResults = await performBiomechanicalAnalysis(gaitType, cameraAngle, selectedFile, updateProgress);
+            console.log('✅ performBiomechanicalAnalysis completed successfully');
+            console.log('📊 Analysis results:', analysisResults);
             
-            // Add visual indicator for MoveNet tibial surrogate
-            if (analysisResults.poseModel === 'MoveNet') {
-                console.log('ℹ️ Note: Tibial inclination angles calculated using shank-to-vertical measurement due to MoveNet model limitations');
+            if (!analysisResults) {
+                throw new Error('Analysis returned null results');
             }
-        }
+            
+            // Display pose model and ankle calculation method information
+            if (analysisResults.poseModel && analysisResults.ankleCalculationMethod) {
+                console.log(`📋 Pose Model: ${analysisResults.poseModel}`);
+                console.log(`🦴 Lower Limb Calculation: ${analysisResults.ankleCalculationMethod}`);
+                console.log(`🎯 Data Source: ${analysisResults.dataSource || 'Unknown'}`);
+                
+                // Show data source prominently to user
+                if (analysisResults.dataSource === 'REAL_MOVENET') {
+                    console.log('🎉 SUCCESS: Results based on REAL MoveNet pose detection from your video!');
+                    console.log('✅ Your biomechanical analysis uses actual movement data');
+                } else if (analysisResults.dataSource === 'SIMULATION') {
+                    console.log('ℹ️ Note: Results based on simulated gait data');
+                    console.log('💡 Upload a video file for real pose detection analysis');
+                }
+                
+                // Add visual indicator for MoveNet tibial surrogate
+                if (analysisResults.poseModel === 'MoveNet') {
+                    console.log('ℹ️ Note: Tibial inclination angles calculated using shank-to-vertical measurement due to MoveNet model limitations');
+                }
+            }
         
         // Generate comprehensive analysis charts
         console.log('Analysis results:', analysisResults);
@@ -275,23 +302,85 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('ROM Table:', analysisResults.romTable);
         console.log('About to generate charts...');
         
-        try {
-            generateSpiderChart(analysisResults);  // Pass full results for ROM values
-            console.log('Spider chart generated successfully');
-        } catch (error) {
-            console.error('Error generating spider chart:', error);
-        }
+        // ===================================================
+        // RETAIL RESULTS POPULATION (NEW PHASE 1-3 SYSTEM)
+        // ===================================================
         
         try {
-            generateAsymmetryChart(analysisResults); // Pass full results for ROM values
-            console.log('Asymmetry chart generated successfully');
+            // Populate retail-focused interface with customer-friendly results
+            populateRetailResults(analysisResults);
+            console.log('✅ Retail interface populated with customer-friendly results');
         } catch (error) {
-            console.error('Error generating asymmetry chart:', error);
+            console.error('❌ Error populating retail interface:', error);
         }
-        
+
+        try {
+            // Display pose snapshot in the hero section pose-display-large
+            displayPoseSnapshot(analysisResults);   
+            console.log('✅ Pose snapshot displayed in hero section');
+        } catch (error) {
+            console.error('❌ Error displaying pose snapshot:', error);
+        }
+
+        // ===================================================
+        // TECHNICAL CHARTS (COLLAPSIBLE SECTION)
+        // ===================================================
+
+        try {
+            // Generate charts for technical analysis section
+            generateSpiderChart(analysisResults);  
+            console.log('✅ Spider chart generated for technical section');
+        } catch (error) {
+            console.error('❌ Error generating spider chart:', error);
+        }
+
+        try {
+            generateAsymmetryChart(analysisResults); 
+            console.log('✅ Asymmetry chart generated for technical section');
+        } catch (error) {
+            console.error('❌ Error generating asymmetry chart:', error);
+        }
+
         try {
             generateJointAnglePlot(analysisResults, 'angleChart');
-            generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
+            console.log('✅ Joint angle plot generated for technical section');
+        } catch (error) {
+            console.error('❌ Error generating joint angle plot:', error);
+        }
+
+        try {
+            // Set up technical analysis section toggle functionality
+            const technicalSection = document.querySelector('.technical-analysis-section');
+            const technicalHeader = document.querySelector('.tech-section-header');
+            const technicalContainer = document.querySelector('.technical-charts-container');
+            if (technicalSection) {
+                // Add event listener for details toggle (HTML5 details element)
+                technicalSection.addEventListener('toggle', function() {
+                    if (this.open && technicalContainer) {
+                        // Section was opened - generate advanced charts
+                        technicalContainer.style.display = 'block';
+                        
+                        setTimeout(() => {
+                            try {
+                                generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
+                                console.log('✅ Advanced joint angle lines chart generated on section open');
+                            } catch (error) {
+                                console.error('❌ Error generating advanced chart:', error);
+                            }
+                        }, 100);
+                        
+                        console.log('🔼 Technical analysis section opened');
+                    } else {
+                        console.log('🔽 Technical analysis section closed');
+                    }
+                });
+                
+                console.log('✅ Technical section toggle functionality configured');
+            } else {
+                console.warn('⚠️ Technical section not found, falling back to standard chart generation');
+                // Fallback: generate chart immediately if toggle not found
+                generateJointAngleLinesPlot(analysisResults, 'angleLinesChart');
+            }
             
             // Show and setup CSV download button
             const downloadBtn = document.getElementById('downloadCSVBtn');
@@ -311,16 +400,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error generating ROM table:', error);
         }
-        
+
         try {
-            generatePersonalizedTips(analysisResults); // Generate tips based on gait.py logic
-            console.log('Personalized tips generated successfully');
+            // Generate personalized tips and integrate into retail interface
+            generateRetailPersonalizedTips(analysisResults);
+            console.log('✅ Retail personalized tips generated and integrated');
         } catch (error) {
-            console.error('Error generating personalized tips:', error);
+            console.error('❌ Error generating retail personalized tips:', error);
         }
         
-        // Add download button
-        addDownloadButton();
+            // Add download button
+            addDownloadButton();
+            
+        } catch (error) {
+            console.error('❌ Error in generateMockResults:', error);
+        }
     }
 
     // MediaPipe Pose keypoints (matching Python implementation)
@@ -337,50 +431,243 @@ document.addEventListener('DOMContentLoaded', function() {
         32: "Right Foot"
     };
 
-    // MediaPipe Pose configuration (matching Python settings)
+    // Pose Detection configuration (using MoveNet as primary, MediaPipe as backup)
     const POSE_CONFIG = {
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-        minDetectionConfidence: 0.5,  // Matching Python min_detection_confidence
-        minTrackingConfidence: 0.5,   // Matching Python min_tracking_confidence
-        modelComplexity: 1            // Default complexity level
+        // Primary: MoveNet (more reliable in TensorFlow.js)
+        moveNet: {
+            modelType: 'SinglePose.Thunder', // High accuracy model
+            minScore: 0.7,  // Lower threshold for better detection
+            enableSmoothing: true,
+            enableTracking: true
+        },
+        // Backup: MediaPipe (if available)
+        mediaPipe: {
+            runtime: 'mediapipe',
+            modelType: 'full',
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+            enableSmoothing: true
+        }
     };
 
-    // Global variables for MediaPipe processing
-    let mediaPipePose = null;
+    // Global variables for TensorFlow.js pose detection processing
+    let poseDetector = null;
+    let tfReady = false;
     let isProcessingVideo = false;
-    let videoElement = null;
-    let canvasElement = null;
+    let currentPoseModel = null;
 
-    // Initialize MediaPipe Pose (matching Python implementation)
-    async function initializeMediaPipe() {
-        if (typeof Pose === 'undefined') {
-            console.warn('MediaPipe Pose not loaded, falling back to simulation');
-            return false;
+    // Universal keypoint mapping for different pose models
+    const KEYPOINT_MAPPING = {
+        // MoveNet uses COCO format (17 keypoints)
+        MoveNet: {
+            leftShoulder: 5,   // Left shoulder
+            rightShoulder: 6,  // Right shoulder  
+            leftElbow: 7,      // Left elbow (proxy for better shoulder-hip line)
+            rightElbow: 8,     // Right elbow
+            leftWrist: 9,      // Left wrist
+            rightWrist: 10,    // Right wrist
+            leftHip: 11,       // Left hip
+            rightHip: 12,      // Right hip
+            leftKnee: 13,      // Left knee
+            rightKnee: 14,     // Right knee
+            leftAnkle: 15,     // Left ankle
+            rightAnkle: 16     // Right ankle
+        },
+        // MediaPipe uses its own format (33 keypoints)
+        MediaPipe: {
+            leftShoulder: 11,  // Left shoulder
+            rightShoulder: 12, // Right shoulder
+            leftHip: 23,       // Left hip
+            rightHip: 24,      // Right hip
+            leftKnee: 25,      // Left knee
+            rightKnee: 26,     // Right knee
+            leftAnkle: 27,     // Left ankle
+            rightAnkle: 28,    // Right ankle
+            leftFoot: 31,      // Left foot index
+            rightFoot: 32      // Right foot index
         }
+    };
 
-        mediaPipePose = new Pose(POSE_CONFIG);
+    // Extract keypoints in universal format (matching Python gait.py structure)
+    function extractUniversalKeypoints(keypoints, width, height) {
+        // Determine model type based on keypoints length
+        const modelType = keypoints.length >= 30 ? 'MediaPipe' : 'MoveNet';
+        const mapping = KEYPOINT_MAPPING[modelType];
         
-        mediaPipePose.setOptions({
-            modelComplexity: POSE_CONFIG.modelComplexity,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-            smoothSegmentation: false,
-            minDetectionConfidence: POSE_CONFIG.minDetectionConfidence,
-            minTrackingConfidence: POSE_CONFIG.minTrackingConfidence
+        console.log(`🎯 Using ${modelType} keypoint mapping`);
+        
+        // Validate required keypoints exist with sufficient confidence
+        const requiredPoints = ['leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 
+                               'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle'];
+        
+        const minScore = 0.3; // Lower threshold for broader compatibility
+        const validPoints = requiredPoints.every(pointName => {
+            const idx = mapping[pointName];
+            return keypoints[idx] && keypoints[idx].score > minScore;
         });
-
-        return true;
+        
+        if (!validPoints) {
+            console.warn(`⚠️ Required keypoints not detected with sufficient confidence (${modelType})`);
+            return null;
+        }
+        
+        // Extract coordinates in consistent format
+        const getCoords = (pointName) => {
+            const idx = mapping[pointName];
+            const kp = keypoints[idx];
+            return kp ? { x: kp.x, y: kp.y, score: kp.score } : null;
+        };
+        
+        // For MoveNet, use ankle as foot since it doesn't have separate foot points
+        const leftFoot = modelType === 'MediaPipe' ? getCoords('leftFoot') : getCoords('leftAnkle');
+        const rightFoot = modelType === 'MediaPipe' ? getCoords('rightFoot') : getCoords('rightAnkle');
+        
+        return {
+            left: {
+                shoulder: getCoords('leftShoulder'),
+                hip: getCoords('leftHip'),
+                knee: getCoords('leftKnee'),
+                ankle: getCoords('leftAnkle'),
+                foot: leftFoot
+            },
+            right: {
+                shoulder: getCoords('rightShoulder'),
+                hip: getCoords('rightHip'),
+                knee: getCoords('rightKnee'),
+                ankle: getCoords('rightAnkle'),
+                foot: rightFoot
+            },
+            modelType: modelType
+        };
     }
 
-    // Process video with real MediaPipe pose estimation (matching Python)
-    async function processVideoWithMediaPipe(videoFile) {
-        if (!mediaPipePose) {
-            const initialized = await initializeMediaPipe();
-            if (!initialized) {
-                console.log('Using simulation fallback');
-                return null;
+    // Initialize pose detection (try MoveNet first, then MediaPipe backup)
+    async function initializePoseDetection() {
+        try {
+            console.log('🤖 Initializing pose detection with TensorFlow.js...');
+            
+            // Check if TensorFlow.js and PoseDetection are loaded
+            if (typeof tf === 'undefined') {
+                throw new Error('TensorFlow.js not loaded');
             }
+            
+            if (typeof poseDetection === 'undefined') {
+                throw new Error('PoseDetection library not loaded');
+            }
+
+            console.log('🚀 TensorFlow.js version:', tf.version.tfjs);
+            
+            // Wait for TensorFlow.js to be ready
+            await tf.ready();
+            tfReady = true;
+            console.log('✅ TensorFlow.js ready');
+
+            // Try MoveNet first (more reliable)
+            console.log('🎯 Attempting to load MoveNet model...');
+            try {
+                poseDetector = await poseDetection.createDetector(
+                    poseDetection.SupportedModels.MoveNet,
+                    POSE_CONFIG.moveNet
+                );
+                console.log('✅ MoveNet pose detector initialized successfully');
+                console.log('📊 Model config:', POSE_CONFIG.moveNet);
+                return { success: true, model: 'MoveNet' };
+                
+            } catch (moveNetError) {
+                console.warn('⚠️ MoveNet failed, trying MediaPipe...', moveNetError);
+                
+                // Fallback to MediaPipe
+                try {
+                    poseDetector = await poseDetection.createDetector(
+                        poseDetection.SupportedModels.MediaPipePose,
+                        POSE_CONFIG.mediaPipe
+                    );
+                    console.log('✅ MediaPipe pose detector initialized as backup');
+                    console.log('📊 Model config:', POSE_CONFIG.mediaPipe);
+                    return { success: true, model: 'MediaPipe' };
+                    
+                } catch (mediaPipeError) {
+                    console.error('❌ Both MoveNet and MediaPipe failed:', mediaPipeError);
+                    throw new Error('No pose detection models available');
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ Failed to initialize any pose detection model:', error);
+            tfReady = false;
+            return { success: false, model: null };
         }
+    }
+
+    // Detect video frame rate by analyzing frame intervals
+    async function detectVideoFrameRate(video) {
+        return new Promise((resolve) => {
+            let frameCount = 0;
+            let lastTime = 0;
+            let intervals = [];
+            const maxSamples = 10; // Sample 10 frame intervals
+            
+            const checkFrame = () => {
+                const currentTime = video.currentTime;
+                if (lastTime > 0) {
+                    const interval = currentTime - lastTime;
+                    if (interval > 0) {
+                        intervals.push(interval);
+                    }
+                }
+                lastTime = currentTime;
+                frameCount++;
+                
+                if (intervals.length >= maxSamples || video.currentTime >= Math.min(1.0, video.duration)) {
+                    // Calculate average frame interval and derive FPS
+                    if (intervals.length > 0) {
+                        const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+                        let detectedFPS = Math.round(1 / avgInterval);
+                        
+                        // Common video frame rates - snap to nearest standard rate
+                        const commonRates = [24, 25, 30, 50, 60];
+                        const closest = commonRates.reduce((prev, curr) => 
+                            Math.abs(curr - detectedFPS) < Math.abs(prev - detectedFPS) ? curr : prev
+                        );
+                        
+                        console.log(`🎯 Raw detected FPS: ${detectedFPS}, snapped to: ${closest}`);
+                        resolve(closest);
+                    } else {
+                        console.log('⚠️ Could not detect frame rate, using 30 FPS default');
+                        resolve(30);
+                    }
+                    return;
+                }
+                
+                // Advance video by small increment for next frame
+                video.currentTime += 0.033; // ~30fps increment for sampling
+                requestAnimationFrame(checkFrame);
+            };
+            
+            video.currentTime = 0.1; // Start slightly into video
+            requestAnimationFrame(checkFrame);
+        });
+    }
+
+    // Process video with TensorFlow.js pose detection (matching Python pose.process() exactly)
+    async function processVideoWithPoseDetection(videoFile, progressCallback = null) {
+        console.log('🎬 Starting video processing with TensorFlow.js pose detection...');
+        console.log('📹 Video file:', videoFile ? videoFile.name : 'None');
+        console.log('🔧 TensorFlow.js ready:', tfReady);
+        console.log('🤖 Pose detector available:', !!poseDetector);
+        
+        if (progressCallback) progressCallback(35, 'Initializing pose detection models...');
+        
+        if (!poseDetector || !tfReady) {
+            const result = await initializePoseDetection();
+            if (!result.success) {
+                throw new Error(`Pose detection initialization failed: ${result.model || 'unknown'}`);
+            }
+            console.log(`🎯 Using ${result.model} model for pose detection`);
+            console.log('✅ Pose detector initialized successfully');
+        }
+
+        if (progressCallback) progressCallback(40, 'Setting up video processing...');
 
         return new Promise((resolve, reject) => {
             const video = document.createElement('video');
@@ -389,13 +676,35 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const allFrameResults = [];
             let frameCount = 0;
+            let processedFrames = 0;
             const frameSkip = 1; // Process every frame for complete data
             
             video.src = URL.createObjectURL(videoFile);
             video.muted = true;
+            video.crossOrigin = 'anonymous';
             
-            video.onloadedmetadata = () => {
+            // Timeout to prevent hanging - increased for longer processing
+            const timeout = setTimeout(() => {
+                if (allFrameResults.length === 0) {
+                    reject(new Error('MediaPipe processing timeout - no results'));
+                } else {
+                    console.log(`⏰ MediaPipe timeout, but got ${allFrameResults.length} frames`);
+                    // Add frame rate metadata to results even on timeout
+                    const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                        ...result,
+                        frameRate: estimatedFrameRate || 30,
+                        actualFrameIndex: index
+                    }));
+                    resolve(resultsWithFrameRate);
+                }
+            }, 30000); // 30 second timeout for longer videos
+            
+            video.onloadedmetadata = async () => {
                 console.log(`📹 Video loaded: ${video.videoWidth}x${video.videoHeight}, duration: ${video.duration}s`);
+                
+                // Detect actual video frame rate by measuring frame intervals
+                const estimatedFrameRate = await detectVideoFrameRate(video);
+                console.log(`🎯 Detected frame rate: ${estimatedFrameRate} FPS`);
                 
                 // Calculate video segment to analyze (middle 12 seconds if video > 12 seconds)
                 let startTime, endTime, analysisSegment;
@@ -414,52 +723,144 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(`🎯 Using entire video: ${analysisSegment.toFixed(1)}s duration`);
                 }
                 
+                // Calculate target frames for the analysis segment
+                const targetFramesForSegment = Math.ceil(analysisSegment * estimatedFrameRate);
+                console.log(`🎯 Target frames for ${analysisSegment.toFixed(1)}s segment: ${targetFramesForSegment} frames`);
+                console.log(`📊 Analysis details: ${analysisSegment}s × ${estimatedFrameRate}fps = ${targetFramesForSegment} frames`);
+                
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
-                // Set up MediaPipe pose results handler
-                mediaPipePose.onResults((results) => {
-                    if (results.poseLandmarks) {
-                        // Extract landmarks matching Python get_coords() function
-                        const landmarks = results.poseLandmarks;
-                        
-                        const frameData = {
-                            left: {
-                                shoulder: { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
-                                hip: { x: landmarks[23].x * canvas.width, y: landmarks[23].y * canvas.height },
-                                knee: { x: landmarks[25].x * canvas.width, y: landmarks[25].y * canvas.height },
-                                ankle: { x: landmarks[27].x * canvas.width, y: landmarks[27].y * canvas.height },
-                                foot: { x: landmarks[31].x * canvas.width, y: landmarks[31].y * canvas.height }
-                            },
-                            right: {
-                                shoulder: { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
-                                hip: { x: landmarks[24].x * canvas.width, y: landmarks[24].y * canvas.height },
-                                knee: { x: landmarks[26].x * canvas.width, y: landmarks[26].y * canvas.height },
-                                ankle: { x: landmarks[28].x * canvas.width, y: landmarks[28].y * canvas.height },
-                                foot: { x: landmarks[32].x * canvas.width, y: landmarks[32].y * canvas.height }
-                            },
-                            frameIndex: frameCount,
-                            segmentStartTime: startTime,
-                            segmentEndTime: endTime,
-                            segmentDuration: analysisSegment
-                        };
-                        
-                        allFrameResults.push(frameData);
-                    }
-                });
-                
-                // Process video frame by frame
-                const processFrame = () => {
-                    if (video.currentTime >= endTime) {
-                        console.log(`🎯 Video segment processing complete: ${allFrameResults.length} frames`);
-                        console.log(`📊 Analyzed segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s (${analysisSegment.toFixed(1)}s total)`);
-                        resolve(allFrameResults);
+                // Process video frame by frame (matching Python approach)
+                const processFrame = async () => {
+                    if (video.currentTime >= endTime || processedFrames >= targetFramesForSegment) {
+                        clearTimeout(timeout);
+                        if (allFrameResults.length > 0) {
+                            // Add frame rate metadata to results
+                            const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                                ...result,
+                                frameRate: estimatedFrameRate,
+                                actualFrameIndex: index,
+                                segmentStartTime: startTime,
+                                segmentEndTime: endTime,
+                                segmentDuration: analysisSegment
+                            }));
+                            console.log(`🎯 Video segment processing complete: ${allFrameResults.length} frames at ${estimatedFrameRate} FPS`);
+                            console.log(`📊 Analyzed segment: ${startTime.toFixed(1)}s to ${endTime.toFixed(1)}s (${analysisSegment.toFixed(1)}s total)`);
+                            
+                            // Update progress to pose processing stage
+                            if (progressCallback) progressCallback(80, 'Analyzing pose data and joint angles...');
+                            
+                            resolve(resultsWithFrameRate);
+                        } else {
+                            reject(new Error('No pose data extracted from video segment'));
+                        }
                         return;
                     }
                     
+                    // Update progress based on frame processing
+                    if (progressCallback && targetFramesForSegment > 0) {
+                        const frameProgress = (processedFrames / targetFramesForSegment) * 30; // 30% of total progress for frame processing
+                        const currentProgress = 50 + frameProgress; // Start from 50%, add frame progress
+                        const message = `Processing frame ${processedFrames + 1} of ${targetFramesForSegment}...`;
+                        progressCallback(Math.min(currentProgress, 79), message);
+                    }
+                    
                     // Process every frame
-                    ctx.drawImage(video, 0, 0);
-                    mediaPipePose.send({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height)});
+                    try {
+                        // Draw current video frame to canvas
+                        ctx.drawImage(video, 0, 0);
+                        
+                        // Create tensor from canvas (equivalent to cv2.cvtColor + pose.process in Python)
+                            const imageTensor = tf.browser.fromPixels(canvas);
+                            
+                            // Detect poses (equivalent to results = pose.process(frame_rgb) in Python)
+                            const poses = await poseDetector.estimatePoses(imageTensor);
+                            
+                            // Clean up tensor to prevent memory leaks
+                            imageTensor.dispose();
+                            
+                            // Process pose results (supporting both MoveNet and MediaPipe formats)
+                            if (poses.length > 0) {
+                                const pose = poses[0];
+                                const keypoints = pose.keypoints;
+                                
+                                // Detailed logging for MoveNet validation
+                                if (processedFrames % 10 === 0) { // Log every 10th frame to avoid spam
+                                    console.log(`🎯 REAL MOVENET FRAME ${processedFrames}:`);
+                                    console.log(`  � Keypoints detected: ${keypoints.length}`);
+                                    console.log(`  🎪 Pose confidence: ${pose.score || 'N/A'}`);
+                                    console.log(`  📍 Sample keypoint (nose):`, keypoints[0]);
+                                    console.log(`  🔍 Model type: ${currentPoseModel}`);
+                                }
+                                
+                                // Extract keypoints with universal mapping (works for both MoveNet and MediaPipe)
+                                const frameData = extractUniversalKeypoints(keypoints, canvas.width, canvas.height);
+                                
+                                if (frameData) {
+                                    frameData.frameIndex = processedFrames;
+                                    frameData.confidence = pose.score || 0.5;
+                                    frameData.model = poseDetector.model || 'unknown';
+                                    
+                                    // Capture middle frame with pose overlay for display
+                                    const isMiddleFrame = processedFrames === Math.floor(targetFramesForSegment / 2);
+                                    if (isMiddleFrame) {
+                                        console.log(`📸 Capturing middle frame ${processedFrames} with pose overlay...`);
+                                        
+                                        // Create a copy of the canvas for pose overlay
+                                        const overlayCanvas = document.createElement('canvas');
+                                        const overlayCtx = overlayCanvas.getContext('2d');
+                                        overlayCanvas.width = canvas.width;
+                                        overlayCanvas.height = canvas.height;
+                                        
+                                        // Draw the original frame
+                                        overlayCtx.drawImage(canvas, 0, 0);
+                                        
+                                        // Draw pose skeleton overlay
+                                        drawPoseSkeleton(overlayCtx, keypoints, overlayCanvas.width, overlayCanvas.height);
+                                        
+                                        // Convert to base64 image for storage
+                                        const poseSnapshotDataUrl = overlayCanvas.toDataURL('image/png', 0.8);
+                                        frameData.poseSnapshot = poseSnapshotDataUrl;
+                                        frameData.isMiddleFrame = true;
+                                        
+                                        console.log(`✅ Middle frame snapshot captured (${(poseSnapshotDataUrl.length / 1024).toFixed(1)}KB)`);
+                                    }
+                                    
+                                    allFrameResults.push(frameData);
+                                    processedFrames++;
+                                    
+                                    // Confirmation logging every 10 frames
+                                    if (processedFrames % 10 === 0) {
+                                        console.log(`✅ SUCCESSFULLY EXTRACTED REAL MOVENET DATA - Frame ${processedFrames}`);
+                                        console.log(`  📊 Left Hip: (${frameData.left.hip.x.toFixed(2)}, ${frameData.left.hip.y.toFixed(2)})`);
+                                        console.log(`  📊 Right Knee: (${frameData.right.knee.x.toFixed(2)}, ${frameData.right.knee.y.toFixed(2)})`);
+                                        console.log(`  🎯 Confidence: ${frameData.confidence.toFixed(3)}`);
+                                    }
+                                    
+                                    if (processedFrames >= targetFramesForSegment) {
+                                        clearTimeout(timeout);
+                                        // Add frame rate metadata to results
+                                        const resultsWithFrameRate = allFrameResults.map((result, index) => ({
+                                            ...result,
+                                            frameRate: estimatedFrameRate,
+                                            actualFrameIndex: index,
+                                            segmentStartTime: startTime,
+                                            segmentEndTime: endTime,
+                                            segmentDuration: analysisSegment
+                                        }));
+                                        console.log(`✅ Processed ${allFrameResults.length} frames successfully for ${analysisSegment.toFixed(1)}s segment`);
+                                        resolve(resultsWithFrameRate);
+                                        return;
+                                    }
+                                } else {
+                                    console.warn('⚠️ Could not extract required keypoints from frame');
+                                }
+                            }
+                            
+                    } catch (error) {
+                        console.error('Error processing frame:', error);
+                    }
                     
                     frameCount++;
                     // Advance video time for every frame
@@ -474,36 +875,220 @@ document.addEventListener('DOMContentLoaded', function() {
                 processFrame();
             };
             
-            video.onerror = () => reject(new Error('Video processing failed'));
+            video.onerror = (error) => {
+                clearTimeout(timeout);
+                reject(new Error(`Video loading failed: ${error.message || 'Unknown error'}`));
+            };
+            
+            video.onloadstart = () => console.log('🎬 Video loading started...');
         });
     }
 
-    async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null) {
+    // Function to draw pose skeleton overlay on canvas
+    function drawPoseSkeleton(ctx, keypoints, canvasWidth, canvasHeight) {
+        // Enhanced pose connections for skeleton drawing (excluding face features)
+        const connections = [
+            // Core body structure (no face/head connections)
+            [5, 6], // shoulders
+            [5, 7], [7, 9], // left arm
+            [6, 8], [8, 10], // right arm
+            [5, 11], [6, 12], // shoulders to hips
+            [11, 12], // hips
+            [11, 13], [13, 15], // left leg
+            [12, 14], [14, 16] // right leg
+        ];
+        
+        // Enhanced styling for professional appearance
+        ctx.save(); // Save current context state
+        
+        // Add subtle glow effect for skeleton lines
+        ctx.shadowColor = 'rgba(0, 255, 170, 0.6)';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Draw connections with gradient colors
+        connections.forEach(([startIdx, endIdx]) => {
+            if (startIdx < keypoints.length && endIdx < keypoints.length) {
+                const startPoint = keypoints[startIdx];
+                const endPoint = keypoints[endIdx];
+                
+                // Only draw if both keypoints have good confidence
+                if (startPoint.score > 0.3 && endPoint.score > 0.3) {
+                    // Create gradient for each line segment
+                    const gradient = ctx.createLinearGradient(
+                        startPoint.x, startPoint.y, 
+                        endPoint.x, endPoint.y
+                    );
+                    gradient.addColorStop(0, '#00FFB3'); // Bright cyan-green
+                    gradient.addColorStop(1, '#00D4FF'); // Electric blue
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.beginPath();
+                    ctx.moveTo(startPoint.x, startPoint.y);
+                    ctx.lineTo(endPoint.x, endPoint.y);
+                    ctx.stroke();
+                }
+            }
+        });
+        
+        // Draw enhanced keypoints (joints) with multiple visual layers
+        keypoints.forEach((keypoint, i) => {
+            // Skip facial keypoints (nose, eyes, ears)
+            if (i <= 4) return; // Skip indices 0-4 (nose, eyes, ears)
+            
+            if (keypoint.score > 0.3) {
+                const x = keypoint.x;
+                const y = keypoint.y;
+                
+                // Outer glow circle
+                ctx.beginPath();
+                ctx.shadowColor = 'rgba(255, 0, 100, 0.8)';
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = 'rgba(255, 0, 100, 0.3)';
+                ctx.arc(x, y, 12, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Main joint circle with gradient
+                const jointGradient = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                jointGradient.addColorStop(0, '#FF0066'); // Hot pink center
+                jointGradient.addColorStop(0.7, '#FF3388'); // Pink middle
+                jointGradient.addColorStop(1, '#AA0044'); // Dark pink edge
+                
+                ctx.beginPath();
+                ctx.shadowBlur = 4;
+                ctx.fillStyle = jointGradient;
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Inner highlight
+                ctx.beginPath();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.arc(x - 2, y - 2, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        });
+        
+        ctx.restore(); // Restore context state
+        
+        // Add sleek confidence and info overlay with modern styling
+        ctx.save();
+        
+        // Background for text with gradient
+        const textBg = ctx.createLinearGradient(0, 0, 400, 80);
+        textBg.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
+        textBg.addColorStop(1, 'rgba(30, 30, 60, 0.8)');
+        ctx.fillStyle = textBg;
+        
+        // Draw rounded rectangle background (with fallback)
+        const drawRoundedRect = (x, y, width, height, radius) => {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.arcTo(x + width, y, x + width, y + height, radius);
+            ctx.arcTo(x + width, y + height, x, y + height, radius);
+            ctx.arcTo(x, y + height, x, y, radius);
+            ctx.arcTo(x, y, x + width, y, radius);
+            ctx.closePath();
+        };
+        
+        drawRoundedRect(15, 15, 400, 80, 10);
+        ctx.fill();
+        
+        // Border for text background
+        ctx.strokeStyle = 'rgba(0, 255, 170, 0.5)';
+        ctx.lineWidth = 2;
+        drawRoundedRect(15, 15, 400, 80, 10);
+        ctx.stroke();
+        
+        // Modern typography for confidence
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 18px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillText('🎯 Pose Detection Analysis', 25, 40);
+        
+        const confidence = (keypoints[5]?.score || keypoints[6]?.score || 0); // Use shoulder confidence
+        const confidencePercent = (confidence * 100).toFixed(0);
+        ctx.fillStyle = confidence > 0.7 ? '#00FF88' : confidence > 0.5 ? '#FFD700' : '#FF6B6B';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.fillText(`Confidence: ${confidencePercent}%`, 25, 65);
+        
+        // Quality indicator
+        const qualityText = confidence > 0.7 ? 'Excellent' : confidence > 0.5 ? 'Good' : 'Fair';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillText(`Quality: ${qualityText}`, 25, 85);
+        
+        ctx.restore();
+    }
+
+    async function performBiomechanicalAnalysis(gaitType, cameraAngle, videoFile = null, progressCallback = null) {
         let gaitCycleFrames;
         
-        // Check if TensorFlow.js MediaPipe is available in docs version
-        const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
-        console.log('TensorFlow.js MediaPipe available (docs):', mediaPipeAvailable);
+        // Initial progress update
+        if (progressCallback) progressCallback(10, 'Starting video analysis...');
         
+        // Check if TensorFlow.js MediaPipe is available
+        const mediaPipeAvailable = typeof tf !== 'undefined' && typeof poseDetection !== 'undefined';
+        console.log('TensorFlow.js MediaPipe available:', mediaPipeAvailable);
+        
+        // Try to use real pose detection if video file is provided and TensorFlow.js is available
         if (videoFile && mediaPipeAvailable) {
-            console.log('📊 Docs version: Using simulation for stable demo (TensorFlow.js available but disabled)');
-            // Still show video duration info for user awareness
+            console.log('🎯 Attempting pose detection with TensorFlow.js...');
+            console.log('🔬 VIDEO FILE ANALYSIS MODE - Real MoveNet Processing');
+            
+            if (progressCallback) progressCallback(20, 'Loading video file...');
+            
+            // Create a temporary video element to get duration info
             const tempVideo = document.createElement('video');
             tempVideo.src = URL.createObjectURL(videoFile);
             await new Promise((resolve) => {
                 tempVideo.onloadedmetadata = () => {
                     if (tempVideo.duration > 12) {
-                        console.log(`📹 Uploaded video is ${tempVideo.duration.toFixed(1)}s long - middle 12s would be analyzed in production`);
+                        console.log(`📹 Video is ${tempVideo.duration.toFixed(1)}s long - using middle 12s segment for analysis`);
+                        console.log('💡 This ensures optimal gait cycle analysis from the most stable portion of your movement');
                     } else {
-                        console.log(`📹 Uploaded video is ${tempVideo.duration.toFixed(1)}s long - entire video would be analyzed`);
+                        console.log(`📹 Video is ${tempVideo.duration.toFixed(1)}s long - analyzing entire video`);
                     }
                     resolve();
                 };
             });
+            
+            try {
+                if (progressCallback) progressCallback(30, 'Processing video with pose detection...');
+                gaitCycleFrames = await processVideoWithPoseDetection(videoFile, progressCallback);
+                if (!gaitCycleFrames || gaitCycleFrames.length === 0) {
+                    throw new Error('No pose data extracted from video');
+                }
+                console.log(`🎉 SUCCESS: REAL MOVENET DATA EXTRACTED`);
+                console.log(`  📊 Total frames processed: ${gaitCycleFrames.length}`);
+                console.log(`  🎯 Data source: REAL MoveNet pose detection`);
+                console.log(`  📹 Video file: ${videoFile.name}`);
+                
+                if (progressCallback) progressCallback(85, 'Calculating biomechanical metrics...');
+                
+                // Validate that we have real keypoint data
+                if (gaitCycleFrames[0] && gaitCycleFrames[0].left && gaitCycleFrames[0].left.hip) {
+                    console.log(`  ✅ Sample real keypoint - Left Hip: (${gaitCycleFrames[0].left.hip.x.toFixed(2)}, ${gaitCycleFrames[0].left.hip.y.toFixed(2)})`);
+                }
+                
+            } catch (error) {
+                console.error('❌ REAL MOVENET FAILED - FALLING BACK TO SIMULATION');
+                console.warn('⚠️ Pose detection processing failed, falling back to simulation:', error);
+                gaitCycleFrames = simulateGaitCycle(gaitType);
+                console.log('🔄 Now using: SIMULATED gait data');
+            }
         } else {
-            console.log('📊 Docs version: Using simulated gait cycle data...');
+            // Fall back to simulation
+            console.log('📊 SIMULATION MODE - Using synthetic gait data');
+            if (!videoFile) {
+                console.log('  ℹ️ Reason: No video file provided');
+            } else if (!mediaPipeAvailable) {
+                console.log('  ⚠️ Reason: TensorFlow.js pose detection not available');
+            }
+            gaitCycleFrames = simulateGaitCycle(gaitType);
+            console.log(`  🎯 Data source: SIMULATED gait cycle (${gaitType})`);
         }
-        gaitCycleFrames = simulateGaitCycle(gaitType);
         
         // Calculate joint angles for each frame
         const leftAngles = { ankle: [], knee: [], hip: [], spine: [] };
@@ -570,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let leftAnkleAngle, rightAnkleAngle;
             
             if (hasFootSegments) {
-                // Traditional ankle angle: shank-to-foot vector angle (MediaPipe)
+                // Traditional lower limb angle: shank-to-foot vector angle (MediaPipe)
                 const leftFootVector = {
                     x: leftAnkle.x - leftFoot.x,
                     y: leftAnkle.y - leftFoot.y
@@ -652,8 +1237,8 @@ document.addEventListener('DOMContentLoaded', function() {
             Math.max(...leftAngles.spine) - Math.min(...leftAngles.spine),    // Spine ROM (same for both sides)
             Math.max(...leftAngles.hip) - Math.min(...leftAngles.hip),        // Left hip ROM
             Math.max(...leftAngles.knee) - Math.min(...leftAngles.knee),      // Left knee ROM
-            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left ankle ROM
-            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right ankle ROM
+            Math.max(...leftAngles.ankle) - Math.min(...leftAngles.ankle),    // Left tibial inclination ROM
+            Math.max(...rightAngles.ankle) - Math.min(...rightAngles.ankle)   // Right tibial inclination ROM
         ];
         
         // Calculate directional cumulative asymmetry (positive = right bias, negative = left bias)
@@ -680,13 +1265,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Use cumulative asymmetry as the main asymmetry score
         const asymmetry = cumulativeAsymmetry;
         
-        // Calculate cadence based on gait cycle detection
-        const cadence = gaitType === 'running' ? 
-            Math.floor(Math.random() * (180 - 165) + 165) : 
-            Math.floor(Math.random() * (125 - 110) + 110);
+        // Grade will be calculated after ROM table is built to use peak performance zones
         
-        // Generate grade based on ROM values and asymmetry
-        const grade = calculateGaitGrade(leftROM, rightROM, asymmetry);
+        // ROM data table will be created below with dynamic labels
         
         // Dynamic joint labels based on calculation method
         const getJointLabel = (joint, side) => {
@@ -794,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get current gait type
         const currentGaitType = document.querySelector('input[name="gait-type"]:checked')?.value || 'running';
         
-        // ROM data table with dynamic labels and Peak Performance Zone
+        // Update ROM table with appropriate labels and Peak Performance Zone
         const romTable = [
             { 
                 joint: 'Spine Segment', 
@@ -847,9 +1428,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         ];
         
+        // Final analysis summary for debugging
+        const isRealData = gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].confidence;
+        console.log('🏁 BIOMECHANICAL ANALYSIS COMPLETE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        if (isRealData) {
+            console.log('✅ DATA SOURCE: REAL MOVENET POSE DETECTION');
+            console.log(`  📊 Frames analyzed: ${gaitCycleFrames.length}`);
+            console.log(`  🎯 Average confidence: ${(gaitCycleFrames.reduce((sum, f) => sum + (f.confidence || 0), 0) / gaitCycleFrames.length).toFixed(3)}`);
+            console.log(`  📹 Video file: ${videoFile ? videoFile.name : 'Unknown'}`);
+        } else {
+            console.log('🔄 DATA SOURCE: SIMULATED GAIT CYCLE');
+            console.log(`  📊 Synthetic frames: ${gaitCycleFrames ? gaitCycleFrames.length : 'Unknown'}`);
+            console.log(`  🎯 Gait type: ${gaitType}`);
+        }
+        console.log(`  ⚙️ Pose model: ${modelUsed}`);
+        console.log(`  🦵 Using: ${usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle'}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
         return {
-            cadence: cadence,
-            grade: grade,
             asymmetry: Math.round(asymmetry * 10) / 10,  // Cumulative directional asymmetry
             asymmetryComponents: {  // Individual joint asymmetries for detailed analysis
                 hip: Math.round(hipAsymmetry * 10) / 10,
@@ -890,17 +1487,31 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             // ROM data table matching Python df_rom structure
             romTable: romTable,
+            // Pose snapshot from middle frame
+            poseSnapshot: gaitCycleFrames.find(frame => frame.isMiddleFrame)?.poseSnapshot || null,
             // Model and calculation metadata
             poseModel: modelUsed,
+            dataSource: gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].confidence ? 'REAL_MOVENET' : 'SIMULATION',
             ankleCalculationMethod: usingTibialSurrogate ? 'Tibial Inclination (MoveNet surrogate)' : 'Traditional Ankle-Foot Angle',
+            frameRate: gaitCycleFrames && gaitCycleFrames[0] && gaitCycleFrames[0].frameRate ? gaitCycleFrames[0].frameRate : 30, // Dynamic frame rate
             // Label helper for charts
             usingTibialSurrogate: usingTibialSurrogate,
             getJointLabel: getJointLabel
         };
+        
+        // Final progress update
+        if (progressCallback) progressCallback(95, 'Finalizing analysis results...');
+        
+        return analysisResults;
     }
 
     // Biomechanical calculation functions
     function simulateGaitCycle(gaitType) {
+        // ⚠️ SIMULATION MODE - Generate synthetic pose data
+        console.log('🔄 GENERATING SIMULATED GAIT DATA');
+        console.log(`  📊 Gait type: ${gaitType}`);
+        console.log('  ⚠️ This is NOT real MoveNet data - using biomechanically accurate simulation');
+        
         // Simulate pose estimation keypoints for a complete gait cycle
         const frames = [];
         const numFrames = 60; // Simulate 60 frames for one gait cycle
@@ -1026,35 +1637,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function average(array) {
         return array.reduce((sum, val) => sum + val, 0) / array.length;
-    }
-
-    function calculateGaitGrade(leftROM, rightROM, asymmetry) {
-        // Scoring based on ROM values and asymmetry
-        let score = 100;
-        
-        // Penalize for asymmetry (higher asymmetry = lower score)
-        score -= asymmetry * 2;
-        
-        // Optimal ROM ranges (degrees)
-        const optimalROM = { knee: 65, hip: 45, ankle: 30, spine: 8 };
-        
-        // Penalize for deviation from optimal ROM
-        Object.keys(optimalROM).forEach(joint => {
-            const leftDev = Math.abs(leftROM[joint] - optimalROM[joint]);
-            const rightDev = Math.abs(rightROM[joint] - optimalROM[joint]);
-            score -= (leftDev + rightDev) * 0.5;
-        });
-        
-        // Convert score to letter grade
-        if (score >= 95) return 'A+';
-        if (score >= 90) return 'A';
-        if (score >= 87) return 'A-';
-        if (score >= 83) return 'B+';
-        if (score >= 80) return 'B';
-        if (score >= 77) return 'B-';
-        if (score >= 73) return 'C+';
-        if (score >= 70) return 'C';
-        return 'D';
     }
 
     function generateROMChart(jointAngles) {
@@ -1282,14 +1864,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const numPoints = joints.length;
         const angleStep = (2 * Math.PI) / numPoints;
         
-        // Draw concentric circles (grid)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        // Draw concentric circles (grid) with modern styling
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.lineWidth = 1;
         for (let i = 1; i <= 4; i++) {
             ctx.beginPath();
             ctx.arc(centerX, centerY, (radius / 4) * i, 0, 2 * Math.PI);
             ctx.stroke();
         }
+        
+        // Add subtle glow effect to outer ring
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 212, 255, 0.3)';
+        ctx.shadowBlur = 5;
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
         
         // Draw axes and labels
         const maxValue = Math.max(...romValues, ...idealValues) + 20;
@@ -1323,10 +1916,13 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(joint, labelX, labelY);
         });
         
-        // Draw ideal range (Peak Performance Zone) - sleek mint green
-        ctx.strokeStyle = '#00D9AA';  // Slightly darker mint for better visibility
-        ctx.fillStyle = 'rgba(0, 217, 170, 0.25)';  // More opaque for better visibility
-        ctx.lineWidth = 3;  // Thicker line for better visibility
+        // Draw ideal range (Peak Performance Zone) with glow effect
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 217, 170, 0.6)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#00D9AA';
+        ctx.fillStyle = 'rgba(0, 217, 170, 0.2)';
+        ctx.lineWidth = 3;
         ctx.beginPath();
         idealValues.forEach((value, i) => {
             const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
@@ -1339,11 +1935,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        ctx.restore();
         
-        // Draw actual ROM values - sleek electric blue
-        ctx.strokeStyle = '#00BFFF';  // Electric blue
-        ctx.fillStyle = 'rgba(0, 191, 255, 0.35)';  // More opaque for better visibility
-        ctx.lineWidth = 3;  // Thicker line for better visibility
+        // Draw actual ROM values with glow effect
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 191, 255, 0.8)';
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = '#00BFFF';
+        ctx.fillStyle = 'rgba(0, 191, 255, 0.25)';
+        ctx.lineWidth = 4;
         ctx.beginPath();
         romValues.forEach((value, i) => {
             const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
@@ -1356,12 +1956,35 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        ctx.restore();
         
-        // Add title with larger, more prominent text
+        // Add data point indicators with glow
+        romValues.forEach((value, i) => {
+            const angle = (i * 2 * Math.PI) / numJoints - Math.PI / 2;
+            const distance = (value / maxValue) * radius;
+            const x = centerX + Math.cos(angle) * distance;
+            const y = centerY + Math.sin(angle) * distance;
+            
+            ctx.save();
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#00BFFF';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        // Add title with modern styling
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 16px Arial';  // Smaller font to create more space
+        ctx.font = 'bold 18px Inter, Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Range of Motion (°) vs Peak Performance Zone', centerX, 15);
+        ctx.fillText('Range of Motion Analysis', centerX, 25);
+        
+        // Subtitle
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#b0b0b0';
+        ctx.fillText('Current vs Peak Performance Zone', centerX, 45);
         
         // Add legend with larger, more readable text positioned on the right to avoid overlap
         ctx.font = 'bold 14px Arial';
@@ -1396,10 +2019,11 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.width = 650;
         canvas.height = 400;
         
-        // Create sophisticated gradient background
+        // Create sophisticated gradient background matching other charts
         const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        backgroundGradient.addColorStop(0, '#0f1419');
-        backgroundGradient.addColorStop(1, '#1a1a2e');
+        backgroundGradient.addColorStop(0, '#0a0a0a');
+        backgroundGradient.addColorStop(0.5, '#1a1a2e');
+        backgroundGradient.addColorStop(1, '#16213e');
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -1407,11 +2031,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // romValues: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
         const romValues = analysisResults.romValues;
         const ankleAsymmetryLabel = analysisResults.usingTibialSurrogate ? 'Tibial Inclination' : 'Ankle';
-        const joints = [ankleAsymmetryLabel, 'Knee', 'Hip'];
+        const joints = ['Hip', 'Knee', ankleAsymmetryLabel];
         const asymmetries = [
-            romValues[6] - romValues[5],  // Right ankle - Left ankle  
+            romValues[1] - romValues[3],  // Right hip - Left hip
             romValues[0] - romValues[4],  // Right knee - Left knee
-            romValues[1] - romValues[3]   // Right hip - Left hip
+            romValues[6] - romValues[5]   // Right ankle - Left ankle  
         ];
         
         const barHeight = 50;
@@ -1528,15 +2152,16 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.fillText(`${asymmetry > 0 ? '+' : ''}${asymmetry.toFixed(1)}°`, textX, y + barHeight/2 + 6);
         });
         
-        // Enhanced title with glow effect
-        ctx.save();
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
-        ctx.shadowBlur = 8;
+        // Enhanced title matching other charts
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif';
+        ctx.font = 'bold 20px Inter, Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Range of Motion Asymmetry', centerX, 35);
-        ctx.restore();
+        ctx.fillText('Symmetry Analysis', centerX, 30);
+        
+        // Subtitle
+        ctx.font = '14px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#b0b0b0';
+        ctx.fillText('Range of Motion Left vs Right Comparison', centerX, 50);
         
         // Add scale markers at bottom
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -1615,6 +2240,82 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillText('Sum of all joint asymmetries', boxX + boxWidth/2, boxY + 65);
     }
 
+    function displayPoseSnapshot(analysisResults) {
+        console.log('Displaying pose snapshot...');
+        
+        // Find the pose snapshot container
+        const snapshotContainer = document.getElementById('pose-snapshot-container');
+        if (!snapshotContainer) {
+            console.error('Pose snapshot container not found');
+            return;
+        }
+        
+        // Check if we have a pose snapshot
+        if (!analysisResults.poseSnapshot) {
+            console.log('No pose snapshot available');
+            snapshotContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div style="color: #888; font-size: 48px; margin-bottom: 20px;">🎯</div>
+                    <h3 style="color: #ffffff; margin-bottom: 10px; font-size: 18px;">Pose Analysis Snapshot</h3>
+                    <p style="color: #888; margin-bottom: 5px;">Upload a video to see your pose detection in action</p>
+                    <small style="color: #666;">AI-powered skeleton tracking and joint analysis</small>
+                </div>
+            `;
+            return;
+        }
+        
+        // Create the impressive snapshot display
+        snapshotContainer.innerHTML = `
+            <div style="background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e); border-radius: 15px; padding: 25px; border: 2px solid rgba(0, 255, 170, 0.3); box-shadow: 0 8px 32px rgba(0, 255, 170, 0.1);">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: transparent; background: linear-gradient(45deg, #00FFB3, #00D4FF); background-clip: text; -webkit-background-clip: text; margin: 0; font-size: 24px; font-weight: bold; font-family: 'Inter', sans-serif;">
+                        🎯 AI Pose Analysis
+                    </h2>
+                    <p style="color: #b0b0b0; margin: 8px 0 0 0; font-size: 14px; font-family: 'Inter', sans-serif;">
+                        Real-time skeleton detection from your video
+                    </p>
+                </div>
+                
+                <div style="text-align: center; position: relative; display: inline-block; width: 100%;">
+                    <img src="${analysisResults.poseSnapshot}" 
+                         alt="AI Pose Detection Analysis" 
+                         style="max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 255, 255, 0.1);" />
+                    
+                    <div style="position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.8); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 170, 0.5);">
+                        <span style="color: #00FFB3; font-size: 12px; font-weight: bold; font-family: 'Inter', sans-serif;">LIVE ANALYSIS</span>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px; padding: 25px; background: linear-gradient(135deg, rgba(0, 255, 170, 0.15), rgba(0, 212, 255, 0.1)); border-radius: 12px; border: 2px solid rgba(0, 255, 170, 0.3);">
+                    <div style="color: #00FFB3; font-size: 16px; font-weight: bold; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
+                        ⚖️ GAIT ASYMMETRY ANALYSIS
+                    </div>
+                    <div style="font-size: 36px; font-weight: bold; font-family: 'Inter', sans-serif; margin: 10px 0;">
+                        <span style="color: ${Math.abs(analysisResults.asymmetry) < 3 ? '#00E676' : Math.abs(analysisResults.asymmetry) > 10 ? '#FF5252' : '#FFC107'};">
+                            ${Math.abs(analysisResults.asymmetry).toFixed(1)}°
+                        </span>
+                        <span style="color: #ffffff; font-size: 24px; margin-left: 10px;">
+                            ${Math.abs(analysisResults.asymmetry) < 3 ? 'BALANCED' : (analysisResults.asymmetry > 0 ? 'RIGHT' : 'LEFT')}
+                        </span>
+                    </div>
+                    <div style="color: #b0b0b0; font-size: 14px; font-family: 'Inter', sans-serif;">
+                        ${Math.abs(analysisResults.asymmetry) < 3 ? 'Excellent symmetrical movement pattern' : 
+                          Math.abs(analysisResults.asymmetry) > 10 ? 'Significant asymmetry detected - consider evaluation' :
+                          'Mild asymmetry - monitor and correct if needed'}
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px; padding: 12px; background: rgba(0, 255, 170, 0.1); border-radius: 8px; border: 1px solid rgba(0, 255, 170, 0.2);">
+                    <p style="color: #00FFB3; margin: 0; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif;">
+                        ✨ Advanced computer vision analyzed ${analysisResults.dataSource === 'REAL_MOVENET' ? 'your movement' : 'simulated gait'} with precision joint tracking
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        console.log('Enhanced pose snapshot displayed successfully');
+    }
+
     function generateROMTable(analysisResults) {
         // Create ROM data table matching gait.py df_rom exactly
         console.log('generateROMTable called with:', analysisResults);
@@ -1645,15 +2346,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         romData.forEach((row, index) => {
             const bgColor = index % 2 === 0 ? '#2A2A2A' : '#333333';
-            const zoneData = row.peakPerformanceZone || { zone: 'N/A', score: 0, color: '#666666' };
+            const ppz = row.peakPerformanceZone || { zone: 'N/A', score: 0, color: '#666666' };
+            
             tableHTML += `
                 <tr style="background: ${bgColor}; transition: background-color 0.2s;">
                     <td style="padding: 12px 15px; border: none; font-size: 15px; font-weight: 500;">${row.joint}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-size: 15px;">${row.minAngle.toFixed(1)}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-size: 15px;">${row.maxAngle.toFixed(1)}</td>
                     <td style="padding: 12px 15px; border: none; text-align: center; font-weight: bold; font-size: 16px; color: #00BFFF;">${row.rom.toFixed(1)}</td>
-                    <td style="padding: 12px 15px; border: none; text-align: center; font-weight: bold; font-size: 15px; color: ${zoneData.color};">
-                        ${zoneData.zone}<br><span style="font-size: 12px; opacity: 0.8;">(${zoneData.score.toFixed(0)}%)</span>
+                    <td style="padding: 12px 15px; border: none; text-align: center; font-weight: bold; font-size: 14px; color: ${ppz.color};">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <span style="font-size: 13px; font-weight: bold;">${ppz.zone}</span>
+                            <span style="font-size: 11px; opacity: 0.8;">${ppz.score.toFixed(0)}%</span>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1685,7 +2390,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Intersection Observer for animations
+// Intersection Observer for animations and retail button setup
 document.addEventListener('DOMContentLoaded', function() {
     const observerOptions = {
         threshold: 0.1,
@@ -1712,6 +2417,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Animate hero stats numbers on page load
     animateHeroStats();
+
+    // =======================================================
+    // RETAIL STAFF WORKFLOW BUTTON EVENT LISTENERS (Phase 3)
+    // =======================================================
+    
+    // Email results button
+    const emailBtn = document.querySelector('.action-btn[onclick="emailResults()"], #emailResultsBtn');
+    if (emailBtn) {
+        emailBtn.addEventListener('click', emailResults);
+        console.log('✅ Email results button configured');
+    }
+    
+    // Print results button  
+    const printBtn = document.querySelector('.action-btn[onclick="printResults()"], #printResultsBtn');
+    if (printBtn) {
+        printBtn.addEventListener('click', printResults);
+        console.log('✅ Print results button configured');
+    }
+    
+    // Re-test button
+    const retestBtn = document.querySelector('.action-btn[onclick="reTest()"], #reTestBtn');
+    if (retestBtn) {
+        retestBtn.addEventListener('click', reTest);
+        console.log('✅ Re-test button configured');
+    }
+    
+    // Try shoes button (CTA)
+    const tryShoesBtn = document.querySelector('.cta-button[onclick="tryShoes()"], #tryShoesBtn');
+    if (tryShoesBtn) {
+        tryShoesBtn.addEventListener('click', tryShoes);
+        console.log('✅ Try shoes button configured');
+    }
+
+    console.log('🏪 All retail workflow buttons configured successfully');
 });
 
 // Function to animate hero stats numbers
@@ -1759,6 +2498,23 @@ function animateNumber(element, start, end, duration, suffix = '') {
     }, 500);
 }
 
+// Performance monitoring
+document.addEventListener('DOMContentLoaded', function() {
+    // Monitor page load performance
+    window.addEventListener('load', () => {
+        if ('performance' in window) {
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            console.log(`Page loaded in ${loadTime}ms`);
+        }
+    });
+});
+
+// Error handling
+window.addEventListener('error', (e) => {
+    console.error('JavaScript error:', e.error);
+});
+
+// Sleek Joint Angle Visualization
 function generateJointAnglePlot(analysisResults, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -1783,10 +2539,10 @@ function generateJointAnglePlot(analysisResults, canvasId) {
     const ankleLabel = analysisResults.usingTibialSurrogate ? 'Tibial Inclination' : 'Ankle';
     
     const joints = [
-        { name: ankleLabel, left: jointAngles.left.ankle, right: jointAngles.right.ankle, color: '#00d4ff', bilateral: true },
-        { name: 'Knee', left: jointAngles.left.knee, right: jointAngles.right.knee, color: '#ff6b6b', bilateral: true },
+        { name: 'Spine Segment', spine: jointAngles.left.spine, color: '#45b7d1', bilateral: false }, // Spine is central, not bilateral
         { name: 'Hip', left: jointAngles.left.hip, right: jointAngles.right.hip, color: '#4ecdc4', bilateral: true },
-        { name: 'Spine', spine: jointAngles.left.spine, color: '#45b7d1', bilateral: false } // Spine is central, not bilateral
+        { name: 'Knee', left: jointAngles.left.knee, right: jointAngles.right.knee, color: '#ff6b6b', bilateral: true },
+        { name: ankleLabel, left: jointAngles.left.ankle, right: jointAngles.right.ankle, color: '#00d4ff', bilateral: true }
     ];
 
     // Chart dimensions and positioning
@@ -2022,15 +2778,15 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
     ctx.fillText('Angle progression throughout gait cycle', canvas.width / 2, 60);
     ctx.restore();
 
-    // Prepare data series
+    // Prepare data series - reordered as Spine, Hip, Knee, Tibial Inclination
     const series = [
-        { name: 'Tibial Inclination (L)', data: angles.left.ankle, color: '#00d4ff', lineWidth: 3 },
-        { name: 'Tibial Inclination (R)', data: angles.right.ankle, color: '#0099cc', lineWidth: 3 },
-        { name: 'Knee (L)', data: angles.left.knee, color: '#ff6b6b', lineWidth: 3 },
-        { name: 'Knee (R)', data: angles.right.knee, color: '#cc5555', lineWidth: 3 },
+        { name: 'Spine Segment', data: angles.left.spine, color: '#45b7d1', lineWidth: 4 }, // Spine is central, thicker line
         { name: 'Hip (L)', data: angles.left.hip, color: '#4ecdc4', lineWidth: 3 },
         { name: 'Hip (R)', data: angles.right.hip, color: '#3ea99a', lineWidth: 3 },
-        { name: 'Spine', data: angles.left.spine, color: '#45b7d1', lineWidth: 4 } // Spine is central, thicker line
+        { name: 'Knee (L)', data: angles.left.knee, color: '#ff6b6b', lineWidth: 3 },
+        { name: 'Knee (R)', data: angles.right.knee, color: '#cc5555', lineWidth: 3 },
+        { name: `${ankleLabel} (L)`, data: angles.left.ankle, color: '#00d4ff', lineWidth: 3 },
+        { name: `${ankleLabel} (R)`, data: angles.right.ankle, color: '#0099cc', lineWidth: 3 }
     ];
 
     // Calculate scales
@@ -2066,24 +2822,25 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
     
     // Vertical grid lines
     const timePoints = series[0].data.length;
-    const verticalGridLines = 10;
     const frameRate = analysisResults.frameRate || 30; // Use detected frame rate, fallback to 30 FPS
     let totalDuration = timePoints / frameRate; // Simple calculation: every frame processed
     
-    console.log(`🎯 Trajectory Plot Debug (docs):`);
+    console.log(`🎯 Trajectory Plot Debug:`);
     console.log(`  📊 Data points: ${timePoints}`);
     console.log(`  🎬 Frame rate: ${frameRate} FPS`);
     console.log(`  ✅ Processing: Every frame (no skipping)`);
     console.log(`  ⏰ Calculated duration: ${totalDuration.toFixed(2)}s`);
+    console.log(`  📐 Raw calculation: ${timePoints} ÷ ${frameRate} = ${totalDuration.toFixed(2)}`);
     
     // If the duration seems wrong, let's use the actual segment duration from analysis results
     const actualSegmentDuration = analysisResults.segmentDuration;
     if (actualSegmentDuration && Math.abs(totalDuration - actualSegmentDuration) > 0.5) {
-        console.log(`⚠️  Duration mismatch detected! Using actual segment duration: ${actualSegmentDuration.toFixed(2)}s`);
+        console.log(`⚠️  Duration mismatch detected! Using actual segment duration: ${actualSegmentDuration.toFixed(2)}s instead of calculated: ${totalDuration.toFixed(2)}s`);
         totalDuration = actualSegmentDuration;
     }
     
     console.log(`✅ Final duration for x-axis: ${totalDuration.toFixed(2)}s`);
+    const verticalGridLines = 10;
     
     for (let i = 0; i <= verticalGridLines; i++) {
         const x = margin.left + (i / verticalGridLines) * chartWidth;
@@ -2116,6 +2873,7 @@ function generateJointAngleLinesPlot(analysisResults, canvasId) {
         ctx.beginPath();
         
         for (let i = 0; i < serie.data.length; i++) {
+            // Calculate x position based on time - processing every frame now
             const timeAtFrame = i / frameRate; // Time in seconds for this frame
             const x = margin.left + (timeAtFrame / totalDuration) * chartWidth;
             const y = margin.top + ((plotMaxAngle - serie.data[i]) / plotAngleRange) * chartHeight;
@@ -2250,22 +3008,6 @@ function downloadLineplotDataAsCSV(analysisResults) {
         console.log('Joint angle trajectory data downloaded as CSV');
     }
 }
-
-// Performance monitoring
-document.addEventListener('DOMContentLoaded', function() {
-    // Monitor page load performance
-    window.addEventListener('load', () => {
-        if ('performance' in window) {
-            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-            console.log(`Page loaded in ${loadTime}ms`);
-        }
-    });
-});
-
-// Error handling
-window.addEventListener('error', (e) => {
-    console.error('JavaScript error:', e.error);
-});
 
 // Generate personalized tips based on gait.py logic
 function generatePersonalizedTips(analysisResults) {
@@ -2577,6 +3319,733 @@ function generatePersonalizedTips(analysisResults) {
     
     console.log('✅ Personalized tips generated and displayed');
     return tips;
+}
+
+// =======================================================
+// RETAIL-FOCUSED CUSTOMER EXPLANATION GENERATOR (Phase 2)
+// =======================================================
+
+/**
+ * Generates customer-friendly explanations and footwear recommendations
+ * based on technical asymmetry analysis data
+ */
+function generateCustomerExplanation(analysisResults) {
+    console.log('🏪 Generating customer explanation for retail environment...');
+    
+    if (!analysisResults || !analysisResults.asymmetryComponents) {
+        console.warn('⚠️ Missing analysis results for customer explanation');
+        return {
+            explanation: "Analysis in progress. Please wait for results.",
+            footwearRecommendation: "Loading recommendations...",
+            nextSteps: "Please wait while we analyze your movement pattern.",
+            status: "loading"
+        };
+    }
+
+    const { asymmetry, asymmetryComponents } = analysisResults;
+    const totalAsymmetry = Math.abs(asymmetry);
+    const direction = asymmetry > 0 ? 'right' : 'left';
+    const oppDirection = direction === 'right' ? 'left' : 'right';
+    
+    // Determine overall gait status based on cumulative asymmetry
+    let status, statusText, severity;
+    if (totalAsymmetry < 3) {
+        status = 'good';
+        statusText = 'Balanced Gait';
+        severity = 'minimal';
+    } else if (totalAsymmetry < 8) {
+        status = 'moderate';
+        statusText = 'Mild Imbalance';
+        severity = 'moderate';
+    } else {
+        status = 'poor';
+        statusText = 'Significant Imbalance';
+        severity = 'significant';
+    }
+    
+    // Generate customer-friendly explanation
+    let explanation = `<h4>Your Gait Analysis Results</h4>`;
+    
+    if (status === 'good') {
+        explanation += `
+            <p>Great news! Your running pattern shows excellent balance between both sides of your body. This indicates efficient movement with minimal compensations.</p>
+            <ul>
+                <li>Both legs are working together harmoniously</li>
+                <li>Your current shoes appear to be supporting your natural gait well</li>
+                <li>Low risk of overuse injuries from imbalanced movement</li>
+            </ul>`;
+    } else {
+        explanation += `
+            <p>Your analysis reveals a ${severity} difference in how your ${direction} and ${oppDirection} legs move during running. Your ${direction} side is working harder than your ${oppDirection} side by ${totalAsymmetry.toFixed(1)} degrees.</p>
+            <ul>
+                <li>This imbalance can lead to uneven wear patterns in your current shoes</li>
+                <li>You may experience more fatigue or discomfort on your ${direction} side</li>
+                <li>The right footwear can help correct this imbalance and improve comfort</li>
+            </ul>`;
+    }
+    
+    // Generate specific joint insights
+    const jointInsights = [];
+    if (Math.abs(asymmetryComponents.hip) > 2) {
+        const hipDir = asymmetryComponents.hip > 0 ? 'right' : 'left';
+        jointInsights.push(`Your ${hipDir} hip is working ${Math.abs(asymmetryComponents.hip).toFixed(1)}° harder, affecting your stride length and power`);
+    }
+    if (Math.abs(asymmetryComponents.knee) > 2) {
+        const kneeDir = asymmetryComponents.knee > 0 ? 'right' : 'left';
+        jointInsights.push(`Your ${kneeDir} knee shows ${Math.abs(asymmetryComponents.knee).toFixed(1)}° more movement, impacting shock absorption`);
+    }
+    if (Math.abs(asymmetryComponents.ankle) > 2) {
+        const ankleDir = asymmetryComponents.ankle > 0 ? 'right' : 'left';
+        jointInsights.push(`Your ${ankleDir} ankle has ${Math.abs(asymmetryComponents.ankle).toFixed(1)}° more motion, affecting push-off efficiency`);
+    }
+    
+    if (jointInsights.length > 0) {
+        explanation += `<h4>What This Means for Your Running:</h4><ul>`;
+        jointInsights.forEach(insight => {
+            explanation += `<li>${insight}</li>`;
+        });
+        explanation += `</ul>`;
+    }
+    
+    // Generate footwear recommendations based on asymmetry patterns
+    let footwearRecommendation = generateFootwearRecommendation(asymmetry, asymmetryComponents, status);
+    
+    // Generate next steps
+    let nextSteps = generateNextSteps(status, severity, direction, totalAsymmetry);
+    
+    return {
+        explanation,
+        footwearRecommendation,
+        nextSteps,
+        status,
+        statusText,
+        asymmetryValue: totalAsymmetry.toFixed(1),
+        dominantSide: direction.toUpperCase()
+    };
+}
+
+/**
+ * Generates specific footwear recommendations based on gait asymmetry
+ * Updated to align with gait.py logic and use tibial inclination considerations
+ */
+function generateFootwearRecommendation(asymmetry, components, status) {
+    const totalAsymmetry = Math.abs(asymmetry);
+    const direction = asymmetry > 0 ? 'right' : 'left';
+    
+    if (status === 'good') {
+        return {
+            primary: "Neutral Running Shoes",
+            description: "Your balanced gait works well with neutral cushioning shoes that don't interfere with your natural movement pattern.",
+            features: ["Balanced midsole cushioning", "Flexible forefoot", "Moderate arch support"],
+            reasoning: "Since your gait is well-balanced, avoid motion control features that might disrupt your natural efficiency."
+        };
+    }
+    
+    // Determine primary imbalance pattern using gait.py thresholds
+    const hipImbalance = Math.abs(components.hip);
+    const kneeImbalance = Math.abs(components.knee);
+    const tibialImbalance = Math.abs(components.ankle) * 0.8; // Convert ankle to tibial inclination estimate
+    
+    let recommendation = {
+        features: [],
+        reasoning: ""
+    };
+    
+    // Apply gait.py logic for footwear recommendations
+    // Overpronation indicators based on frontal plane assessment
+    if (tibialImbalance > 12 || kneeImbalance > 10 || hipImbalance > 15) {
+        if (tibialImbalance > 16 || kneeImbalance > 15) {
+            // Motion Control needed
+            recommendation.primary = "Motion Control Shoes";
+            recommendation.description = `Excessive overpronation and knee valgus detected. Strong support shoes help guide your stride and reduce excess inward rolling on your ${direction} side.`;
+            recommendation.features = [
+                "Firm medial support",
+                "Structured heel counter", 
+                "Motion control technology",
+                "Enhanced arch support"
+            ];
+            recommendation.reasoning = `Your ${totalAsymmetry.toFixed(1)}° imbalance with significant tibial and knee motion needs structured support to prevent overuse injuries.`;
+        } else {
+            // Stability needed  
+            recommendation.primary = "Stability Running Shoes";
+            recommendation.description = `Moderate overpronation detected. Dual-density midsole and guided motion control help balance your ${direction}-side dominance.`;
+            recommendation.features = [
+                "Dual-density midsole",
+                "Moderate medial posting", 
+                "Guided motion control",
+                "Supportive arch design"
+            ];
+            recommendation.reasoning = `Your moderate ${totalAsymmetry.toFixed(1)}° imbalance benefits from gentle corrective support to improve efficiency.`;
+        }
+    } else if (totalAsymmetry >= 6) {
+        // Moderate overall imbalance - stability recommended
+        recommendation.primary = "Stability Running Shoes";
+        recommendation.description = `Supportive shoes with gentle guidance features to help balance your movement pattern.`;
+        recommendation.features = [
+            "Moderate medial posting",
+            "Supportive midsole", 
+            "Guided gait technology"
+        ];
+        recommendation.reasoning = `Your ${totalAsymmetry.toFixed(1)}° imbalance benefits from gentle corrective support.`;
+    }
+    
+    // Add specific features based on joint patterns (enhanced with tibial considerations)
+    if (tibialImbalance > 8) {
+        recommendation.features.push("Enhanced pronation control");
+        recommendation.reasoning += ` Tibial motion needs specialized roll-through design.`;
+    }
+    if (kneeImbalance > 5) {
+        recommendation.features.push("Superior shock absorption");
+        recommendation.reasoning += ` Knee imbalance requires excellent impact protection.`;
+    }
+    if (hipImbalance > 8) {
+        recommendation.features.push("Responsive cushioning platform");
+        recommendation.reasoning += ` Hip asymmetry benefits from energy-returning midsole technology.`;
+    }
+    
+    return recommendation;
+}
+
+/**
+ * Generates actionable next steps for customers
+ */
+function generateNextSteps(status, severity, direction, totalAsymmetry) {
+    let steps = [];
+    
+    if (status === 'good') {
+        steps = [
+            "Continue with your current running routine - your gait is well-balanced!",
+            "Try on neutral cushioning shoes to maintain your efficient movement pattern",
+            "Consider a follow-up analysis in 6 months to track any changes"
+        ];
+    } else {
+        steps = [
+            `Try on ${status === 'moderate' ? 'stability' : 'motion control'} shoes specifically designed for ${direction}-side imbalances`,
+            "Walk and jog in-store to feel how the corrective features support your gait",
+            "Consider replacing shoes every 300-400 miles to maintain corrective benefits"
+        ];
+        
+        if (totalAsymmetry > 6) {
+            steps.push("Schedule a follow-up analysis after 2-3 weeks with new shoes to track improvement");
+        }
+        
+        if (severity === 'significant') {
+            steps.push("Consider consulting with a running coach or physical therapist for additional gait training");
+        }
+    }
+    
+    return steps;
+}
+
+/**
+ * Populates the retail interface with customer-friendly analysis results
+ */
+function populateRetailResults(analysisResults) {
+    console.log('🏪 Populating retail interface with analysis results...');
+    
+    const customerData = generateCustomerExplanation(analysisResults);
+    
+    // Update asymmetry display in hero section
+    const asymmetryValueEl = document.querySelector('.asymmetry-value');
+    const asymmetryDirectionEl = document.querySelector('.asymmetry-direction');
+    
+    if (asymmetryValueEl && asymmetryDirectionEl) {
+        asymmetryValueEl.textContent = `${customerData.asymmetryValue}°`;
+        asymmetryDirectionEl.textContent = `${customerData.dominantSide} DOMINANT`;
+    }
+    
+    // Update status indicator
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusText = document.querySelector('.status-text');
+    
+    if (statusIndicator && statusText) {
+        statusIndicator.className = `status-indicator ${customerData.status}`;
+        statusText.textContent = customerData.statusText;
+    }
+    
+    // Update footwear recommendation
+    const recommendationContainer = document.querySelector('.footwear-recommendation-primary .footwear-card-large');
+    if (recommendationContainer && customerData.footwearRecommendation.primary) {
+        recommendationContainer.innerHTML = `
+            <h3>${customerData.footwearRecommendation.primary}</h3>
+            <p class="recommendation-description">${customerData.footwearRecommendation.description}</p>
+            <div class="recommended-features">
+                <h4>Key Features to Look For:</h4>
+                <ul>
+                    ${customerData.footwearRecommendation.features.map(feature => `<li>${feature}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="why-this-helps">
+                <h4>Why This Helps:</h4>
+                <p>${customerData.footwearRecommendation.reasoning}</p>
+            </div>
+        `;
+    }
+    
+    // Update customer explanation
+    const explanationContainer = document.querySelector('.customer-friendly-explanation');
+    if (explanationContainer) {
+        explanationContainer.innerHTML = customerData.explanation;
+    }
+    
+    // Update next steps
+    const nextStepsContainer = document.querySelector('.next-steps-section .customer-friendly-explanation');
+    if (nextStepsContainer && customerData.nextSteps) {
+        nextStepsContainer.innerHTML = `
+            <h4>Your Next Steps</h4>
+            <ul>
+                ${customerData.nextSteps.map(step => `<li>${step}</li>`).join('')}
+            </ul>
+        `;
+    }
+    
+    console.log('✅ Retail interface populated successfully');
+    return customerData;
+}
+
+// =======================================================
+// RETAIL PERSONALIZED TIPS (Phase 2 Enhancement)
+// =======================================================
+
+/**
+ * Generates personalized training tips based on gait.py logic
+ * Uses tibial inclination instead of ankle angle to match MoveNet implementation
+ */
+function generateRetailPersonalizedTips(analysisResults) {
+    console.log('🎯 Generating retail personalized tips based on gait.py logic...');
+    
+    if (!analysisResults || !analysisResults.romValues) {
+        console.warn('⚠️ Missing analysis results for personalized tips');
+        return;
+    }
+    
+    const { romValues, jointAngles } = analysisResults;
+    
+    // ROM values order: [right_knee, right_hip, spine, left_hip, left_knee, left_ankle, right_ankle]
+    // But we'll use tibial inclination calculated from shank angles instead of ankle
+    const knee_right_rom = romValues[0];
+    const hip_right_rom = romValues[1];
+    const spine_rom = romValues[2];  
+    const hip_left_rom = romValues[3];
+    const knee_left_rom = romValues[4];
+    
+    // Calculate tibial inclination ROM (shank angle variation) instead of using ankle ROM
+    // This matches the MoveNet implementation approach
+    let tibial_left_rom, tibial_right_rom;
+    
+    if (jointAngles && jointAngles.left && jointAngles.right) {
+        // Use knee angles as proxy for tibial inclination in the absence of direct shank measurements
+        // This approximates the shank-to-vertical angle that would be measured with full skeletal tracking
+        tibial_left_rom = knee_left_rom * 0.6; // Scaled approximation based on biomechanical ratios
+        tibial_right_rom = knee_right_rom * 0.6;
+    } else {
+        // Fallback if detailed joint angles not available
+        tibial_left_rom = romValues[5] * 0.8; // Conservative estimate
+        tibial_right_rom = romValues[6] * 0.8;
+    }
+    
+    // Average bilateral values for analysis
+    const avg_tibial_rom = (tibial_left_rom + tibial_right_rom) / 2;
+    const avg_knee_rom = (knee_left_rom + knee_right_rom) / 2;
+    const avg_hip_rom = (hip_left_rom + hip_right_rom) / 2;
+    
+    // Determine camera side and gait type (defaulting to common use case)
+    const camera_side = "back"; // Most retail analysis focuses on frontal plane
+    const gait_type = "running"; // Most common use case
+    
+    // Generate footwear recommendation based on gait.py logic
+    const footwearRecommendation = generateGaitPyFootwearRecommendation(
+        [knee_right_rom, hip_right_rom, spine_rom, hip_left_rom, knee_left_rom, tibial_left_rom, tibial_right_rom],
+        camera_side,
+        gait_type
+    );
+    
+    // Generate training recommendations based on biomechanical deficits  
+    const trainingRecommendation = generateGaitPyTrainingRecommendation(
+        [knee_right_rom, hip_right_rom, spine_rom, hip_left_rom, knee_left_rom, tibial_left_rom, tibial_right_rom],
+        camera_side,
+        gait_type
+    );
+    
+    // Populate the personal tips section
+    const tipsContainer = document.querySelector('.personal-tips-section .tips-container');
+    if (tipsContainer) {
+        tipsContainer.innerHTML = `
+            <div class="tip-category" style="margin-bottom: 25px; padding: 20px; background: rgba(0, 255, 179, 0.1); border-radius: 10px; border-left: 4px solid #00ffb3;">
+                <div class="tip-header" style="margin-bottom: 15px;">
+                    <i class="fas fa-shoe-prints" style="color: #00ffb3; margin-right: 10px; font-size: 18px;"></i>
+                    <span style="color: #00ffb3; font-weight: bold; font-size: 18px;">RECOMMENDED FOOTWEAR</span>
+                </div>
+                <div class="tip-content">
+                    <div style="color: #ffffff; font-size: 20px; font-weight: bold; margin-bottom: 10px;">${footwearRecommendation.type}</div>
+                    <p style="color: #e2e8f0; line-height: 1.6; margin: 0;">${footwearRecommendation.reason}</p>
+                </div>
+            </div>
+            
+            <div class="tip-category" style="margin-bottom: 25px; padding: 20px; background: rgba(0, 212, 255, 0.1); border-radius: 10px; border-left: 4px solid #00d4ff;">
+                <div class="tip-header" style="margin-bottom: 15px;">
+                    <i class="fas fa-dumbbell" style="color: #00d4ff; margin-right: 10px; font-size: 18px;"></i>
+                    <span style="color: #00d4ff; font-weight: bold; font-size: 18px;">RECOMMENDED TRAINING</span>
+                </div>
+                <div class="tip-content">
+                    <div style="color: #ffffff; font-size: 20px; font-weight: bold; margin-bottom: 10px;">${trainingRecommendation.name}</div>
+                    <p style="color: #e2e8f0; line-height: 1.6; margin-bottom: 10px;">${trainingRecommendation.description}</p>
+                    <div style="color: #00d4ff; font-style: italic; font-size: 14px;">Target: ${trainingRecommendation.target}</div>
+                </div>
+            </div>
+        `;
+        
+        // Show the tips section
+        document.getElementById('personal-tips-section').style.display = 'block';
+        
+        console.log('✅ Retail personalized tips populated successfully');
+    } else {
+        console.warn('⚠️ Tips container not found');
+    }
+}
+
+/**
+ * Generates footwear recommendation based on gait.py logic with tibial inclination
+ */
+function generateGaitPyFootwearRecommendation(romValues, camera_side, gait_type) {
+    // Extract ROM values matching gait.py structure
+    const knee_right_rom = romValues[0];
+    const hip_right_rom = romValues[1];
+    const spine_rom = romValues[2];
+    const hip_left_rom = romValues[3]; 
+    const knee_left_rom = romValues[4];
+    const tibial_left_rom = romValues[5];  // Using tibial inclination instead of ankle
+    const tibial_right_rom = romValues[6];
+    
+    // Average bilateral values
+    const avg_tibial_rom = (tibial_left_rom + tibial_right_rom) / 2;
+    const avg_knee_rom = (knee_left_rom + knee_right_rom) / 2;
+    const avg_hip_rom = (hip_left_rom + hip_right_rom) / 2;
+    
+    // Primary: Posterior/Frontal Plane Assessment (from gait.py)
+    if (camera_side === "back") {
+        // Overpronation indicators (Motion Control/Stability needed)
+        // Using tibial inclination thresholds instead of ankle ROM
+        if (avg_tibial_rom > 12 || avg_knee_rom > 10 || avg_hip_rom > 15) {
+            if (avg_tibial_rom > 16 || avg_knee_rom > 15) {
+                return {
+                    type: "Motion Control",
+                    reason: "Excessive overpronation and knee valgus detected. Shoes with extra support on the inside of the foot help guide your stride and reduce extra inward rolling."
+                };
+            } else {
+                return {
+                    type: "Stability", 
+                    reason: "Moderate overpronation detected. Dual-density midsole and guided motion control recommended."
+                };
+            }
+        }
+    }
+    
+    // Supporting: Sagittal Plane Refinement
+    if (camera_side === "side") {
+        if (gait_type === "walking" || gait_type === "running") {
+            // Using tibial inclination for mobility assessment
+            if (avg_tibial_rom < 24 && spine_rom > 10) { // Limited tibial mobility + heel-strike posture
+                return {
+                    type: "Maximum Cushioning",
+                    reason: "Limited tibial mobility and heel-strike pattern detected. Enhanced shock absorption needed."
+                };
+            } else if (avg_tibial_rom > 48 && avg_knee_rom > 100) { // Good mobility + forefoot striking
+                return {
+                    type: "Minimalist/Neutral", 
+                    reason: "Excellent mobility and efficient movement pattern. Minimal interference recommended."
+                };
+            }
+        }
+    }
+    
+    // Default recommendation
+    return {
+        type: "Neutral",
+        reason: "Balanced biomechanics detected. Standard neutral support recommended."
+    };
+}
+
+/**
+ * Generates training recommendation based on gait.py logic with tibial inclination
+ */
+function generateGaitPyTrainingRecommendation(romValues, camera_side, gait_type) {
+    // Extract ROM values
+    const knee_right_rom = romValues[0];
+    const hip_right_rom = romValues[1];
+    const spine_rom = romValues[2];
+    const hip_left_rom = romValues[3];
+    const knee_left_rom = romValues[4]; 
+    const tibial_left_rom = romValues[5];
+    const tibial_right_rom = romValues[6];
+    
+    // Average bilateral values
+    const avg_tibial_rom = (tibial_left_rom + tibial_right_rom) / 2;
+    const avg_knee_rom = (knee_left_rom + knee_right_rom) / 2;
+    const avg_hip_rom = (hip_left_rom + hip_right_rom) / 2;
+    
+    // Analyze deficits and recommend exercises based on gait.py logic
+    if (camera_side === "back") {
+        // Frontal plane issues - focus on stability and control
+        if (avg_tibial_rom > 12 || avg_knee_rom > 10) { // Overpronation/valgus using tibial measure
+            return {
+                name: "Single-Leg Glute Bridge",
+                description: "3x12 each leg. Strengthens hip abductors to control knee valgus and pelvic stability.",
+                target: "Hip abductor strength, pelvic control"
+            };
+        } else { // Good frontal plane control
+            return {
+                name: "Lateral Band Walks", 
+                description: "3x15 each direction. Maintains hip abductor strength and lateral stability.",
+                target: "Hip stability maintenance"
+            };
+        }
+    } else { // Sagittal plane (side view)
+        // Analyze specific joint limitations using tibial inclination
+        if (avg_tibial_rom < 24 && (gait_type === "walking" || gait_type === "running")) { // Limited tibial mobility
+            return {
+                name: "Wall Calf Stretch + Tibial Mobility",
+                description: "3x30 seconds each foot. Improves tibial inclination mobility for better heel-to-toe transition.",
+                target: "Tibial inclination, calf flexibility"
+            };
+        }
+        
+        if (avg_hip_rom < 35 && (gait_type === "walking" || gait_type === "running")) { // Limited hip ROM
+            return {
+                name: "90/90 Hip Stretch + Hip Flexor Activation",
+                description: "3x30 sec stretch + 10 leg lifts. Improves hip flexion ROM and activation.",
+                target: "Hip mobility and flexor strength"
+            };
+        }
+        
+        if (avg_knee_rom < 60 && (gait_type === "walking" || gait_type === "running")) { // Limited knee flexion
+            return {
+                name: "Wall Sits with Calf Raises", 
+                description: "3x45 seconds. Builds knee flexion endurance and calf strength simultaneously.",
+                target: "Knee flexion endurance, shock absorption"
+            };
+        }
+        
+        if (spine_rom > 15 || spine_rom < 3) { // Poor trunk control
+            return {
+                name: "Dead Bug with Opposite Arm/Leg",
+                description: "3x10 each side. Improves core stability and trunk control during movement.",
+                target: "Core stability, trunk alignment"
+            };
+        }
+    }
+    
+    // Default recommendation if no specific deficits
+    return {
+        name: "Single-Leg Romanian Deadlift",
+        description: "3x8 each leg. Maintains posterior chain strength and balance.",
+        target: "Overall stability and strength"
+    };
+}
+
+// =======================================================
+// STAFF WORKFLOW FUNCTIONS (Phase 3)
+// =======================================================
+
+/**
+ * Email analysis results to customer
+ */
+function emailResults() {
+    console.log('📧 Preparing email with analysis results...');
+    
+    // Get current analysis data
+    const analysisContainer = document.querySelector('.retail-results-container');
+    if (!analysisContainer) {
+        alert('No analysis results available to email.');
+        return;
+    }
+    
+    // Extract key information for email
+    const asymmetryValue = document.querySelector('.asymmetry-value')?.textContent || 'N/A';
+    const dominantSide = document.querySelector('.asymmetry-direction')?.textContent || 'N/A';
+    const recommendation = document.querySelector('.footwear-card-large h3')?.textContent || 'Custom recommendation';
+    
+    // Create email content
+    const emailSubject = `Your Gait Analysis Results - ${recommendation}`;
+    const emailBody = `Hello!
+
+Thank you for completing your gait analysis at our store. Here are your personalized results:
+
+GAIT ANALYSIS SUMMARY:
+• Asymmetry Score: ${asymmetryValue}
+• Dominant Side: ${dominantSide}
+• Recommended Shoe Type: ${recommendation}
+
+Your detailed analysis and specific product recommendations are attached. Our team is available to help you find the perfect shoes for your running goals.
+
+Questions? Reply to this email or visit us in-store.
+
+Happy Running!
+Your Gait Analysis Team`;
+    
+    // Create mailto link (in production, this would integrate with email service)
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    
+    // Open email client or show copy dialog
+    if (navigator.share) {
+        navigator.share({
+            title: emailSubject,
+            text: emailBody
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        window.open(mailtoLink);
+    }
+    
+    console.log('📧 Email prepared and opened');
+}
+
+/**
+ * Print analysis results
+ */
+function printResults() {
+    console.log('🖨️ Preparing analysis results for printing...');
+    
+    // Create print-friendly version
+    const printWindow = window.open('', '_blank');
+    const analysisContainer = document.querySelector('.retail-results-container');
+    
+    if (!analysisContainer) {
+        alert('No analysis results available to print.');
+        return;
+    }
+    
+    // Generate print content with store branding
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Gait Analysis Results</title>
+            <style>
+                body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #333; }
+                .header { text-align: center; border-bottom: 2px solid #00FFB3; padding-bottom: 20px; margin-bottom: 30px; }
+                .logo { font-size: 24px; font-weight: bold; color: #00FFB3; }
+                .results-section { margin: 20px 0; }
+                .asymmetry-display { text-align: center; font-size: 48px; font-weight: bold; color: #00FFB3; margin: 20px 0; }
+                .recommendation-box { background: #f8f9fa; padding: 20px; border-left: 4px solid #00FFB3; margin: 20px 0; }
+                ul { padding-left: 20px; }
+                li { margin: 8px 0; }
+                .footer { margin-top: 40px; text-align: center; font-size: 14px; color: #666; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">STRIDE SYNC Gait Analysis</div>
+                <div>Professional Running Gait Assessment</div>
+                <div>Date: ${new Date().toLocaleDateString()}</div>
+            </div>
+            
+            <div class="results-section">
+                <h2>Analysis Summary</h2>
+                <div class="asymmetry-display">
+                    ${document.querySelector('.asymmetry-value')?.textContent || 'N/A'}
+                </div>
+                <div style="text-align: center; font-size: 20px; margin-bottom: 30px;">
+                    ${document.querySelector('.asymmetry-direction')?.textContent || 'N/A'}
+                </div>
+                
+                <div class="recommendation-box">
+                    <h3>Recommended Footwear</h3>
+                    ${document.querySelector('.footwear-card-large')?.innerHTML || 'Custom recommendations discussed in-store.'}
+                </div>
+                
+                <div class="recommendation-box">
+                    <h3>Your Analysis Explanation</h3>
+                    ${document.querySelector('.customer-friendly-explanation')?.innerHTML || 'Detailed explanation provided in-store.'}
+                </div>
+                
+                <div class="recommendation-box">
+                    <h3>Next Steps</h3>
+                    ${document.querySelector('.next-steps-section .customer-friendly-explanation')?.innerHTML || 'Follow-up plan discussed with our team.'}
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>This analysis was performed using advanced pose detection technology.<br>
+                For questions about your results, contact our expert fitting team.<br>
+                <strong>STRIDE SYNC</strong> - Optimizing Your Running Performance</p>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+    
+    console.log('🖨️ Print dialog opened');
+}
+
+/**
+ * Initiate re-test workflow
+ */
+function reTest() {
+    console.log('🔄 Initiating re-test workflow...');
+    
+    if (confirm('Start a new gait analysis? This will clear current results and return to the upload screen.')) {
+        // Clear current results
+        const resultsContainer = document.querySelector('.retail-results-container');
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+        }
+        
+        // Clear personal tips section
+        const tipsSection = document.querySelector('#personal-tips-section');
+        if (tipsSection) {
+            tipsSection.style.display = 'none';
+            const tipsContainer = tipsSection.querySelector('.tips-container');
+            if (tipsContainer) {
+                tipsContainer.innerHTML = '';
+            }
+        }
+        
+        // Show upload section
+        const uploadSection = document.querySelector('.upload-section, #upload');
+        if (uploadSection) {
+            uploadSection.style.display = 'block';
+            uploadSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Reset file input
+        const fileInput = document.querySelector('#video-upload');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        // Reset progress
+        const progressContainer = document.querySelector('.progress-container');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+        
+        console.log('🔄 Re-test initiated - cleared tips and returned to upload screen');
+    }
+}
+
+/**
+ * Try different shoes workflow
+ */
+function tryShoes() {
+    console.log('👟 Initiating shoe trial workflow...');
+    
+    const currentRecommendation = document.querySelector('.footwear-card-large h3')?.textContent || 'recommended shoes';
+    
+    if (confirm(`Ready to try ${currentRecommendation}? We'll help you find the perfect pair based on your analysis.`)) {
+        // In a real implementation, this might:
+        // - Log the customer interaction
+        // - Display inventory of recommended shoes
+        // - Start guided fitting process
+        // - Track trial outcomes
+        
+        alert(`Great! Let's find you the perfect ${currentRecommendation}. Our team will help you try different options and we can re-test your gait with new shoes if needed.`);
+        
+        console.log('👟 Shoe trial workflow initiated');
+    }
 }
 
 // Service Worker registration (for PWA functionality)
