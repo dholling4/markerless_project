@@ -417,28 +417,20 @@
                             </div>
                         </div>
 
-                        <!-- Phase 2: Primary Footwear Recommendation -->
-                        <div class="footwear-recommendation-primary">
-                            <div class="recommendation-header">
-                                <span class="shoe-icon">👟</span>
-                                <h2>Recommended Footwear Type</h2>
+                        <!-- Phase 2: Primary Analysis Charts -->
+                        <div class="primary-analysis-charts">
+                            <div class="charts-header">
+                                <h2>📊 Movement Analysis</h2>
                             </div>
-                            <div id="primary-footwear-rec" class="footwear-card-large">
-                                <div class="loading-recommendation">
-                                    <span>Analyzing your gait pattern...</span>
+                            <div class="primary-charts-grid">
+                                <div class="chart-section primary-chart">
+                                    <h4>Movement Quality Overview</h4>
+                                    <canvas id="spider-chart" width="350" height="280"></canvas>
                                 </div>
-                            </div>
-                            <div class="try-shoes-cta">
-                                <button class="cta-button" onclick="tryShoes()" id="tryShoesBtn">� Try Recommended Shoes</button>
-                            </div>
-                        </div>
-
-                        <!-- Phase 2: Customer-Friendly Explanation -->
-                        <div class="next-steps-section">
-                            <h3>💡 What This Means</h3>
-                            <div id="interpretation-text" class="customer-friendly-explanation">
-                                <div class="loading-explanation">
-                                    <span>Generating personalized recommendations...</span>
+                                
+                                <div class="chart-section primary-chart">
+                                    <h4>Left vs Right Symmetry</h4>
+                                    <canvas id="asymmetry-chart" width="350" height="280"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -477,12 +469,12 @@
                                 
                                 <div class="chart-section">
                                     <h4>Joint Angle Analysis</h4>
-                                    <canvas id="angleChart" width="900" height="500"></canvas>
+                                    <canvas id="angleChart" width="700" height="400"></canvas>
                                 </div>
                                 
                                 <div class="chart-section">
                                     <h4>Advanced Joint Angle Trajectories</h4>
-                                    <canvas id="angleLinesChart" width="900" height="600"></canvas>
+                                    <canvas id="angleLinesChart" width="700" height="450"></canvas>
                                     <div style="text-align: center; margin-top: 20px;">
                                         <button id="downloadCSVBtn" class="cta-primary" style="display: none;">
                                             📊 Download Trajectory Data (CSV)
@@ -491,15 +483,8 @@
                                 </div>
                                 
                                 <div class="chart-section">
-                                    <canvas id="spider-chart" width="400" height="300"></canvas>
-                                </div>
-                                
-                                <div class="chart-section">
-                                    <canvas id="asymmetry-chart" width="400" height="200"></canvas>
-                                </div>
-                                
-                                <div class="chart-section">
-                                    <canvas id="rom-chart" width="400" height="200"></canvas>
+                                    <h4>Range of Motion Overview</h4>
+                                    <canvas id="rom-chart" width="350" height="200"></canvas>
                                 </div>
                             </div>
                         </details>

@@ -2318,3 +2318,79 @@ body {
         font-size: 28px;
     }
 }
+
+/* Primary Analysis Charts Section */
+.primary-analysis-charts {
+    margin: 30px 0;
+    padding: 30px;
+    background: rgba(26, 26, 27, 0.8);
+    border-radius: 15px;
+    border: 1px solid rgba(0, 255, 179, 0.3);
+}
+
+.charts-header h2 {
+    color: #00ffb3;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.primary-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    max-width: 100%;
+}
+
+.primary-chart {
+    background: rgba(45, 55, 72, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 179, 0.2);
+    padding: 20px;
+    text-align: center;
+}
+
+.primary-chart h4 {
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.primary-chart canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Responsive design for primary charts */
+@media (max-width: 768px) {
+    .primary-charts-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .primary-analysis-charts {
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .charts-header h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .primary-analysis-charts {
+        padding: 15px;
+    }
+    
+    .primary-chart {
+        padding: 15px;
+    }
+    
+    .primary-chart h4 {
+        font-size: 14px;
+    }
+}
