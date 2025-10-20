@@ -450,23 +450,24 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Pose Detection configuration (using MoveNet as primary, MediaPipe as backup)
-    const POSE_CONFIG = {
-        // Primary: MoveNet (more reliable in TensorFlow.js)
-        moveNet: {
-            modelType: 'SinglePose.Thunder', // High accuracy model
-            minScore: 0.7,  // Lower threshold for better detection
-            enableSmoothing: true,
-            enableTracking: true
-        },
-        // Backup: MediaPipe (if available)
-        mediaPipe: {
-            runtime: 'mediapipe',
-            modelType: 'full',
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5,
-            enableSmoothing: true
-        }
-    };
+    // Function to get pose detection config (called after libraries load)
+    function getPoseConfig() {
+        return {
+            // Primary: MoveNet (more reliable in TensorFlow.js)
+            moveNet: {
+                modelType: 'SINGLEPOSE_LIGHTNING', // Faster, lighter model
+                enableSmoothing: true,
+                minPoseScore: 0.25
+            },
+            // Backup: MediaPipe (if available)
+            mediaPipe: {
+                runtime: 'tfjs',
+                modelType: 'lite',
+                enableSmoothing: true,
+                solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose'
+            }
+        };
+    }
 
     // Global variables for TensorFlow.js pose detection processing
     let poseDetector = null;
@@ -587,32 +588,52 @@ document.addEventListener('DOMContentLoaded', function() {
             tfReady = true;
             console.log('✅ TensorFlow.js ready');
 
+            const config = getPoseConfig();
+            
             // Try MoveNet first (more reliable)
             console.log('🎯 Attempting to load MoveNet model...');
+            console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
+            
             try {
+                // Use simpler config for MoveNet
+                const moveNetConfig = {
+                    modelType: 'SINGLEPOSE_LIGHTNING',
+                    enableSmoothing: true
+                };
+                
                 poseDetector = await poseDetection.createDetector(
                     poseDetection.SupportedModels.MoveNet,
-                    POSE_CONFIG.moveNet
+                    moveNetConfig
                 );
                 console.log('✅ MoveNet pose detector initialized successfully');
-                console.log('📊 Model config:', POSE_CONFIG.moveNet);
+                console.log('📊 Model config:', moveNetConfig);
+                currentPoseModel = 'MoveNet';
                 return { success: true, model: 'MoveNet' };
                 
             } catch (moveNetError) {
                 console.warn('⚠️ MoveNet failed, trying MediaPipe...', moveNetError);
+                console.error('MoveNet error details:', moveNetError.message);
                 
-                // Fallback to MediaPipe
+                // Fallback to MediaPipe with tfjs runtime
                 try {
+                    const mediaPipeConfig = {
+                        runtime: 'tfjs',
+                        modelType: 'lite',
+                        enableSmoothing: true
+                    };
+                    
                     poseDetector = await poseDetection.createDetector(
-                        poseDetection.SupportedModels.MediaPipePose,
-                        POSE_CONFIG.mediaPipe
+                        poseDetection.SupportedModels.BlazePose,
+                        mediaPipeConfig
                     );
-                    console.log('✅ MediaPipe pose detector initialized as backup');
-                    console.log('📊 Model config:', POSE_CONFIG.mediaPipe);
+                    console.log('✅ BlazePose (MediaPipe) detector initialized as backup');
+                    console.log('📊 Model config:', mediaPipeConfig);
+                    currentPoseModel = 'MediaPipe';
                     return { success: true, model: 'MediaPipe' };
                     
                 } catch (mediaPipeError) {
                     console.error('❌ Both MoveNet and MediaPipe failed:', mediaPipeError);
+                    console.error('MediaPipe error details:', mediaPipeError.message);
                     throw new Error('No pose detection models available');
                 }
             }
