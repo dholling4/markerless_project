@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         console.log('✅ Accepted video file:', file.name, 'Type:', file.type);
+        console.log('🎯 REAL VIDEO ANALYSIS MODE: Processing uploaded video with actual pose detection');
 
         // Validate file size (100MB limit)
         const maxSize = 100 * 1024 * 1024; // 100MB in bytes
@@ -772,13 +773,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         ctx.drawImage(video, 0, 0);
                         
                         // Create tensor from canvas (equivalent to cv2.cvtColor + pose.process in Python)
-                            const imageTensor = tf.browser.fromPixels(canvas);
-                            
-                            // Detect poses (equivalent to results = pose.process(frame_rgb) in Python)
-                            const poses = await poseDetector.estimatePoses(imageTensor);
-                            
-                            // Clean up tensor to prevent memory leaks
-                            imageTensor.dispose();
+                        const imageTensor = tf.browser.fromPixels(canvas);
+                        
+                        // Detect poses (equivalent to results = pose.process(frame_rgb) in Python)
+                        const poses = await poseDetector.estimatePoses(imageTensor);
+                        
+                        // Clean up tensor to prevent memory leaks
+                        imageTensor.dispose();
                             
                             // Process pose results (supporting both MoveNet and MediaPipe formats)
                             if (poses.length > 0) {
@@ -1073,10 +1074,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                console.error('❌ REAL MOVENET FAILED - FALLING BACK TO SIMULATION');
-                console.warn('⚠️ Pose detection processing failed, falling back to simulation:', error);
+                console.error('❌ POSE DETECTION FAILED - Analyzing error type:', error);
+                
+                // Check if it's a timeout or initialization error
+                if (error.message.includes('timeout')) {
+                    console.warn('⏰ Processing timeout - this may indicate the video is too long or complex');
+                    alert('Video processing timed out. Please try a shorter video (under 30 seconds) or ensure the person is clearly visible.');
+                } else if (error.message.includes('initialization')) {
+                    console.warn('🔧 Initialization error - TensorFlow.js may not be fully loaded');
+                    alert('Pose detection models are still loading. Please wait a moment and try again.');
+                } else {
+                    console.warn('💥 Unexpected error during pose detection:', error.message);
+                    alert(`Pose detection failed: ${error.message}. Please try a different video or check that the person is clearly visible.`);
+                }
+                
+                console.log('🔄 FALLING BACK TO SIMULATION MODE');
                 gaitCycleFrames = simulateGaitCycle(gaitType);
-                console.log('🔄 Now using: SIMULATED gait data');
+                console.log('� Now using: SIMULATED gait data for demonstration purposes');
             }
         } else {
             // Fall back to simulation
@@ -4047,6 +4061,73 @@ function tryShoes() {
         console.log('👟 Shoe trial workflow initiated');
     }
 }
+
+/**
+ * Test function to automatically analyze the test video
+ */
+async function testWithActualVideo() {
+    console.log('🧪 Testing with actual video file: matt-palmer-back-run1.MP4');
+    
+    try {
+        // Fetch the test video file
+        const response = await fetch('/videos/matt-palmer-back-run1.MP4');
+        if (!response.ok) {
+            throw new Error(`Failed to load test video: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const file = new File([blob], 'matt-palmer-back-run1.MP4', { type: 'video/mp4' });
+        
+        console.log('✅ Test video loaded successfully:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+        
+        // Simulate the file being selected
+        const fileInput = document.getElementById('video-upload');
+        if (fileInput) {
+            // Create a DataTransfer object to simulate file selection
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            
+            // Trigger the change event to start analysis
+            const changeEvent = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(changeEvent);
+            
+            console.log('🚀 Automatic analysis started with test video');
+        } else {
+            console.error('❌ Video upload input not found');
+        }
+        
+    } catch (error) {
+        console.error('❌ Failed to load test video:', error);
+        alert('Failed to load test video. Please use the regular upload interface.');
+    }
+}
+
+// Add a button to trigger automatic testing (for development)
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        // Add test button for development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const testButton = document.createElement('button');
+            testButton.textContent = '🧪 Test with Actual Video';
+            testButton.style.position = 'fixed';
+            testButton.style.top = '10px';
+            testButton.style.right = '10px';
+            testButton.style.zIndex = '9999';
+            testButton.style.background = '#4F46E5';
+            testButton.style.color = 'white';
+            testButton.style.border = 'none';
+            testButton.style.padding = '10px 15px';
+            testButton.style.borderRadius = '5px';
+            testButton.style.cursor = 'pointer';
+            testButton.style.fontSize = '14px';
+            testButton.onclick = testWithActualVideo;
+            document.body.appendChild(testButton);
+            
+            console.log('🧪 Test button added for automatic video analysis');
+        }
+    }, 2000);
+});
 
 // Service Worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {

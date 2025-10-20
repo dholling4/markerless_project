@@ -4048,6 +4048,73 @@ function tryShoes() {
     }
 }
 
+/**
+ * Test function to automatically analyze the test video
+ */
+async function testWithActualVideo() {
+    console.log('🧪 Testing with actual video file: matt-palmer-back-run1.MP4');
+    
+    try {
+        // Fetch the test video file
+        const response = await fetch('../videos/matt-palmer-back-run1.MP4');
+        if (!response.ok) {
+            throw new Error(`Failed to load test video: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const file = new File([blob], 'matt-palmer-back-run1.MP4', { type: 'video/mp4' });
+        
+        console.log('✅ Test video loaded successfully:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+        
+        // Simulate the file being selected
+        const fileInput = document.getElementById('video-upload');
+        if (fileInput) {
+            // Create a DataTransfer object to simulate file selection
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            
+            // Trigger the change event to start analysis
+            const changeEvent = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(changeEvent);
+            
+            console.log('🚀 Automatic analysis started with test video');
+        } else {
+            console.error('❌ Video upload input not found');
+        }
+        
+    } catch (error) {
+        console.error('❌ Failed to load test video:', error);
+        alert('Failed to load test video. Please use the regular upload interface.');
+    }
+}
+
+// Add a button to trigger automatic testing (for development)
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        // Add test button for development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const testButton = document.createElement('button');
+            testButton.textContent = '🧪 Test with Actual Video';
+            testButton.style.position = 'fixed';
+            testButton.style.top = '10px';
+            testButton.style.right = '10px';
+            testButton.style.zIndex = '9999';
+            testButton.style.background = '#4F46E5';
+            testButton.style.color = 'white';
+            testButton.style.border = 'none';
+            testButton.style.padding = '10px 15px';
+            testButton.style.borderRadius = '5px';
+            testButton.style.cursor = 'pointer';
+            testButton.style.fontSize = '14px';
+            testButton.onclick = testWithActualVideo;
+            document.body.appendChild(testButton);
+            
+            console.log('🧪 Test button added for automatic video analysis');
+        }
+    }, 2000);
+});
+
 // Service Worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
