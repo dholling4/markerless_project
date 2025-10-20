@@ -570,16 +570,52 @@
         </div>
     </footer>
 
-    <!-- TensorFlow.js and Pose Detection Models -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/movenet@1.0.0/dist/movenet.min.js"></script>
+    <!-- TensorFlow.js Core - Use stable version with fallbacks -->
+    <script src="https://unpkg.com/@tensorflow/tfjs@3.21.0/dist/tf.min.js" 
+            onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js'"></script>
     
-    <!-- Backup: Direct MediaPipe libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <!-- Pose Detection Models - Use compatible versions -->
+    <script src="https://unpkg.com/@tensorflow-models/pose-detection@2.0.0/dist/pose-detection.min.js"
+            onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.0.0/dist/pose-detection.min.js'"></script>
+    
+    <!-- Library Loading Status Check -->
+    <script>
+        window.libraryLoadStatus = {
+            tensorflow: false,
+            poseDetection: false,
+            checkInterval: null
+        };
+        
+        // Check if libraries loaded successfully
+        function checkLibraries() {
+            if (typeof tf !== 'undefined') {
+                window.libraryLoadStatus.tensorflow = true;
+                console.log('✅ TensorFlow.js loaded successfully');
+            }
+            if (typeof poseDetection !== 'undefined') {
+                window.libraryLoadStatus.poseDetection = true;
+                console.log('✅ Pose Detection library loaded successfully');
+            }
+            
+            if (window.libraryLoadStatus.tensorflow && window.libraryLoadStatus.poseDetection) {
+                console.log('🎉 All pose detection libraries ready!');
+                if (window.libraryLoadStatus.checkInterval) {
+                    clearInterval(window.libraryLoadStatus.checkInterval);
+                }
+            }
+        }
+        
+        // Check libraries periodically
+        window.libraryLoadStatus.checkInterval = setInterval(checkLibraries, 100);
+        
+        // Fallback: Use simulation mode if libraries don't load within 10 seconds
+        setTimeout(() => {
+            if (!window.libraryLoadStatus.tensorflow || !window.libraryLoadStatus.poseDetection) {
+                console.warn('⚠️ Pose detection libraries failed to load - simulation mode will be used');
+                window.forceSimulationMode = true;
+            }
+        }, 10000);
+    </script>
     
     <script src="script.js"></script>
 </body>

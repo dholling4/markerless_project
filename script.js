@@ -9,17 +9,30 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(async () => {
             console.log('🚀 Checking TensorFlow.js and MediaPipe libraries...');
             
+            // Check library loading status first
+            const librariesReady = checkLibraryStatus();
+            
+            if (!librariesReady) {
+                console.warn('⚠️ Pose detection libraries not ready - enabling simulation mode');
+                window.forceSimulationMode = true;
+                enableTestButtons(); // Still allow testing with simulation
+                return;
+            }
+            
             // Check if libraries are loaded
             if (typeof tf !== 'undefined') {
                 console.log('✅ TensorFlow.js loaded, version:', tf.version?.tfjs || 'unknown');
+                window.libraryLoadStatus.tensorflow = true;
             } else {
                 console.error('❌ TensorFlow.js not loaded');
+                window.forceSimulationMode = true;
                 return;
             }
             
             // Check for TensorFlow.js pose detection
             if (typeof poseDetection !== 'undefined') {
                 console.log('✅ TensorFlow.js PoseDetection library loaded');
+                window.libraryLoadStatus.poseDetection = true;
                 
                 try {
                     await tf.ready();
@@ -83,6 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Helper function to check library status
+function checkLibraryStatus() {
+    return (typeof tf !== 'undefined') && (typeof poseDetection !== 'undefined');
+}
 
 // Smooth scrolling functionality
 function scrollToSection(sectionId) {
@@ -547,6 +565,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             console.log('🤖 Initializing pose detection with TensorFlow.js...');
             
+            // Check if libraries are available and loaded properly
+            if (!checkLibraryStatus()) {
+                console.error('❌ Required libraries not loaded - falling back to simulation');
+                window.forceSimulationMode = true;
+                return { success: false, error: 'Libraries not loaded', fallback: true };
+            }
+            
             // Check if TensorFlow.js and PoseDetection are loaded
             if (typeof tf === 'undefined') {
                 throw new Error('TensorFlow.js not loaded');
@@ -656,13 +681,26 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('📹 Video file:', videoFile ? videoFile.name : 'None');
         console.log('🔧 TensorFlow.js ready:', tfReady);
         console.log('🤖 Pose detector available:', !!poseDetector);
+        console.log('🧪 Force simulation mode:', window.forceSimulationMode);
+        
+        // Check if we should use simulation mode
+        if (window.forceSimulationMode || !checkLibraryStatus()) {
+            console.log('⚠️ Using simulation mode for video processing');
+            if (progressCallback) progressCallback(50, 'Using simulation mode (libraries unavailable)...');
+            return generateSimulatedGaitData();
+        }
         
         if (progressCallback) progressCallback(35, 'Initializing pose detection models...');
         
         if (!poseDetector || !tfReady) {
             const result = await initializePoseDetection();
             if (!result.success) {
-                throw new Error(`Pose detection initialization failed: ${result.model || 'unknown'}`);
+                if (result.fallback) {
+                    console.log('🔄 Falling back to simulation mode');
+                    if (progressCallback) progressCallback(50, 'Using simulation mode...');
+                    return generateSimulatedGaitData();
+                }
+                throw new Error(`Pose detection initialization failed: ${result.error || 'unknown'}`);
             }
             console.log(`🎯 Using ${result.model} model for pose detection`);
             console.log('✅ Pose detector initialized successfully');
