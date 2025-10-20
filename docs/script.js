@@ -4153,6 +4153,33 @@ window.addEventListener('load', () => {
     }, 2000);
 });
 
+// CDN Library Status Test Function (for development)
+function testCDNStatus() {
+    console.log('🔍 Testing CDN Library Status...');
+    
+    const results = {
+        tensorflow: typeof tf !== 'undefined',
+        poseDetection: typeof poseDetection !== 'undefined',
+        libraryLoadStatus: window.libraryLoadStatus || {},
+        forceSimulationMode: window.forceSimulationMode || false
+    };
+    
+    console.table(results);
+    
+    if (results.tensorflow) {
+        console.log('✅ TensorFlow.js Version:', tf.version?.tfjs || 'unknown');
+    }
+    
+    if (results.poseDetection) {
+        console.log('✅ Available Models:', Object.keys(poseDetection.SupportedModels || {}));
+    }
+    
+    return results;
+}
+
+// Make CDN test available globally
+window.testCDNStatus = testCDNStatus;
+
 // Service Worker registration (for PWA functionality)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
