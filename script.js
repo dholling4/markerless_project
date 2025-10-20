@@ -456,9 +456,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             // Primary: MoveNet (more reliable in TensorFlow.js)
             moveNet: {
-                modelType: 'SINGLEPOSE_LIGHTNING', // Faster, lighter model
+                modelType: 'SinglePose.Lightning', // Faster, lighter model
                 enableSmoothing: true,
-                minPoseScore: 0.25
+                minPoseScore: 0.5
             },
             // Backup: MediaPipe (if available)
             mediaPipe: {
@@ -598,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Use simpler config for MoveNet
                 const moveNetConfig = {
-                    modelType: 'SINGLEPOSE_LIGHTNING',
+                    modelType: 'SinglePose.Lightning',
                     enableSmoothing: true
                 };
                 
