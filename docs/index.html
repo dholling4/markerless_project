@@ -570,11 +570,15 @@
         </div>
     </footer>
 
-    <!-- TensorFlow.js Core - Use stable version with fallbacks -->
+    <!-- TensorFlow.js Core -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"
             crossorigin="anonymous"></script>
     
-    <!-- Pose Detection Models - Use compatible versions -->
+    <!-- PoseNet Model (legacy, for compatibility) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2/dist/posenet.min.js"
+            crossorigin="anonymous"></script>
+    
+    <!-- Pose Detection Models (newer API) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.0/dist/pose-detection.min.js"
             crossorigin="anonymous"></script>
     
@@ -582,6 +586,7 @@
     <script>
         window.libraryLoadStatus = {
             tensorflow: false,
+            posenet: false,
             poseDetection: false,
             checkInterval: null
         };
@@ -590,11 +595,18 @@
         function checkLibraries() {
             if (typeof tf !== 'undefined') {
                 window.libraryLoadStatus.tensorflow = true;
-                console.log('✅ TensorFlow.js loaded successfully');
+                console.log('✅ TensorFlow.js loaded successfully', 'Version:', tf.version?.tfjs || 'unknown');
+            }
+            if (typeof posenet !== 'undefined') {
+                window.libraryLoadStatus.posenet = true;
+                console.log('✅ PoseNet library loaded successfully');
             }
             if (typeof poseDetection !== 'undefined') {
                 window.libraryLoadStatus.poseDetection = true;
                 console.log('✅ Pose Detection library loaded successfully');
+                if (poseDetection.SupportedModels) {
+                    console.log('📋 Available models:', Object.keys(poseDetection.SupportedModels));
+                }
             }
             
             if (window.libraryLoadStatus.tensorflow && window.libraryLoadStatus.poseDetection) {

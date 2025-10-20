@@ -4180,6 +4180,7 @@ function testCDNStatus() {
     
     const results = {
         tensorflow: typeof tf !== 'undefined',
+        posenet: typeof posenet !== 'undefined',
         poseDetection: typeof poseDetection !== 'undefined',
         libraryLoadStatus: window.libraryLoadStatus || {},
         forceSimulationMode: window.forceSimulationMode || false
@@ -4189,10 +4190,22 @@ function testCDNStatus() {
     
     if (results.tensorflow) {
         console.log('✅ TensorFlow.js Version:', tf.version?.tfjs || 'unknown');
+        console.log('📊 TensorFlow.js Backend:', tf.getBackend());
+    }
+    
+    if (results.posenet) {
+        console.log('✅ PoseNet Available (Legacy API)');
     }
     
     if (results.poseDetection) {
         console.log('✅ Available Models:', Object.keys(poseDetection.SupportedModels || {}));
+    }
+    
+    // Test model loading capability
+    if (results.tensorflow && results.poseDetection) {
+        console.log('🧪 Ready to load pose detection models');
+    } else {
+        console.warn('⚠️ Missing required libraries for pose detection');
     }
     
     return results;
