@@ -3,7 +3,7 @@ streamlit
 streamlit-webrtc==0.32.0
 
 # Computer Vision
-cv2
+cv
 opencv-python-headless
 mediapipe
 
